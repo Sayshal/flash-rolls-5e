@@ -374,7 +374,7 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
   async _onTabClick(event) {
     const tab = event.currentTarget.dataset.tab;
     LogUtil.log('_onTabClick #0', [tab]);
-    if (tab === this.currentTab) return;
+    // if (tab === this.currentTab) return;
     
     this.selectedRequestType = null;
     
