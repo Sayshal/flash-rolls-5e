@@ -11,7 +11,7 @@ This is a Foundry VTT module that facilitates rolling for GMs, adding the follow
 - Target tokens from template drawing
 
 
-https://github.com/user-attachments/assets/725e73c7-ffc0-415d-be37-bf07a9877040
+<img width="650" alt="image" src="https://github.com/crlngn/flash-rolls-5e/blob/main/demo/compact-menu-group-roll.png?raw=true" />
 
 https://github.com/user-attachments/assets/c2cae279-e2e0-43a5-91ff-d1bf5fc21458
 
