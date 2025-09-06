@@ -18,7 +18,6 @@ export class RollMenuActorProcessor {
    * @returns {Object} Complete context object for template
    */
   static async prepareActorContext(menu, baseContext) {
-    LogUtil.log('RollMenuActorProcessor.prepareActorContext');
     const SETTINGS = getSettings();
     const actors = game.actors.contents;
     const pcActors = [];

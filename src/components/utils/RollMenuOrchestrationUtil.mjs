@@ -205,12 +205,8 @@ export class RollMenuOrchestrationUtil {
    * @param {RollRequestsMenu} menu - Menu instance for accessing properties and methods
    */
   static async triggerRoll(requestType, rollKey, menu) {
-    LogUtil.log('DEBUG: RollMenuOrchestrationUtil.triggerRoll called with', [requestType, rollKey]);
-    LogUtil.log('DEBUG: menu.selectedActors Set', [menu.selectedActors]);
-    LogUtil.log('DEBUG: menu.selectedActors.size', [menu.selectedActors.size]);
     const SETTINGS = getSettings();
     const selectedUniqueIds = Array.from(menu.selectedActors);
-    LogUtil.log('DEBUG: selectedUniqueIds', [selectedUniqueIds]);
     const skipRollDialog = SettingsUtil.get(SETTINGS.skipRollDialog.tag);
     
     let actorsData = selectedUniqueIds
@@ -230,20 +226,15 @@ export class RollMenuOrchestrationUtil {
       .filter(item => item);
     
     let actors = actorsData.map(item => item.actor);
-    LogUtil.log('DEBUG: actors mapped', [actors]);
     
     const rollOption = MODULE.ROLL_REQUEST_OPTIONS[requestType];
     const rollMethodName = (rollOption?.name || requestType)?.toLowerCase();
-    LogUtil.log('DEBUG: rollOption and rollMethodName', [rollOption, rollMethodName]);
     
     // Handle special roll types
-    LogUtil.log('DEBUG: Handling special roll types...');
     const originalRollKey = rollKey;
     rollKey = await this.handleSpecialRollTypes(rollMethodName, rollKey, selectedUniqueIds, actorsData, actors, menu);
-    LogUtil.log('DEBUG: rollKey after special handling', [rollKey]);
     // Only treat as cancelled if handleSpecialRollTypes explicitly returned null when rollKey wasn't originally null
     if (rollKey === null && originalRollKey !== null) {
-      LogUtil.log('DEBUG: Operation cancelled or failed in special handling');
       return; // Operation cancelled or failed
     }
     
@@ -276,8 +267,6 @@ export class RollMenuOrchestrationUtil {
    * @returns {Promise<string|null>} Modified rollKey or null if cancelled
    */
   static async handleSpecialRollTypes(rollMethodName, rollKey, selectedUniqueIds, actorsData, actors, menu) {
-    LogUtil.log('DEBUG: handleSpecialRollTypes called with rollMethodName', [rollMethodName]);
-    LogUtil.log('DEBUG: handleSpecialRollTypes input rollKey', [rollKey]);
     const SETTINGS = getSettings();
     
     switch(rollMethodName) {
@@ -318,7 +307,6 @@ export class RollMenuOrchestrationUtil {
         break;
     }
     
-    LogUtil.log('DEBUG: handleSpecialRollTypes returning rollKey', [rollKey]);
     return rollKey;
   }
 
