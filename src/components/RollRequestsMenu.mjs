@@ -298,7 +298,6 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
       });
     }
     
-    this._attachListeners();
     const dropZones = this.element.querySelectorAll('.actor-list');
     
     dropZones.forEach((zone, index) => {      
@@ -358,8 +357,65 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
     
     ActorDragUtil.initializeActorDrag(this);
     this._updateRequestTypesVisibilityNoRender();
+
+    this._attachListeners();
   }
   
+  /**
+   * Attach tooltip handlers for compact mode
+   * @param {HTMLElement} html - The menu element
+   */
+  _attachCompactTooltipHandlers(html) {
+    const actors = html.querySelectorAll('#flash-rolls-menu.compact .actor');
+    
+    actors.forEach(actor => {
+      const actorData = actor.querySelector('.actor-data');
+      if (!actorData) return;
+      
+      let tooltipCopy = null;
+      
+      const showTooltip = (event) => {
+        const existingTooltip = document.querySelector('.actor-data-tooltip');
+        if (existingTooltip) {
+          existingTooltip.remove();
+        }
+        
+        tooltipCopy = actorData.cloneNode(true);
+        tooltipCopy.className = 'actor-data-tooltip';
+        
+        const actorRect = actor.getBoundingClientRect();
+        const menuRect = html.getBoundingClientRect();
+        
+        const isLeftEdge = html.classList.contains('left-edge');
+        
+        if (isLeftEdge) {
+          tooltipCopy.style.left = `${actorRect.right - menuRect.left}px`;
+        } else {
+          tooltipCopy.style.right = `${menuRect.right - actorRect.left}px`;
+        }
+        tooltipCopy.style.top = `${actorRect.top - menuRect.top}px`;
+        
+        document.querySelector('#flash-rolls-menu').appendChild(tooltipCopy);
+      };
+      
+      const hideTooltip = () => {
+        if (tooltipCopy) {
+          tooltipCopy.remove();
+          tooltipCopy = null;
+        }
+      };
+      
+      actor.addEventListener('mouseenter', showTooltip);
+      actor.addEventListener('mouseleave', hideTooltip);
+      
+      // Clean up on scroll to prevent misaligned tooltips
+      const scrollContainer = actor.closest('ul');
+      if (scrollContainer) {
+        scrollContainer.addEventListener('scroll', hideTooltip);
+      }
+    });
+  }
+
   /**
    * Handle token control changes
    */
@@ -430,14 +486,15 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
    * Handle clicks outside the menu
    */
   _onClickOutside = (event) => {
-    LogUtil.log('_onClickOutside');
+    LogUtil.log('_onClickOutside', [event.target]);
     if (this.isLocked) return;
     const menu = this.element;
     if (!menu) return;
     if (event.target.closest('.flash-rolls-menu')) return;
     if (menu.contains(event.target)) return;
-    if (event.target.closest('#flash-rolls-icon')) return;
-    if (event.target.closest('.dialog, .app, .notification, .application')) return;
+    // if (event.target.closest('#flash-rolls-icon')) return;
+    // if (event.target.closest('.dialog, .app, .notification, .application')) return;
+    // if (event.target.closest('.actor-tab')) return;
     this.close();
   }
 
@@ -445,7 +502,7 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
    * Attach event listeners
    */
   _attachListeners() {
-    LogUtil.log('_attachListeners');
+    LogUtil.log('_attachListeners... #0');
     
     const html = this.element;
     
@@ -473,6 +530,10 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
     html.querySelectorAll('.actor.drag-wrapper').forEach(wrapper => {
       wrapper.addEventListener('click', this._onActorClick.bind(this));
     });
+    
+    if (html.classList.contains('compact')) {
+      this._attachCompactTooltipHandlers(html);
+    }
     
     const searchInput = html.querySelector('.search-input');
     if (searchInput) {
@@ -686,9 +747,10 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
         const uniqueId = token.id;
         this.selectedActors.add(uniqueId);
         
+        LogUtil.log('_initializeFromSelectedTokens', [this.selectedActors]);
         if (this.selectedActors.size === 1) {
-          const isPC = isPlayerOwned(token.actor);
-          this.currentTab = isPC ? 'pc' : 'npc';
+            const isPC = isPlayerOwned(token.actor);
+            this.currentTab = isPC ? 'pc' : 'npc';
         }
       }
     }
@@ -702,7 +764,8 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
    */
   async _onTabClick(event) {
     const tab = event.currentTarget.dataset.tab;
-    if (tab === this.currentTab) return;
+    LogUtil.log('_onTabClick #0', [tab]);
+    // if (tab === this.currentTab) return;
     
     // this.selectedActors.clear();
     // canvas.tokens?.releaseAll();
@@ -710,6 +773,7 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
     
     this.currentTab = tab;
     await this.render();
+    LogUtil.log('_onTabClick #1', [tab]);
   }
 
   /**
@@ -1758,11 +1822,12 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
       
       if (!this.#instance) {
         this.#instance = new RollRequestsMenu();
-        this.#instance.render(true);
-        this.#instance.isLocked = true;
       } else if (!this.#instance.rendered) {
         this.#instance._initializeFromSelectedTokens();
-        this.#instance.render(true);
+      }
+
+      this.#instance?.render(true);
+      if (this.#instance) {
         this.#instance.isLocked = true;
       }
     }

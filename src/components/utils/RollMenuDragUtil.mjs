@@ -51,7 +51,6 @@ export class RollMenuDragUtil {
     const initialTop = menuRect.top;
     
     const parent = menu.element.parentElement;
-
     document.body.appendChild(menu.element);
     menu.element.style.position = 'fixed';
     menu.element.style.inset = '';  // Clear inset first
