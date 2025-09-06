@@ -197,7 +197,7 @@
     padding: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.5em;
+    gap: 0.35em;
   }
 }
 
@@ -1035,7 +1035,7 @@ body.crlngn-tabs #flash-rolls-menu.docked-right {
 
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
+  gap: 2px;
   row-gap: 0.1rem;
 
   .actor-name {

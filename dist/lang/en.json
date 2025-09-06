@@ -22,6 +22,7 @@
       "actorsSkippedInitiative": "No tokens found for {actors}. Initiative not rolled.",
       "noTokensForInitiative": "The selected actors do not have tokens on the scene. Initiative not rolled.",
       "noCharactersForHitDie": "Hit dice can only be rolled for player characters, not NPCs.",
+      "noValidActorsSelected": "No valid actors selected.",
       "actorAdded": "{actor} added to Flash Rolls menu",
       "actorAlreadyAdded": "{actor} is already in the menu",
       "actorNotFound": "Actor not found",

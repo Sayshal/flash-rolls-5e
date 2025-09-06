@@ -405,7 +405,7 @@ export class ChatMessageUtils {
         });
         break;
       case ROLL_TYPES.CONCENTRATION:
-        flavor = game.i18n.localize("DND5E.ConcentrationBreaking") || "Concentration";
+        flavor = game.i18n.localize("DND5E.Concentration") || "Concentration";
         break;
       case ROLL_TYPES.DEATH_SAVE:
         flavor = game.i18n.localize("DND5E.DeathSave") || "Death Saving Throw";

@@ -129,7 +129,7 @@ export const RollHandlers = {
       if (token) {
         tokenActor = token.actor;
       } else {
-        ui.notifications.error(game.i18n.localize("FLASH_ROLLS.notifications.noTokensForInitiative"));
+        ui.notifications.info(game.i18n.localize("FLASH_ROLLS.notifications.noTokensForInitiative"));
         return;
       }
     }

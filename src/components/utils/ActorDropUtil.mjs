@@ -98,13 +98,11 @@ export class ActorDropUtil {
         ui.notifications.warn(game.i18n.localize("FLASH_ROLLS.notifications.actorNotFound") || "Actor not found");
         return;
       }
-      LogUtil.log('ActorDropUtil.handleDrop - Processing actor', [actor]);
-
+      
       const isPC = isPlayerOwned(actor);
       const targetTab = isPC ? 'pc' : 'npc';
 
       if (menu.currentTab !== targetTab) {
-        LogUtil.log('ActorDropUtil.handleDrop - Switching to tab', [targetTab]);
         menu.currentTab = targetTab;
       }
       await this.addActorToMenu(actor, menu);
@@ -126,18 +124,13 @@ export class ActorDropUtil {
    */
   static parseDragData(event) {
     try {
-      LogUtil.log('ActorDropUtil.parseDragData - Starting parse, available types:', [event.dataTransfer.types]);
-      
       const jsonData = event.dataTransfer.getData('application/json');
-      LogUtil.log('ActorDropUtil.parseDragData - JSON data:', [jsonData]);
       if (jsonData) {
         const parsed = JSON.parse(jsonData);
-        LogUtil.log('ActorDropUtil.parseDragData - Parsed JSON:', [parsed]);
         return parsed;
       }
 
       const textData = event.dataTransfer.getData('text/plain');
-      LogUtil.log('ActorDropUtil.parseDragData - Text data:', [textData]);
       
       if (textData) {
         if (textData.startsWith('Actor.')) {
@@ -145,20 +138,17 @@ export class ActorDropUtil {
             type: 'Actor',
             uuid: textData
           };
-          LogUtil.log('ActorDropUtil.parseDragData - Created Actor drag data from text:', [dragData]);
           return dragData;
         }
         
         try {
           const parsed = JSON.parse(textData);
-          LogUtil.log('ActorDropUtil.parseDragData - Parsed text as JSON:', [parsed]);
           return parsed;
         } catch (e) {
           LogUtil.log('ActorDropUtil.parseDragData - Text is not JSON');
         }
       }
 
-      LogUtil.log('ActorDropUtil.parseDragData - No valid data found');
       return null;
     } catch (error) {
       LogUtil.error('ActorDropUtil.parseDragData - Error parsing drag data', [error]);
@@ -191,30 +181,16 @@ export class ActorDropUtil {
    * @param {RollRequestsMenu} menu - The menu instance
    */
   static async addActorToMenu(actor, menu) {
-    LogUtil.log('ActorDropUtil.addActorToMenu', [actor.name, actor.id]);
-    LogUtil.log('ActorDropUtil.addActorToMenu - Current tab:', [menu.currentTab]);
-    
-    // Check current status
     const isBlocked = ActorStatusUtil.isBlocked(actor);
     const isFavorite = ActorStatusUtil.isFavorite(actor);
     
-    LogUtil.log('ActorDropUtil.addActorToMenu - Actor status:', [{ isBlocked, isFavorite }]);
-    
     if (isFavorite && !isBlocked) {
-      LogUtil.log('ActorDropUtil.addActorToMenu - Actor already a favorite', [actor.name]);
       ui.notifications.info(game.i18n.format("FLASH_ROLLS.notifications.actorAlreadyAdded", { 
         actor: actor.name 
       }) || `${actor.name} is already in the menu`);
       return;
     }
 
-    // Add to favorites (this will automatically remove blocked status if needed)
-    LogUtil.log('ActorDropUtil.addActorToMenu - Setting as favorite:', [actor.id]);
     await ActorStatusUtil.setFavorite(actor, true);
-    
-    // The ActorStatusUtil.setFavorite method will automatically trigger a menu refresh
-    // and handle removing blocked status, so we don't need to manually do anything else
-    
-    LogUtil.log('ActorDropUtil.addActorToMenu - Actor added to favorites successfully', [actor.name, actor.id]);
   }
 }

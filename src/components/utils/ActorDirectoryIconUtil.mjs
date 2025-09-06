@@ -42,8 +42,6 @@ export class ActorDirectoryIconUtil {
    * @param {HTMLElement} html - The rendered HTML
    */
   static onRenderActorDirectory(app, html) {
-    LogUtil.log('ActorDirectoryIconUtil.onRenderActorDirectory', [app, html]);
-    
     const actorItems = html.querySelectorAll('.directory-item.actor');
     actorItems.forEach((element) => {
       const actorId = element.dataset.entryId || element.dataset.documentId;
