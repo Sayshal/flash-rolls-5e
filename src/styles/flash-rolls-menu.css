@@ -486,6 +486,7 @@ body > .actor.drag-wrapper {
   position: absolute;
   display: none;
   overflow-y: auto;
+  pointer-events: all;
 }
 #flash-rolls-menu.compact > div > ul.request-types {
   left: calc(-5rem + 1px);
@@ -667,6 +668,7 @@ body > .actor.drag-wrapper {
     background: transparent;
     font-size: var(--font-size-10);
     cursor: pointer;
+    pointer-events: all;
     
     &:hover {
       opacity: 0.8;

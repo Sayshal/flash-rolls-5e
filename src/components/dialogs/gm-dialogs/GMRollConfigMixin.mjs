@@ -126,6 +126,62 @@ export function GMRollConfigMixin(Base) {
     }
     
     /**
+     * Handle macro button click to create a macro with current dialog configuration
+     * @param {Event} event - The click event
+     * @protected
+     */
+    async _onCreateMacroClick(event) {
+      event.preventDefault();
+      event.stopPropagation();
+      
+      LogUtil.log('_onCreateMacroClick', [this]);
+      
+      if (!this.rollTypeString) {
+        ui.notifications.error("Cannot create macro: roll type not defined");
+        return;
+      }
+      
+      // Get current form data
+      const formData = new FormDataExtended(this.form);
+      const situational = formData.get('roll.0.situational') || formData.get('rolls.0.situational') || '';
+      const dc = formData.get('dc');
+      const sendRequest = formData.get('flash5e-send-request');
+      const rollMode = formData.get('rollMode') || game.settings.get("core", "rollMode");
+      
+      // Get selected actors
+      const actorIds = this.actors?.map(actor => actor.id) || [];
+      
+      // Build macro configuration
+      const macroData = {
+        requestType: this.rollTypeString,
+        rollKey: this.rollKey,
+        actorIds: actorIds,
+        config: {
+          ...(situational && { situationalBonus: situational }),
+          ...(dc && { dc: parseInt(dc) }),
+          ...(rollMode !== game.settings.get("core", "rollMode") && { rollMode }),
+          sendAsRequest: !!sendRequest,
+          skipRollDialog: true, // Always skip roll dialog for macros
+          // Add empty advantage/disadvantage properties for user customization
+          advantage: false,
+          disadvantage: false
+        }
+      };
+      
+      try {
+        // Import FlashRollsAPI dynamically to avoid circular imports
+        const { FlashRollsAPI } = await import("../../FlashRollsAPI.mjs");
+        await FlashRollsAPI.createMacro(macroData);
+        
+        // Close the dialog after successful macro creation
+        this.close();
+      } catch (error) {
+        LogUtil.error('Failed to create macro:', [error]);
+        ui.notifications.error(`Failed to create macro: ${error.message}`);
+      }
+    }
+    
+    /**
      * Handle post-render actions for the dialog.
      * Triggers initial formula rebuild if there's a situational bonus.
      * @param {ApplicationRenderContext} context - The render context.

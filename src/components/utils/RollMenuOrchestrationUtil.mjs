@@ -203,11 +203,17 @@ export class RollMenuOrchestrationUtil {
    * @param {string} requestType - The type of roll request (e.g., 'skill', 'ability')
    * @param {string} rollKey - The specific roll key (e.g., 'acr' for Acrobatics)
    * @param {RollRequestsMenu} menu - Menu instance for accessing properties and methods
+   * @param {Object} [config={}] - Optional configuration overrides
+   * @param {boolean} [config.skipRollDialog] - Override skip roll dialog setting
+   * @param {number} [config.dc] - Difficulty Class for the roll
+   * @param {string} [config.situationalBonus] - Situational bonus
+   * @param {boolean} [config.advantage] - Roll with advantage
+   * @param {boolean} [config.disadvantage] - Roll with disadvantage
    */
-  static async triggerRoll(requestType, rollKey, menu) {
+  static async triggerRoll(requestType, rollKey, menu, config = {}) {
     const SETTINGS = getSettings();
     const selectedUniqueIds = Array.from(menu.selectedActors);
-    const skipRollDialog = SettingsUtil.get(SETTINGS.skipRollDialog.tag);
+    const skipRollDialog = config.skipRollDialog !== undefined ? config.skipRollDialog : SettingsUtil.get(SETTINGS.skipRollDialog.tag);
     
     let actorsData = selectedUniqueIds
       .map(uniqueId => {
@@ -245,13 +251,13 @@ export class RollMenuOrchestrationUtil {
     }
     
     const { pcActors, npcActors } = categorizeActorsByOwnership(actors);
-    const config = await RollMenuConfigUtil.getRollConfiguration(actors, rollMethodName, rollKey, skipRollDialog, pcActors);
+    const rollConfig = await RollMenuConfigUtil.getRollConfiguration(actors, rollMethodName, rollKey, skipRollDialog, pcActors, config);
     
-    if (!config) return;
+    if (!rollConfig) return;
     
-    await this.orchestrateRollsForActors(config, pcActors, npcActors, rollMethodName, rollKey, actorsData, menu);
+    await this.orchestrateRollsForActors(rollConfig, pcActors, npcActors, rollMethodName, rollKey, actorsData, menu);
     
-    if (!menu.isLocked) {
+    if (!menu.isLocked && typeof menu.close === 'function') {
       setTimeout(() => menu.close(), 500);
     }
   }

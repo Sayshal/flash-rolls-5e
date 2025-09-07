@@ -18,7 +18,7 @@ export class RollMenuConfigUtil {
    * @param {Array} pcActors - PC actors with owners
    * @returns {Promise<BasicRollProcessConfiguration|null>} Process configuration or null if cancelled
    */
-  static async getRollConfiguration(actors, rollMethodName, rollKey, skipRollDialog, pcActors) {
+  static async getRollConfiguration(actors, rollMethodName, rollKey, skipRollDialog, pcActors, configOverrides = {}) {
     const SETTINGS = getSettings();
     const rollRequestsEnabled = SettingsUtil.get(SETTINGS.rollRequestsEnabled.tag);
     
@@ -45,16 +45,17 @@ export class RollMenuConfigUtil {
       const config = {
         rolls: [{
           parts: [],
-          data: {},
-          options: {}
+          // parts: configOverrides.situationalBonus ? ["@situational"] : [],
+          data: configOverrides.situationalBonus ? { situational: configOverrides.situationalBonus } : {},
+          options: configOverrides.dc ? { target: configOverrides.dc } : {}
         }],
-        advantage: false,
-        disadvantage: false,
-        rollMode: game.settings.get("core", "rollMode"),
+        advantage: configOverrides.advantage || false,
+        disadvantage: configOverrides.disadvantage || false,
+        rollMode: configOverrides.rollMode || game.settings.get("core", "rollMode"),
         chatMessage: true,
         isRollRequest: false,
         skipRollDialog: true,
-        sendRequest: rollRequestsEnabled && pcActors.length > 0
+        sendRequest: configOverrides.sendAsRequest !== undefined ? configOverrides.sendAsRequest : (rollRequestsEnabled && pcActors.length > 0)
       };
       
       // Death saves always have DC 10

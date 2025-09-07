@@ -551,6 +551,57 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
     this._triggerRoll(requestType, rollKey);
   }
 
+  /**
+   * Handle macro button click
+   */
+  async _onMacroButtonClick(event) {
+    LogUtil.log('_onMacroButtonClick');
+    
+    const element = event.currentTarget;
+    const elementId = element.dataset.id || null;
+    const parentType = element.dataset.parent;
+    
+    // For top-level request types (no parent), the requestType is the element's dataset.id
+    // For sub-items, the requestType is the parentType and rollKey is the element's dataset.id
+    let requestType, rollKey;
+    if (parentType) {
+      // This is a sub-item (like "Acrobatics" under "Skill Check")
+      requestType = parentType;
+      rollKey = elementId;
+    } else {
+      // This is a top-level item (like "Intelligence" ability check)
+      requestType = elementId;
+      rollKey = null; // Top-level items don't have a specific rollKey
+    }
+    
+    if (!requestType) {
+      ui.notifications.warn("No roll type selected for macro creation");
+      return;
+    }
+    
+    // Get currently selected actors
+    const selectedActorIds = Array.from(this.selectedActors);
+    if (selectedActorIds.length === 0) {
+      ui.notifications.warn("No actors selected for macro creation");
+      return;
+    }
+    
+    // Create macro data object
+    const macroData = {
+      requestType,
+      rollKey,
+      actorIds: selectedActorIds,
+      config: {}
+    };
+    
+    try {
+      // Use the API to create the macro
+      await FlashRolls5e.createMacro(macroData);
+    } catch (error) {
+      LogUtil.error("Failed to create macro", [error]);
+      ui.notifications.error("Failed to create macro: " + error.message);
+    }
+  }
 
   /**
    * Defines who rolls for each selected actor (GM or player)

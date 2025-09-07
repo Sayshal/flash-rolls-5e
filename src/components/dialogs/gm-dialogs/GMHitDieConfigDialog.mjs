@@ -124,6 +124,15 @@ export class GMHitDieConfigDialog extends GMRollConfigMixin(dnd5e.applications.d
       wrapper.innerHTML = template;
       
       configSection.parentNode.insertBefore(wrapper, configSection);
+      
+      // Set up macro button click handler
+      const macroButton = this.element.querySelector('.flash5e-macro-button[data-action="create-macro"]');
+      if (macroButton) {
+        LogUtil.log('Attaching click handler to macro button');
+        macroButton.addEventListener('click', this._onCreateMacroClick.bind(this));
+      } else {
+        LogUtil.warn('Macro button not found in dialog');
+      }
     }
   }
   

@@ -17,19 +17,16 @@ export const RollHelpers = {
   addSituationalBonus(config, situational) {
     LogUtil.log("Config before adding bonus:", [situational, config]);
     if (situational && config.rolls?.[0]) {
-      // Ensure the roll has proper structure
       if (!config.rolls[0].parts) config.rolls[0].parts = [];
       if (!config.rolls[0].data) config.rolls[0].data = {};
       
       config.rolls[0].data.situational = situational;
-      
       // Only add @situational if it's not already in parts
       if (!config.rolls[0].parts.includes("@situational")) {
         config.rolls[0].parts.push("@situational");
       }
       LogUtil.log("Config after adding bonus:", [config]);
     }
-    // config.situational = situational;
     return config;
   },
 
@@ -50,6 +47,12 @@ export const RollHelpers = {
    * @returns {BasicRollProcessConfiguration} The process configuration for D&D5e actor roll methods
    */
   buildRollConfig(requestData, rollConfig, additionalConfig = {}) {
+    LogUtil.log('RollHelpers.buildRollConfig - incoming rollConfig', [
+      'parts:', rollConfig.parts,
+      'data:', rollConfig.data,
+      'requestData.config.situational:', requestData.config.situational
+    ]);
+    
     // Build BasicRollProcessConfiguration
     const config = {
       rolls: [{

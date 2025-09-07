@@ -470,11 +470,10 @@ export class ChatMessageUtils {
    * @param {Roll} roll - The completed roll
    */
   static async updateGroupRollMessage(groupRollId, uniqueId, roll) {
-    LogUtil.log('ChatMessageUtils.updateGroupRollMessage', [groupRollId, uniqueId, roll ]);
-    
     if (!game.user.isGM) {
       return;
     }
+    LogUtil.log('ChatMessageUtils.updateGroupRollMessage', [groupRollId, uniqueId, roll ]);
     
     const currentUpdate = this.updateQueue.get(groupRollId) || Promise.resolve();
     const nextUpdate = currentUpdate.then(() => this._performGroupRollUpdate(groupRollId, uniqueId, roll));
@@ -504,7 +503,7 @@ export class ChatMessageUtils {
       
       if (message) {
         this.groupRollMessages.set(groupRollId, message);
-        LogUtil.log('updateGroupRollMessage - Found and registered group message', [groupRollId]);
+        LogUtil.log('_performGroupRollUpdate - Found and registered group message', [groupRollId]);
         
         if (!pendingData) {
           const flagData = message.getFlag(MODULE_ID, 'rollData');
@@ -532,22 +531,36 @@ export class ChatMessageUtils {
     
     const flagData = message.getFlag(MODULE_ID, 'rollData');
     
+    LogUtil.log('_performGroupRollUpdate - Searching for uniqueId', [uniqueId, 'in results:', flagData.results.map(r => ({uniqueId: r.uniqueId, actorId: r.actorId, tokenId: r.tokenId}))]);
+    
     let resultIndex = flagData.results.findIndex(r => r.uniqueId === uniqueId);
     
-    // If no match found by uniqueId, try multiple fallback strategies
+    // If no match found by uniqueId, try multiple fallbacks
     if (resultIndex === -1) {
-      // Strategy 1: Try matching by actorId directly
+      // Attempt 1: Try matching by actorId directly
       resultIndex = flagData.results.findIndex(r => r.actorId === uniqueId);
       
-      // Strategy 2: If uniqueId is a tokenId, try finding by tokenId property
+      // Attempt 2: If uniqueId is a tokenId, try finding by tokenId property
       if (resultIndex === -1) {
         resultIndex = flagData.results.findIndex(r => r.tokenId === uniqueId);
       }
       
-      // Strategy 3: Try extracting actorId from speaker and match that
+      // Attempt 3: extract actorId from speaker and match
       if (resultIndex === -1 && message.speaker?.actor) {
         const speakerActorId = message.speaker.actor;
         resultIndex = flagData.results.findIndex(r => r.actorId === speakerActorId);
+      }
+      
+      // Attempt 4: If uniqueId looks like a token ID, try to get the actor from the token
+      if (resultIndex === -1) {
+        const token = canvas.tokens?.get(uniqueId) || game.scenes.active?.tokens?.get(uniqueId);
+        if (token && token.actor) {
+          const tokenActorId = token.actor.id;
+          LogUtil.log('_performGroupRollUpdate - Trying token actor match', [uniqueId, 'token actor:', tokenActorId]);
+          resultIndex = flagData.results.findIndex(r => 
+            r.actorId === tokenActorId || r.uniqueId === tokenActorId
+          );
+        }
       }
     }
     
@@ -567,7 +580,7 @@ export class ChatMessageUtils {
         // }
         flagData.results[resultIndex].rollBreakdown = rollBreakdown;
       } catch (error) {
-        LogUtil.error('Error rendering roll breakdown', error);
+        LogUtil.error('Error rendering roll breakdown', [error]);
         flagData.results[resultIndex].rollBreakdown = null;
       }
       
@@ -575,6 +588,9 @@ export class ChatMessageUtils {
         flagData.results[resultIndex].success = roll.total >= flagData.dc;
         flagData.results[resultIndex].failure = roll.total < flagData.dc;
       }
+    }else{
+      LogUtil.error('Group message id not found');
+      return;
     }
     
     flagData.allRolled = flagData.results.every(r => r.rolled);
@@ -783,6 +799,7 @@ export class ChatMessageUtils {
     }
     
     if (game.user.isGM) {
+      LogUtil.log('interceptRollMessage - Updating group message', [groupRollId, uniqueId, actor.name, roll.total]);
       this.updateGroupRollMessage(groupRollId, uniqueId, roll);
       
       const msgId = message.id;

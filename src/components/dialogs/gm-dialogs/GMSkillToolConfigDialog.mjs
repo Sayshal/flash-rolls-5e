@@ -144,6 +144,15 @@ export class GMSkillToolConfigDialog extends GMRollConfigMixin(dnd5e.application
    */
   _attachButtonListeners() {
     LogUtil.log('_attachButtonListeners', []);
+    
+    // Set up macro button click handler
+    const macroButton = this.element.querySelector('.flash5e-macro-button[data-action="create-macro"]');
+    if (macroButton) {
+      LogUtil.log('Attaching click handler to macro button');
+      macroButton.addEventListener('click', this._onCreateMacroClick.bind(this));
+    } else {
+      LogUtil.warn('Macro button not found in dialog');
+    }
 
     const buttons = this.element.querySelectorAll('[data-action="advantage"], [data-action="normal"], [data-action="disadvantage"]');
     buttons.forEach(button => {

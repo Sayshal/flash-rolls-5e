@@ -140,7 +140,6 @@ export class RollMenuEventUtil {
    * Attach accordion and request type handlers
    */
   static attachAccordionHandlers(menu, html) {
-    LogUtil.log('RollMenuEventUtil.attachAccordionHandlers');
     const accordion = html.querySelector('.request-types-accordion');
     if (accordion) {
       html.addEventListener('mouseenter', () => {
@@ -155,8 +154,47 @@ export class RollMenuEventUtil {
     }
     
     const requestTypesContainer = html.querySelector('.request-types');
+    LogUtil.log('RollMenuEventUtil.attachAccordionHandlers', [requestTypesContainer]);
     if (requestTypesContainer) {
       requestTypesContainer.addEventListener('click', (event) => {
+        // Handle macro button clicks FIRST - check target directly
+
+        LogUtil.log('requestTypes click', [event.target]);
+        if (event.target.classList.contains('btn-macro')) {
+          event.preventDefault();
+          event.stopPropagation();
+          event.stopImmediatePropagation();
+
+          
+          const parentItem = event.target.closest('.sub-item') || event.target.closest('.request-type-item');
+          if (parentItem) {
+            const customEvent = {
+              ...event,
+              currentTarget: parentItem
+            };
+            menu._onMacroButtonClick(customEvent);
+          }
+          return;
+        }
+        
+        // Also check if clicked element is inside a macro button
+        const macroBtn = event.target.closest('.btn-macro');
+        if (macroBtn) {
+          event.preventDefault();
+          event.stopPropagation();
+          event.stopImmediatePropagation();
+          
+          const parentItem = macroBtn.closest('.sub-item') || macroBtn.closest('.request-type-item');
+          if (parentItem) {
+            const customEvent = {
+              ...event,
+              currentTarget: parentItem
+            };
+            menu._onMacroButtonClick(customEvent);
+          }
+          return;
+        }
+        
         const requestHeader = event.target.closest('.request-type-header');
         
         if (requestHeader) {

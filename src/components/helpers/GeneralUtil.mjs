@@ -558,10 +558,8 @@ export class GeneralUtil {
    * @param {Item5e} item 
    */
   static removeTemplateForItem (item) {
-    LogUtil.log("removeTemplateForItem - A", [item]);
     const SETTINGS = getSettings();
     const removeTemplateSettingOn = SettingsUtil.get(SETTINGS.removeTemplate.tag);
-    LogUtil.log("removeTemplateForItem - B", [removeTemplateSettingOn]);
     if(!removeTemplateSettingOn){ return; }
     const templates = canvas.templates.objects.children.filter(mt => {
       return mt.document.flags.dnd5e.item === item?.uuid;

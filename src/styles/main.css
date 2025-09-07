@@ -72,6 +72,23 @@ body.flash5e {
     justify-self: flex-start;
   }
 
+  .flash5e-macro-button{
+    color: var(--color-light-1);
+    background: var(--color-warm-2);
+    border: 1px solid transparent;
+    padding: 4px;
+    border-radius: 4px;
+    font-size: var(--font-size-12);
+    width: 3em;
+    height: 2.3em;
+    display: flex;
+    align-self: flex-end;
+    margin: 0 0 0.5em 0.35em;
+    &:hover{
+      background: var(--color-dark-1);
+    }
+  }
+
   #chat-notifications #chat-controls{
     z-index: 2;
   }

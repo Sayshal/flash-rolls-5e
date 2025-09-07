@@ -51,6 +51,11 @@
       .dice-total{
         display: none;
       }
+
+      .dice-tooltip {
+        display: flex;
+        justify-content: center;
+      }
     }
 
     &.expanded .roll-breakdown {

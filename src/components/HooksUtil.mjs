@@ -13,6 +13,7 @@ import { ChatMessageUtils } from "./ChatMessageUtils.mjs";
 import RollRequestsMenu from "./RollRequestsMenu.mjs";
 import { ActorStatusUtil } from "./ActorStatusUtil.mjs";
 import { ActorDirectoryIconUtil } from "./utils/ActorDirectoryIconUtil.mjs";
+import { FlashRollsAPI } from "./FlashRollsAPI.mjs";
 
 /**
  * Utility class for managing all module hooks in one place
@@ -28,7 +29,9 @@ export class HooksUtil {
   static initialize() {
     Hooks.once(HOOKS_CORE.INIT, this._onInit.bind(this));
     Hooks.once(HOOKS_CORE.READY, this._onReady.bind(this));
-    
+    Hooks.on("flash-rolls-5e.ready", ()=>{
+      LogUtil.log("flash-rolls-5e.ready hook", []);
+    })
     Hooks.on(HOOKS_CORE.GET_CHAT_MESSAGE_CONTEXT_OPTIONS, (document, contextOptions) => {
       LogUtil.log("getChatMessageContextOptions hook", [document, contextOptions]);
       if (!game.user.isGM) return;
@@ -230,6 +233,15 @@ export class HooksUtil {
     }
     updateSidebarClass(isSidebarExpanded());
 
+    // Initialize public API for other modules
+    const module = game.modules.get("flash-rolls-5e");
+    if (module) {
+      module.api = FlashRollsAPI;
+    }
+    
+    // Create global alias for easier access
+    globalThis.FlashRolls5e = FlashRollsAPI;
+
     // Notify other modules that Flash Rolls 5e is ready
     Hooks.call("flash-rolls-5e.ready");
   
@@ -428,7 +440,6 @@ export class HooksUtil {
    * Used to add custom situational bonus from data, since the default DnD5e dialog does not seem to handle that
    */
   static _onRenderRollConfigDialog(app, html, data) {
-    console.trace("Flash Rolls 5e - _onRenderRollConfigDialog", [ app, data ]);
     if (app._flashRollsApplied) return;
     // LogUtil.log("_onRenderRollConfigDialog #0", [ app, data ]);
     

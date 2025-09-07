@@ -103,13 +103,11 @@ export class RollMenuExecutionUtil {
         }
       }
       
-      const situational = rollProcessConfig.rolls?.[0]?.data?.situational || "";
       const requestData = {
         rollKey: actualRollKey,
         groupRollId: rollProcessConfig.groupRollId,
         config: {
           ...rollProcessConfig,
-          situational: situational,
           rollMode: rollProcessConfig.rollMode || game.settings.get("core", "rollMode"),
           advantage: rollProcessConfig.advantage || false,
           disadvantage: rollProcessConfig.disadvantage || false,
@@ -129,6 +127,12 @@ export class RollMenuExecutionUtil {
       };
       
       const rollConfig = rollProcessConfig.rolls?.[0] || {};
+      
+      LogUtil.log('RollMenuExecutionUtil.initiateRoll - rollConfig before handler', [
+        'parts:', rollConfig.parts,
+        'data:', rollConfig.data,
+        'rollProcessConfig:', rollProcessConfig
+      ]);
       
       const handler = RollHandlers[normalizedType];
       if (handler) {
