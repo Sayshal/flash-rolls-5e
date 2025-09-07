@@ -59,12 +59,14 @@ export const getSettings = () => {
       fields: [
         'groupRollsMsgEnabled',
         'groupRollResultMode',
-        'showGroupDCToPlayers'
+        'showGroupDCToPlayers',
+        'groupRollNPCHidden'
       ],
       default: {
         groupRollsMsgEnabled: true,
         groupRollResultMode: 1,
-        showGroupDCToPlayers: false
+        showGroupDCToPlayers: false,
+        groupRollNPCHidden: true
       },
       scope: SETTING_SCOPE.world,
       config: false, 
@@ -78,6 +80,17 @@ export const getSettings = () => {
       propType: Boolean,
       inputType: SETTING_INPUT.checkbox,
       default: false,
+      scope: SETTING_SCOPE.world,
+      config: false
+    },
+
+    groupRollNPCHidden: {
+      tag: "group-roll-npc-hidden",
+      label: game.i18n.localize("FLASH_ROLLS.settings.groupRollNPCHidden.label"),
+      hint: game.i18n.localize("FLASH_ROLLS.settings.groupRollNPCHidden.hint"),
+      propType: Boolean,
+      inputType: SETTING_INPUT.checkbox,
+      default: true,
       scope: SETTING_SCOPE.world,
       config: false
     },

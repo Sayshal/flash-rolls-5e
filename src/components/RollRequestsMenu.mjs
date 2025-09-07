@@ -509,7 +509,7 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
     
     const isExpanded = accordionToggle.classList.contains('expanded');
     accordionToggle.classList.toggle('expanded', !isExpanded);
-    nestedList.style.display = isExpanded ? 'none' : 'block';
+    nestedList.style.display = isExpanded ? 'none' : 'flex';
     this.accordionStates[requestId] = !isExpanded;
     await game.user.setFlag(MODULE.ID, 'menuAccordionStates', this.accordionStates);
   }

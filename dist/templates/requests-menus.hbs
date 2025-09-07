@@ -193,6 +193,7 @@
               <i class="icon fas fa-dice-d20"></i>
             {{/if}}
             <span class="request-type-name">{{ requestType.name }}</span>
+            {{#unless requestType.hasSubList}}<i class="btn-macro fas fa-code" data-tooltip="{{localize 'FLASH_ROLLS.ui.buttons.createMacro'}}" data-tooltip-direction="UP"></i>{{/unless}}
           </div>
           
           {{#if requestType.hasSubList}}
@@ -201,6 +202,7 @@
                 <li data-id="{{ subItem.id }}" data-parent="{{ ../id }}" class="rollable sub-item">
                   <i class="icon fas fa-dice-d20"></i>
                   <span class="sub-item-name">{{ subItem.name }}</span>
+                  <i class="btn-macro fas fa-code" data-tooltip="{{localize 'FLASH_ROLLS.ui.buttons.createMacro'}}" data-tooltip-direction="UP"></i>
                 </li>
               {{/each}}
             </ul>

@@ -60,6 +60,10 @@
     &.expanded .roll-value.toggle {
       color: var(--color-text-hyperlink);
     }
+
+    &.npc-hidden {
+      display: none;
+    }
   }
 
   .actor-image {

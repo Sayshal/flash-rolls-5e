@@ -591,7 +591,11 @@ body > .actor.drag-wrapper {
   width: calc(100% - 1em);
   overflow: auto;
 
-  .request-type-header > i{
+  > li {
+    width: calc(100% - 0.35em);
+  }
+
+  .request-type-header > i.icon{
     width: 1em;
     margin-right: 0.2em;
     margin-left: 0.05em;
@@ -633,14 +637,15 @@ body > .actor.drag-wrapper {
     margin: 0;
     padding: 0;
 
-    li {
+    > li {
       padding: 0.4em 0 0.4em 1.5em;
       display: flex;
+      width: 100%;
       align-items: center;
       gap: 0.35em;
       cursor: pointer;
 
-      > i{
+      > i.icon{
         margin-right: 0.25em;
         display: flex;
         width: 1em;
@@ -649,6 +654,22 @@ body > .actor.drag-wrapper {
         background: var(--color-warm-2);
         color: var(--color-light-1);
       }
+    }
+  }
+
+  i.btn-macro {
+    margin-left: auto;
+    display: inline-flex;
+    width: 1.5rem;
+    height: 100%;
+    padding: 4px;
+    border-radius: 3px;
+    background: transparent;
+    font-size: var(--font-size-10);
+    cursor: pointer;
+    
+    &:hover {
+      opacity: 0.8;
     }
   }
 }

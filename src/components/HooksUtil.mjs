@@ -29,6 +29,13 @@ export class HooksUtil {
     Hooks.once(HOOKS_CORE.INIT, this._onInit.bind(this));
     Hooks.once(HOOKS_CORE.READY, this._onReady.bind(this));
     
+    Hooks.on(HOOKS_CORE.GET_CHAT_MESSAGE_CONTEXT_OPTIONS, (document, contextOptions) => {
+      LogUtil.log("getChatMessageContextOptions hook", [document, contextOptions]);
+      if (!game.user.isGM) return;
+      
+      this._addGroupRollContextOptions(document, contextOptions);
+    });
+    
     Hooks.once(HOOKS_CORE.GET_ACTOR_CONTEXT_OPTIONS, (html, contextOptions) => {
       LogUtil.log("getActorContextOptions hook", [html, contextOptions]);
       
@@ -105,6 +112,76 @@ export class HooksUtil {
       });
     });
   }
+
+  /**
+   * Add context menu options for group roll messages
+   * @param {ChatMessage} message - The chat message document
+   * @param {Array} contextOptions - Array of context menu options
+   */
+  static _addGroupRollContextOptions(chatLog, contextOptions) {
+    LogUtil.log("_addGroupRollContextOptions", [chatLog, contextOptions]);
+    
+    // Add "Hide NPCs from Players" option
+    contextOptions.push({
+      name: game.i18n.localize("FLASH_ROLLS.contextMenu.hideNPCsFromPlayers"),
+      icon: '<i class="fas fa-eye-slash"></i>',
+      callback: li => {
+        const messageId = li.dataset.messageId;
+        const message = game.messages.get(messageId);
+        if (message) {
+          message.setFlag(MODULE_ID, 'npcHiddenOverride', true);
+          ui.notifications.info(game.i18n.localize("FLASH_ROLLS.notifications.npcHiddenFromPlayers"));
+        }
+      },
+      condition: li => {
+        const messageId = li.dataset.messageId;
+        if (!messageId) return false;
+        const message = game.messages.get(messageId);
+        if (!message || !message.getFlag(MODULE_ID, 'isGroupRoll')) return false;
+        
+        const SETTINGS = getSettings();
+        const globalHidden = SettingsUtil.get(SETTINGS.groupRollNPCHidden.tag);
+        const messageHidden = message.getFlag(MODULE_ID, 'npcHiddenOverride');
+        const currentlyHidden = messageHidden !== undefined ? messageHidden : globalHidden;
+        
+        return !currentlyHidden;
+      }
+    });
+
+    // Add "Show NPCs to Players" option  
+    contextOptions.push({
+      name: game.i18n.localize("FLASH_ROLLS.contextMenu.showNPCsToPlayers"),
+      icon: '<i class="fas fa-eye"></i>',
+      callback: li => {
+        const messageId = li.dataset.messageId;
+        const message = game.messages.get(messageId);
+        if (message) {
+          const SETTINGS = getSettings();
+          const globalHidden = SettingsUtil.get(SETTINGS.groupRollNPCHidden.tag);
+          
+          if (globalHidden) {
+            message.setFlag(MODULE_ID, 'npcHiddenOverride', false);
+          } else {
+            message.unsetFlag(MODULE_ID, 'npcHiddenOverride');
+          }
+          ui.notifications.info(game.i18n.localize("FLASH_ROLLS.notifications.npcVisibleToPlayers"));
+        }
+      },
+      condition: li => {
+        const messageId = li.dataset.messageId;
+        if (!messageId) return false;
+        const message = game.messages.get(messageId);
+        if (!message || !message.getFlag(MODULE_ID, 'isGroupRoll')) return false;
+        
+        const SETTINGS = getSettings();
+        const globalHidden = SettingsUtil.get(SETTINGS.groupRollNPCHidden.tag);
+        const messageHidden = message.getFlag(MODULE_ID, 'npcHiddenOverride');
+        const currentlyHidden = messageHidden !== undefined ? messageHidden : globalHidden;
+        
+        return currentlyHidden;
+      }
+    });
+  }
   
   /**
    * Triggered when Foundry initializes
@@ -152,6 +229,10 @@ export class HooksUtil {
       this._registerPlayerHooks();
     }
     updateSidebarClass(isSidebarExpanded());
+
+    // Notify other modules that Flash Rolls 5e is ready
+    Hooks.call("flash-rolls-5e.ready");
+  
   }
   
   /**
@@ -162,6 +243,7 @@ export class HooksUtil {
     this._registerHook(HOOKS_CORE.PRE_CREATE_CHAT_MESSAGE, this._onPreCreateChatMessage.bind(this));
     this._registerHook(HOOKS_CORE.PRE_CREATE_CHAT_MESSAGE, this._onPreCreateChatMessageFlavor.bind(this));
     this._registerHook(HOOKS_CORE.RENDER_CHAT_MESSAGE, this._onRenderChatMessageHTML.bind(this));
+    this._registerHook(HOOKS_CORE.RENDER_CHAT_LOG, this._onRenderChatLog.bind(this));
     this._registerHook(HOOKS_CORE.CHANGE_SIDEBAR_TAB, this._onSidebarUpdate.bind(this));
     this._registerHook(HOOKS_CORE.COLLAPSE_SIDE_BAR, this._onSidebarUpdate.bind(this));
     this._registerHook(HOOKS_CORE.REFRESH_MEASURED_TEMPLATE, this.onRefreshTemplate.bind(this)); 
@@ -417,18 +499,55 @@ export class HooksUtil {
    * Intercept rendered chat messages to handle group rolls
    */
   static _onRenderChatMessageHTML(message, html, context) {
-    LogUtil.log("_onRenderChatMessageHTML", [message, html, context]);
     ChatMessageUtils.interceptRollMessage(message, html, context);
+    
+    // Handle group roll messages
+    if (message.getFlag(MODULE_ID, 'isGroupRoll')) {
+      // Handle NPC hiding
+      const SETTINGS = getSettings();
+      const globalHidden = SettingsUtil.get(SETTINGS.groupRollNPCHidden.tag);
+      const messageHidden = message.getFlag(MODULE_ID, 'npcHiddenOverride');
+      const isGM = game.user.isGM;
+      
+      // Hide NPCs based on global setting and message override
+      // If override exists, use it; otherwise use global setting
+      const shouldHideNPCs = (messageHidden !== undefined ? messageHidden : globalHidden) && !isGM;
+      
+      if (shouldHideNPCs) {
+        const flagData = message.getFlag(MODULE_ID, 'rollData');
+        if (flagData && flagData.results) {
+          const actorResults = html.querySelectorAll('.actor-result');
+          actorResults.forEach((element, index) => {
+            const result = flagData.results[index];
+            if (result) {
+              const actor = game.actors.get(result.actorId);
+              const shouldHide = actor && !actor.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER);
+              
+              if (shouldHide) {
+                element.classList.add('npc-hidden');
+              }
+            }
+          });
+        }
+      }
+      
+      // Attach group roll event listeners
+      ChatMessageUtils._attachGroupRollListeners(html, message);
+    }
     
     this._addSelectTargetsButton(message, html);
 
     if(game.user.isGM){
       const item = context.subject?.item;
-      if (!item) return;
-      setTimeout(() => {
-        GeneralUtil.removeTemplateForItem(item);
-      }, 3000); 
+      if (item) {
+        setTimeout(() => {
+          GeneralUtil.removeTemplateForItem(item);
+        }, 3000); 
+      }
     }
+
+    LogUtil.log("_onRenderChatMessageHTML", [message, html, context]);
+    return false
     
   }
   
@@ -546,6 +665,53 @@ export class HooksUtil {
    */
   static _onRenderApplicationV2(app, html, options) {
     LogUtil.log("_onRenderApplicationV2", [app, html, options]);
+  }
+  
+  /**
+   * Handle render chat log to attach listeners to existing group roll messages
+   */
+  static _onRenderChatLog(app, html) {
+    const groupRollElements = html.querySelectorAll('.flash5e-group-roll');
+    groupRollElements.forEach(element => {
+      const messageElement = element.closest('.chat-message');
+      if (messageElement) {
+        const messageId = messageElement.dataset.messageId;
+        const message = game.messages.get(messageId);
+        if (message && message.getFlag(MODULE_ID, 'isGroupRoll')) {
+          
+          // Handle NPC hiding
+          const SETTINGS = getSettings();
+          const globalHidden = SettingsUtil.get(SETTINGS.groupRollNPCHidden.tag);
+          const messageHidden = message.getFlag(MODULE_ID, 'npcHiddenOverride');
+          const isGM = game.user.isGM;
+          
+          // Hide NPCs based on global setting and message override
+          // If override exists, use it; otherwise use global setting
+          const shouldHideNPCs = (messageHidden !== undefined ? messageHidden : globalHidden) && !isGM;
+          
+          if (shouldHideNPCs) {
+            const flagData = message.getFlag(MODULE_ID, 'rollData');
+            if (flagData && flagData.results) {
+              const actorResults = element.querySelectorAll('.actor-result');
+              actorResults.forEach((actorElement, index) => {
+                const result = flagData.results[index];
+                if (result) {
+                  const actor = game.actors.get(result.actorId);
+                  const shouldHide = actor && !actor.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER);
+                  
+                  if (shouldHide) {
+                    actorElement.classList.add('npc-hidden');
+                  }
+                }
+              });
+            }
+          }
+          
+          // Attach group roll listeners
+          ChatMessageUtils._attachGroupRollListeners(element, message);
+        }
+      }
+    });
   }
   
   /**

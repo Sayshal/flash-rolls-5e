@@ -26,14 +26,18 @@
       "actorAdded": "{actor} added to Flash Rolls menu",
       "actorAlreadyAdded": "{actor} is already in the menu",
       "actorNotFound": "Actor not found",
-      "dropError": "Error adding actor to menu"
+      "dropError": "Error adding actor to menu",
+      "npcHiddenFromPlayers": "NPCs are now hidden from players in the group message.",
+      "npcVisibleToPlayers": "NPCs are now visible to players in the group message."
     },
     "contextMenu": {
       "addToFavorites": "Add to Flash Rolls Menu",
       "removeFromFavorites": "Remove from Flash Rolls Menu",
       "toggleFavorite": "Toggle on Flash Menu",
       "blockFromMenu": "Block from Flash Rolls Menu",
-      "unblockFromMenu": "Unblock from Flash Rolls Menu"
+      "unblockFromMenu": "Unblock from Flash Rolls Menu",
+      "showNPCsToPlayers": "Show NPCs to Players",
+      "hideNPCsFromPlayers": "Hide NPCs from Players"
     },
     "chat": {
       "requestedBy": "[Requested by {gm}]"
@@ -54,6 +58,10 @@
       "showGroupDCToPlayers": {
         "label": "Show Group DC to Players",
         "hint": "Enable to show the group DC in the group roll message to players."
+      },
+      "groupRollNPCHidden": {
+        "label": "Hide NPC rolls in group messages from players",
+        "hint": "When enabled, players will not see roll results from actors they don't have observer permission on in group roll messages. GMs always see all results."
       },
       "groupRollResultMode": {
         "label": "Group Roll Result Mode",
@@ -161,7 +169,14 @@
         "summary": "Average: {average} (DC {dc})"
       },
       "leaderWithHelp": {
-        "summary": "Leader with help: {leaderRoll} + {bonus} successes - {penalty} failures = {adjustedResult} (DC {dc})"
+        "summary": "Leader with help: {leaderRoll} + {bonus} successes - {penalty} failures = {adjustedResult} (DC {dc})",
+        "summaryOnlySuccess": "Leader with help: {leaderRoll} + {bonus} {successWord} = {adjustedResult} (DC {dc})",
+        "summaryOnlyFailure": "Leader with help: {leaderRoll} - {penalty} {failureWord} = {adjustedResult} (DC {dc})",
+        "summaryNoModifiers": "Leader with help: {leaderRoll} = {adjustedResult} (DC {dc})",
+        "successSingular": "success",
+        "successPlural": "successes",
+        "failureSingular": "failure",
+        "failurePlural": "failures"
       },
       "weakestLink": {
         "summary": "Weakest link: {weakestRoll} + {bonus} {successWord} = {adjustedResult} (DC {dc})",
@@ -180,7 +195,8 @@
         "reset": "Reset",
         "save": "Save",
         "reloadButton": "Reload",
-        "cancelButton": "Cancel"
+        "cancelButton": "Cancel",
+        "createMacro": "Create Macro"
       },
       "inputs": {
         "selectAll": "Select All",

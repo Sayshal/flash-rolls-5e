@@ -387,7 +387,7 @@ export const RollHelpers = {
   },
 
   /**
-   * Calculate group roll result using Leader with Help - Result from actor with highest bonus, plus successes minus failures
+   * Calculate group roll result using Leader with Help - Result from actor with highest bonus, plus other successes minus other failures
    * @param {Object[]} rollResults - Array of roll results with { actorId, total, modifier }
    * @param {number} dc - The DC to check against
    * @param {Actor[]} actors - Array of actors to get modifiers from
@@ -397,32 +397,68 @@ export const RollHelpers = {
    */
   calculateLeaderWithHelp(rollResults, dc, actors, rollType, rollKey) {
     let highestModifier = -999;
+    let leaderIndex = -1;
     let leaderActorId = null;
     let leaderModifier = 0;
     
-    for (const actor of actors) {
+    // Find the leader by checking each roll result's corresponding actor
+    for (let i = 0; i < rollResults.length; i++) {
+      const result = rollResults[i];
+      const actor = actors.find(a => a.id === result.actorId);
+      if (!actor) continue;
+      
       const modifier = this._getActorModifier(actor, rollType, rollKey);
       if (modifier > highestModifier) {
         highestModifier = modifier;
+        leaderIndex = i;
         leaderActorId = actor.id;
         leaderModifier = modifier;
       }
     }
     
-    const leaderResult = rollResults.find(r => r.actorId === leaderActorId);
-    if (!leaderResult) {
+    if (leaderIndex === -1) {
       return {
         finalResult: 0,
-        error: 'Leader actor did not roll',
+        error: 'No leader found',
         method: 'Leader with Help'
       };
     }
     
-    // Count successes and failures (excluding the leader)
-    const otherResults = rollResults.filter(r => r.actorId !== leaderActorId);
+    const leaderResult = rollResults[leaderIndex];
+    
+    // Count successes and failures from other members (excluding the leader by index, not actorId)
+    const otherResults = rollResults.filter((r, index) => index !== leaderIndex);
     const successes = otherResults.filter(r => r.total >= dc).length;
     const failures = otherResults.filter(r => r.total < dc).length;
     const adjustedResult = leaderResult.total + successes - failures;
+    
+    // Choose appropriate summary based on successes and failures
+    let summaryKey;
+    let summaryData = {
+      leaderRoll: leaderResult.total,
+      adjustedResult,
+      dc
+    };
+    
+    if (successes > 0 && failures > 0) {
+      summaryKey = "FLASH_ROLLS.groupRoll.leaderWithHelp.summary";
+      summaryData.bonus = successes;
+      summaryData.penalty = failures;
+    } else if (successes > 0) {
+      summaryKey = "FLASH_ROLLS.groupRoll.leaderWithHelp.summaryOnlySuccess";
+      summaryData.bonus = successes;
+      summaryData.successWord = successes === 1 
+        ? game.i18n.localize("FLASH_ROLLS.groupRoll.leaderWithHelp.successSingular")
+        : game.i18n.localize("FLASH_ROLLS.groupRoll.leaderWithHelp.successPlural");
+    } else if (failures > 0) {
+      summaryKey = "FLASH_ROLLS.groupRoll.leaderWithHelp.summaryOnlyFailure";
+      summaryData.penalty = failures;
+      summaryData.failureWord = failures === 1
+        ? game.i18n.localize("FLASH_ROLLS.groupRoll.leaderWithHelp.failureSingular")
+        : game.i18n.localize("FLASH_ROLLS.groupRoll.leaderWithHelp.failurePlural");
+    } else {
+      summaryKey = "FLASH_ROLLS.groupRoll.leaderWithHelp.summaryNoModifiers";
+    }
     
     return {
       finalResult: adjustedResult,
@@ -432,13 +468,7 @@ export const RollHelpers = {
       bonus: successes,
       penalty: failures,
       success: adjustedResult >= dc,
-      summary: game.i18n.format("FLASH_ROLLS.groupRoll.leaderWithHelp.summary", {
-        leaderRoll: leaderResult.total,
-        bonus: successes,
-        penalty: failures,
-        adjustedResult,
-        dc
-      }),
+      summary: game.i18n.format(summaryKey, summaryData),
       method: 'Leader with Help'
     };
   },

@@ -47,214 +47,195 @@ export class ChatMessageUtils {
   static async initialize() {
     LogUtil.log('ChatMessageUtils.initialize');
     await this.preloadTemplate();
-    this.registerEventListeners();
   }
   
-  /**
-   * Register event listeners for group roll messages
-   */
-  static registerEventListeners() {
-    const attachGroupRollListeners = (html, message) => {
-      html.querySelectorAll('.actor-result').forEach(element => {
-        element.addEventListener('click', (event) => {
-          if (event.target.closest('.dice-btn.rollable')) {
-            return;
-          }
-          
-          event.preventDefault();
-          event.stopPropagation();
-          
-          const actorResult = element;
-          
-          LogUtil.log('actor-result click', [element]);
 
-          if (actorResult.classList.contains('expanded')) {
-            actorResult.classList.remove('expanded');
-          } else {
-            actorResult.classList.add('expanded');
-          }
-        });
-      });
-      
-      html.querySelectorAll('.dice-btn.rollable').forEach(diceBtn => {
-        diceBtn.addEventListener('click', async (event) => {
-          event.preventDefault();
-          event.stopPropagation();
-          event.stopImmediatePropagation();
-          
-          const dataset = diceBtn.dataset;
-          const actorId = dataset.actorId;
-          const actor = game.actors.get(actorId);
-          
-          if (!actor) {
-            ui.notifications.warn(`Actor not found`);
-            return;
-          }
-          
-          const canRoll = game.user.isGM || actor.isOwner;
-          if (!canRoll) {
-            ui.notifications.warn(`You don't have permission to roll for ${actor.name}`);
-            return;
-          }
-          
-          const rollType = dataset.type?.toLowerCase();
-          const rollKey = dataset.rollKey;
-          const groupRollId = dataset.groupRollId;
-          const dc = dataset.dc ? parseInt(dataset.dc) : null;
-          
-          LogUtil.log('Rollable dice clicked', [rollType, rollKey, actorId, groupRollId]);
-          
-          const requestData = {
-            rollKey: rollKey,
-            groupRollId: groupRollId,
-            config: {
-              advantage: false,
-              disadvantage: false,
-              target: dc,
-              rollMode: game.settings.get("core", "rollMode")
-            }
-          };
-          
-          // Dialog configuration - show dialog for rolls
-          const dialogConfig = {
-            configure: true,
-            isRollRequest: true
-          };
-          
-          const messageConfig = {
-            rollMode: game.settings.get("core", "rollMode"),
-            create: true,
-            isRollRequest: true
-          };
-          
-          const rollConfig = {
-            parts: [],
-            data: {},
-            options: {}
-          };
-          
-          try {
-            const handler = RollHandlers[rollType];
-            if (handler) {
-              await handler(actor, requestData, rollConfig, dialogConfig, messageConfig);
-            } else {
-              let rollMethod;
-              switch(rollType) {
-                case ROLL_TYPES.SKILL:
-                  rollMethod = 'rollSkill';
-                  break;
-                case ROLL_TYPES.ABILITY:
-                case ROLL_TYPES.ABILITY_CHECK:
-                  rollMethod = 'rollAbilityTest';
-                  break;
-                case ROLL_TYPES.SAVE:
-                case ROLL_TYPES.SAVING_THROW:
-                  rollMethod = 'rollAbilitySave';
-                  break;
-                case ROLL_TYPES.TOOL:
-                  rollMethod = 'rollToolCheck';
-                  break;
-                default:
-                  ui.notifications.warn(`Unknown roll type: ${rollType}`);
-                  return;
-              }
-              
-              if (rollMethod && actor[rollMethod]) {
-                await actor[rollMethod](rollKey, {
-                  ...requestData.config,
-                  messageOptions: { "flags.flash-rolls-5e.groupRollId": groupRollId }
-                });
-              }
-            }
-          } catch (error) {
-            LogUtil.error('Error executing roll from chat', error);
-            ui.notifications.error(`Failed to execute roll: ${error.message}`);
-          }
-        });
-      });
-      
-      // Handle DC control visibility and input
-      const dcControl = html.querySelector('.group-roll-dc-control');
-      const dcInput = html.querySelector('.dc-input');
-      
-      if (dcControl) {
-        const showToPlayers = dcControl.dataset.showToPlayers === 'true';
-        if (!game.user.isGM) {
-          dcControl.style.display = 'none';
+  /**
+   * Static method to attach group roll listeners to HTML elements
+   * @param {HTMLElement} html - The HTML element containing group roll elements
+   * @param {ChatMessage} message - The chat message instance
+   */
+  static _attachGroupRollListeners(html, message) {
+    html.querySelectorAll('.actor-result').forEach(element => {
+      element.addEventListener('click', (event) => {
+        if (event.target.closest('.dice-btn.rollable')) {
+          return;
         }
-        if (!game.user.isGM && !showToPlayers) {
-          const groupFooterDetails = html.querySelector('.group-roll-footer .group-result-details');
-          if (groupFooterDetails) {
-            groupFooterDetails.style.display = 'none';
+        
+        event.preventDefault();
+        event.stopPropagation();
+        
+        const actorResult = element;
+        
+        LogUtil.log('actor-result click', [element]);
+
+        if (actorResult.classList.contains('expanded')) {
+          actorResult.classList.remove('expanded');
+        } else {
+          actorResult.classList.add('expanded');
+        }
+      });
+    });
+    
+    html.querySelectorAll('.dice-btn.rollable').forEach(diceBtn => {
+      diceBtn.addEventListener('click', async (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+        
+        const dataset = diceBtn.dataset;
+        const actorId = dataset.actorId;
+        const actor = game.actors.get(actorId);
+        
+        if (!actor) {
+          ui.notifications.warn(`Actor not found`);
+          return;
+        }
+        
+        const canRoll = game.user.isGM || actor.isOwner;
+        if (!canRoll) {
+          ui.notifications.warn(`You don't have permission to roll for ${actor.name}`);
+          return;
+        }
+        
+        const rollType = dataset.type?.toLowerCase();
+        const rollKey = dataset.rollKey;
+        const groupRollId = dataset.groupRollId;
+        const dc = dataset.dc ? parseInt(dataset.dc) : null;
+        
+        LogUtil.log('Rollable dice clicked', [rollType, rollKey, actorId, groupRollId]);
+        
+        const requestData = {
+          rollKey: rollKey,
+          groupRollId: groupRollId,
+          config: {
+            advantage: false,
+            disadvantage: false,
+            target: dc,
+            rollMode: game.settings.get("core", "rollMode")
           }
+        };
+        
+        // Dialog configuration - show dialog for rolls
+        const dialogConfig = {
+          configure: true,
+          isRollRequest: true
+        };
+        
+        const messageConfig = {
+          rollMode: game.settings.get("core", "rollMode"),
+          create: true,
+          isRollRequest: true
+        };
+        
+        const rollConfig = {
+          parts: [],
+          data: {},
+          options: {}
+        };
+        
+        try {
+          const handler = RollHandlers[rollType];
+          if (handler) {
+            await handler(actor, requestData, rollConfig, dialogConfig, messageConfig);
+          } else {
+            let rollMethod;
+            switch(rollType) {
+              case ROLL_TYPES.SKILL:
+                rollMethod = 'rollSkill';
+                break;
+              case ROLL_TYPES.ABILITY:
+              case ROLL_TYPES.ABILITY_CHECK:
+                rollMethod = 'rollAbilityTest';
+                break;
+              case ROLL_TYPES.SAVE:
+              case ROLL_TYPES.SAVING_THROW:
+                rollMethod = 'rollAbilitySave';
+                break;
+              case ROLL_TYPES.TOOL:
+                rollMethod = 'rollToolCheck';
+                break;
+              default:
+                ui.notifications.warn(`Unknown roll type: ${rollType}`);
+                return;
+            }
+            
+            if (rollMethod && actor[rollMethod]) {
+              await actor[rollMethod](rollKey, {
+                ...requestData.config,
+                messageOptions: { "flags.flash-rolls-5e.groupRollId": groupRollId }
+              });
+            }
+          }
+        } catch (error) {
+          LogUtil.error('Error executing roll from chat', error);
+          ui.notifications.error(`Failed to execute roll: ${error.message}`);
+        }
+      });
+    });
+    
+    // Handle DC control visibility and input
+    const dcControl = html.querySelector('.group-roll-dc-control');
+    const dcInput = html.querySelector('.dc-input');
+    
+    if (dcControl) {
+      const showToPlayers = dcControl.dataset.showToPlayers === 'true';
+      if (!game.user.isGM) {
+        dcControl.style.display = 'none';
+      }
+      if (!game.user.isGM && !showToPlayers) {
+        const groupFooterDetails = html.querySelector('.group-roll-footer .group-result-details');
+        if (groupFooterDetails) {
+          groupFooterDetails.style.display = 'none';
         }
       }
-      
-      if (dcInput) {
-        if (!game.user.isGM) {
-          dcInput.readOnly = true;
-          dcInput.style.cursor = 'not-allowed';
-        } else {
-          let debounceTimer = null;
+    }
+    
+    if (dcInput) {
+      if (!game.user.isGM) {
+        dcInput.readOnly = true;
+        dcInput.style.cursor = 'not-allowed';
+      } else {
+        let debounceTimer = null;
+        
+        const handleDCChange = async () => {
+          const newDC = parseInt(dcInput.value);
           
-          const handleDCChange = async () => {
-            const newDC = parseInt(dcInput.value);
-            
-            if (!dcInput.value) return;
-            
-            if (isNaN(newDC) || newDC < 1 || newDC > 99) {
-              dcInput.value = '';
-              return;
-            }
-            
-            const messageId = dcInput.dataset.messageId;
-            const targetMessage = game.messages.get(messageId);
-            
-            if (targetMessage) {
-              await this.updateGroupRollDC(targetMessage, newDC);
-            }
-          };
+          if (!dcInput.value) return;
           
-          dcInput.addEventListener('input', (e) => {
+          if (isNaN(newDC) || newDC < 1 || newDC > 99) {
+            dcInput.value = '';
+            return;
+          }
+          
+          const messageId = dcInput.dataset.messageId;
+          const targetMessage = game.messages.get(messageId);
+          
+          if (targetMessage) {
+            await ChatMessageUtils.updateGroupRollDC(targetMessage, newDC);
+          }
+        };
+        
+        dcInput.addEventListener('input', (e) => {
+          if (debounceTimer) {
+            clearTimeout(debounceTimer);
+          }
+          
+          debounceTimer = setTimeout(() => {
+            handleDCChange();
+          }, 750);
+        });
+        
+        dcInput.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') {
             if (debounceTimer) {
               clearTimeout(debounceTimer);
             }
-            
-            debounceTimer = setTimeout(() => {
-              handleDCChange();
-            }, 750);
-          });
-          
-          dcInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-              if (debounceTimer) {
-                clearTimeout(debounceTimer);
-              }
-              handleDCChange();
-            }
-          });
-        }
-      }
-    };
-    
-    Hooks.on(HOOKS_CORE.RENDER_CHAT_MESSAGE, (message, html) => {
-      if (!message.getFlag(MODULE_ID, 'isGroupRoll')) return;
-      attachGroupRollListeners(html, message);
-    });
-    
-    Hooks.on(HOOKS_CORE.RENDER_CHAT_LOG, (app, html) => {
-      const groupRollElements = html.querySelectorAll('.flash5e-group-roll');
-      groupRollElements.forEach(element => {
-        const messageElement = element.closest('.chat-message');
-        if (messageElement) {
-          const messageId = messageElement.dataset.messageId;
-          const message = game.messages.get(messageId);
-          if (message && message.getFlag(MODULE_ID, 'isGroupRoll')) {
-            attachGroupRollListeners(element, message);
+            handleDCChange();
           }
-        }
-      });
-    });
+        });
+      }
+    }
   }
   
   /**
@@ -314,13 +295,6 @@ export class ChatMessageUtils {
    * @returns {Object} Template data
    */
   static buildGroupRollData(actorEntries, rollType, rollKey, config) {
-    LogUtil.log('ChatMessageUtils.buildGroupRollData', [actorEntries.length, rollType, rollKey, config]);
-    LogUtil.log('ChatMessageUtils.buildGroupRollData - actorEntries structure', actorEntries.map(entry => ({
-      hasEntry: !!entry,
-      hasActor: !!(entry && entry.actor),
-      entryKeys: entry ? Object.keys(entry) : 'null',
-      actorType: entry?.actor?.constructor?.name || 'undefined'
-    })));
     
     const validEntries = actorEntries.filter(entry => entry && entry.actor);
     if (validEntries.length === 0) {
@@ -338,6 +312,7 @@ export class ChatMessageUtils {
       actorName: entry.tokenId ? 
         (canvas.tokens?.get(entry.tokenId)?.name || entry.actor.name) : 
         entry.actor.name,
+      isNPC: !entry.actor.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER),
       rolled: false,
       showDice: true,
       total: null,
@@ -348,6 +323,13 @@ export class ChatMessageUtils {
     const supportsDC = RollHelpers.shouldShowDC(rollType);
     const SETTINGS = getSettings();
     const showDCToPlayers = SettingsUtil.get(SETTINGS.showGroupDCToPlayers.tag);
+    const groupRollNPCHidden = SettingsUtil.get(SETTINGS.groupRollNPCHidden.tag);
+    const isGM = game.user.isGM;
+    
+    // Add shouldHide flag to each result
+    results.forEach(result => {
+      result.shouldHide = result.isNPC && groupRollNPCHidden && !isGM;
+    });
     
     return {
       flavor,
@@ -358,6 +340,8 @@ export class ChatMessageUtils {
       rollKey,
       supportsDC,
       showDCToPlayers,
+      groupRollNPCHidden,
+      isGM,
       actorEntries: validEntries.map(entry => ({ actorId: entry.actor.id, uniqueId: entry.uniqueId, tokenId: entry.tokenId })),
       moduleId: MODULE_ID
     };
@@ -600,6 +584,20 @@ export class ChatMessageUtils {
     
     const SETTINGS = getSettings();
     flagData.showDCToPlayers = SettingsUtil.get(SETTINGS.showGroupDCToPlayers.tag);
+    flagData.groupRollNPCHidden = SettingsUtil.get(SETTINGS.groupRollNPCHidden.tag);
+    flagData.isGM = game.user.isGM;
+    
+    // Ensure isNPC flag is set on results if not already present
+    if (flagData.results) {
+      flagData.results.forEach(result => {
+        if (result.isNPC === undefined) {
+          const actor = game.actors.get(result.actorId);
+          result.isNPC = actor ? !actor.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER) : false;
+        }
+        // Update shouldHide flag
+        result.shouldHide = result.isNPC && flagData.groupRollNPCHidden && !flagData.isGM;
+      });
+    }
     
     // Calculate group result if DC is set and roll type supports it
     if (flagData.supportsDC && flagData.showDC && flagData.dc) {
@@ -686,6 +684,20 @@ export class ChatMessageUtils {
     
     const SETTINGS = getSettings();
     flagData.showDCToPlayers = SettingsUtil.get(SETTINGS.showGroupDCToPlayers.tag);
+    flagData.groupRollNPCHidden = SettingsUtil.get(SETTINGS.groupRollNPCHidden.tag);
+    flagData.isGM = game.user.isGM;
+    
+    // Ensure isNPC flag is set on results if not already present
+    if (flagData.results) {
+      flagData.results.forEach(result => {
+        if (result.isNPC === undefined) {
+          const actor = game.actors.get(result.actorId);
+          result.isNPC = actor ? !actor.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER) : false;
+        }
+        // Update shouldHide flag
+        result.shouldHide = result.isNPC && flagData.groupRollNPCHidden && !flagData.isGM;
+      });
+    }
     
     const newContent = await GeneralUtil.renderTemplate(this.templatePath, flagData);
     await message.update({
@@ -748,14 +760,6 @@ export class ChatMessageUtils {
     }
     
     if (!this.groupRollMessages.has(groupRollId)) {
-      LogUtil.log('interceptRollMessage - groupRollId not in map', [actor.name, groupRollId, Array.from(this.groupRollMessages.keys())]);
-      LogUtil.log('interceptRollMessage - All group messages in chat:', [
-        game.messages.contents,
-        game.messages.contents
-          .filter(m => m.getFlag(MODULE_ID, 'isGroupRoll'))
-          .map(m => ({ id: m.id, groupRollId: m.getFlag(MODULE_ID, 'groupRollId') }))
-      ]);
-      
       const messages = game.messages.contents;
       const groupMessage = messages.find(m => 
         m.getFlag(MODULE_ID, 'groupRollId') === groupRollId &&
