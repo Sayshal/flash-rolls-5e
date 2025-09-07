@@ -1,12 +1,15 @@
 import { MODULE, ROLL_TYPES } from "../constants/General.mjs";
 import { RollMenuOrchestrationUtil } from "./utils/RollMenuOrchestrationUtil.mjs";
 import RollRequestsMenu from "./RollRequestsMenu.mjs";
-import { getActorData } from "./helpers/Helpers.mjs";
+import { getActorData, getFullRollName } from "./helpers/Helpers.mjs";
 import { LogUtil } from "./LogUtil.mjs";
+import { SettingsUtil } from "./SettingsUtil.mjs";
+import { getSettings } from "../constants/Settings.mjs";
+import { RollHelpers } from "./helpers/RollHelpers.mjs";
 
 /**
  * Public API for Flash Rolls 5e that can be used by other modules
- * Accessible via game.modules.get('flash-rolls-5e').api
+ * Accessible via FlashRolls5e.requestRoll() or game.modules.get('flash-rolls-5e').api
  */
 export class FlashRollsAPI {
   
@@ -25,73 +28,111 @@ export class FlashRollsAPI {
    * @returns {Promise<void>}
    */
   static async requestRoll(options = {}) {
-    const { requestType, rollKey = null, actorIds = [], dc, situationalBonus, advantage, disadvantage, skipRollDialog, sendAsRequest } = options;
-    const config = { dc, situationalBonus, advantage, disadvantage, skipRollDialog, sendAsRequest };
-    
-    LogUtil.log('FlashRollsAPI.requestRoll', [requestType, rollKey, actorIds, config]);
-    
-    // Find roll option by either uppercase key or lowercase name
-    let rollOption = MODULE.ROLL_REQUEST_OPTIONS[requestType];
-    if (!rollOption) {
-      // Try finding by lowercase name if not found by key
-      const rollRequestOptions = Object.values(MODULE.ROLL_REQUEST_OPTIONS);
-      rollOption = rollRequestOptions.find(option => option.name === requestType);
-    }
-    
-    if (!rollOption) {
-      throw new Error(`Unknown request type: ${requestType}`);
-    }
-    
-    // Convert uppercase key to lowercase name for internal processing
-    const normalizedRequestType = rollOption.name;
-    
-    // If no actors specified, use currently selected actors from menu
-    if (actorIds.length === 0) {
-      const menu = RollRequestsMenu.getInstance();
-      if (menu && menu.selectedActors) {
-        actorIds = Array.from(menu.selectedActors);
+    try {
+      // Validate input parameters
+      if (!options || typeof options !== 'object') {
+        ui.notifications.error(game.i18n.localize("FLASH_ROLLS.notifications.invalidMacroData"));
+        return;
       }
-    }
-    
-    if (actorIds.length === 0) {
-      ui.notifications.warn("No actors selected for roll request");
-      return;
-    }
-    
-    // Create actor data array
-    const actorsData = actorIds
-      .map(uniqueId => {
+      
+      const { requestType, rollKey = null, actorIds = [], dc, situationalBonus, advantage, disadvantage, skipRollDialog, sendAsRequest = true } = options;
+      
+      if (!requestType) {
+        ui.notifications.error(game.i18n.localize("FLASH_ROLLS.notifications.missingRequestType"));
+        return;
+      }
+      
+      const config = { dc, situationalBonus, advantage, disadvantage, skipRollDialog, sendAsRequest };
+      
+      LogUtil.log('FlashRollsAPI.requestRoll', [requestType, rollKey, actorIds, config]);
+      
+      // Find roll option by either uppercase key or lowercase name
+      let rollOption = MODULE.ROLL_REQUEST_OPTIONS[requestType];
+      if (!rollOption) {
+        // Try finding by lowercase name if not found by key
+        const rollRequestOptions = Object.values(MODULE.ROLL_REQUEST_OPTIONS);
+        rollOption = rollRequestOptions.find(option => option.name === requestType);
+      }
+      
+      if (!rollOption) {
+        ui.notifications.error(game.i18n.format("FLASH_ROLLS.notifications.unknownRequestType", {
+          requestType: requestType
+        }));
+        return;
+      }
+      
+      const normalizedRequestType = rollOption.name;
+      
+      if (actorIds.length === 0) {
+        const menu = RollRequestsMenu.getInstance();
+        if (menu && menu.selectedActors) {
+          actorIds = Array.from(menu.selectedActors);
+        }
+      }
+      
+      if (actorIds.length === 0) {
+        ui.notifications.warn(game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelected"));
+        return;
+      }
+      
+      // Validate actorIds array
+      if (!Array.isArray(actorIds)) {
+        ui.notifications.error(game.i18n.localize("FLASH_ROLLS.notifications.invalidActorIdsFormat"));
+        return;
+      }
+      
+      // Create actor data array and track invalid IDs
+      const invalidActorIds = [];
+      const actorsData = [];
+      
+      for (const uniqueId of actorIds) {
         const actor = getActorData(uniqueId);
-        if (!actor) return null;
+        if (!actor) {
+          invalidActorIds.push(uniqueId);
+          continue;
+        }
         
         let tokenId = null;
         if (!game.actors.get(uniqueId)) {
           tokenId = uniqueId;
         }
         
-        return {
+        actorsData.push({
           actor,
           uniqueId,
           tokenId
-        };
-      })
-      .filter(entry => entry !== null);
-    
-    if (actorsData.length === 0) {
-      ui.notifications.error("No valid actors found for roll request");
+        });
+      }
+      
+      // Show notification for invalid actors but continue with valid ones
+      if (invalidActorIds.length > 0) {
+        const invalidIds = invalidActorIds.join(', ');
+        ui.notifications.info(game.i18n.format("FLASH_ROLLS.notifications.invalidActorIds", {
+          numIds: invalidActorIds.length,
+          invalidIds: invalidIds
+        }));
+      }
+      
+      if (actorsData.length === 0) {
+        ui.notifications.error(game.i18n.localize("FLASH_ROLLS.notifications.noValidActorsSelected"));
+        return;
+      }
+      
+      // Create a mock menu object with the necessary properties
+      const mockMenu = {
+        selectedActors: new Set(actorIds),
+        selectedRequestType: requestType,
+        isLocked: true, 
+        close: () => {} 
+      };
+      
+      // Use orchestration utility to handle the roll request
+      return RollMenuOrchestrationUtil.triggerRoll(normalizedRequestType, rollKey, mockMenu, config);
+    } catch (error) {
+      LogUtil.error('FlashRollsAPI.requestRoll - Execution error:', [error]);
+      ui.notifications.error(game.i18n.localize("FLASH_ROLLS.notifications.macroExecutionFailed"));
       return;
     }
-    
-    // Create a mock menu object with the necessary properties
-    const mockMenu = {
-      selectedActors: new Set(actorIds),
-      selectedRequestType: requestType,
-      isLocked: true, // Prevent the close() call since this is API-initiated
-      close: () => {} // Provide a no-op close function
-    };
-    
-    // Use orchestration utility to handle the roll request
-    return RollMenuOrchestrationUtil.triggerRoll(normalizedRequestType, rollKey, mockMenu, config);
   }
   
   /**
@@ -133,20 +174,20 @@ export class FlashRollsAPI {
    * @returns {Promise<Macro>} Created macro document
    */
   static async createMacro(macroData) {
+    const SETTINGS = getSettings();
+    const addMacrosToFolder = SettingsUtil.get(SETTINGS.addMacrosToFolder.tag);
+    
     LogUtil.log('FlashRollsAPI.createMacro', [macroData]);
     
     const { requestType, rollKey = null, actorIds = [], config = {} } = macroData;
     
-    // Find roll option by either uppercase key or lowercase name  
     let rollOption = MODULE.ROLL_REQUEST_OPTIONS[requestType];
     if (!rollOption) {
-      // Try finding by lowercase name if not found by key
       const rollRequestOptions = Object.values(MODULE.ROLL_REQUEST_OPTIONS);
       rollOption = rollRequestOptions.find(option => option.name === requestType);
     }
-    
     if (!rollOption) {
-      ui.notifications.error(`Unknown request type: ${requestType}`);
+      ui.notifications.warn(`Unknown request type: ${requestType}`);
       return;
     }
     
@@ -158,18 +199,11 @@ export class FlashRollsAPI {
       if (subItem) {
         macroName = subItem.name;
       }
+    } else if (rollKey) {
+      const fullName = getFullRollName(rollOption.name, rollKey);
+      macroName = fullName;
     }
     
-    // Get actor names for macro description
-    const actorNames = actorIds
-      .map(id => {
-        const actor = getActorData(id);
-        return actor ? actor.name : null;
-      })
-      .filter(name => name)
-      .slice(0, 3); // Limit to first 3 for readability
-
-    // Generate macro command using normalized lowercase name
     const requestOptions = {
       requestType: rollOption.name,
       ...(rollKey && { rollKey }),
@@ -177,12 +211,19 @@ export class FlashRollsAPI {
       ...config
     };
     
-    // Always include advantage/disadvantage properties for user customization
     if (requestOptions.advantage === undefined) requestOptions.advantage = false;
     if (requestOptions.disadvantage === undefined) requestOptions.disadvantage = false;
     
     const command = `// Flash Rolls: ${macroName} - ${rollKey || ''}
-FlashRolls5e.requestRoll(${JSON.stringify(requestOptions, null, 2)});`;
+try {
+  FlashRolls5e.requestRoll(${JSON.stringify(requestOptions, null, 2)});
+} catch (error) {
+  ui.notifications.error(game.i18n.localize("FLASH_ROLLS.notifications.macroDataMalformed"));
+}`;
+    let folderId = null;
+    if (addMacrosToFolder) {
+      folderId = await this._ensureFlashRollsFolder();
+    }
 
     // Create the macro
     const macroDocumentData = {
@@ -190,6 +231,7 @@ FlashRolls5e.requestRoll(${JSON.stringify(requestOptions, null, 2)});`;
       type: "script",
       command: command,
       img: "modules/flash-rolls-5e/assets/bolt-circle.svg",
+      ...(folderId && { folder: folderId }),
       flags: {
         "flash-rolls-5e": {
           requestType,
@@ -201,11 +243,233 @@ FlashRolls5e.requestRoll(${JSON.stringify(requestOptions, null, 2)});`;
     };
     
     const macro = await Macro.create(macroDocumentData);
-    ui.notifications.info(`Macro "${macro.name}" created successfully`);
+    ui.notifications.info(game.i18n.format("FLASH_ROLLS.notifications.macroCreated", {
+      macroName: macro.name
+    }));
     
     // Open the macro configuration sheet for editing
     macro.sheet.render(true);
     
     return macro;
+  }
+  
+  /**
+   * Ensure 'Flash Rolls' folder exists, creating it if necessary
+   * @returns {Promise<string|null>} The folder ID or null if creation failed
+   * @private
+   */
+  static async _ensureFlashRollsFolder() {
+    const folderName = 'Flash Rolls';
+    let folder = game.folders.find(f => f.type === 'Macro' && f.name === folderName);
+    
+    if (!folder) {
+      try {
+        folder = await Folder.create({
+          name: folderName,
+          type: 'Macro',
+          color: '#302437',
+          sort: 0
+        });
+        LogUtil.log('Created Flash Rolls macro folder', [folder]);
+      } catch (error) {
+        LogUtil.error('Failed to create Flash Rolls macro folder:', [error]);
+        ui.notifications.warn('Failed to create Flash Rolls macro folder. Macro will be created without folder organization.');
+        return null;
+      }
+    }
+    
+    return folder?.id || null;
+  }
+  
+  /**
+   * Calculate group roll results using Flash Rolls 5e calculation methods
+   * @param {Object} options - Group roll calculation options
+   * @param {number|string} options.method - Calculation method: 1/"Standard Rule", 2/"Group Average", 3/"Leader with Help", 4/"Weakest Link"
+   * @param {Object[]} options.rollResults - Array of roll results with { actorId, total, actorName? }
+   * @param {number} options.dc - Difficulty Class to check against
+   * @param {Object[]} [options.actors] - Array of actor objects (auto-resolved from rollResults actorId if not provided)
+   * @param {string} [options.rollType] - Type of roll (required for methods 3 & 4, e.g., 'skill', 'ability')
+   * @param {string} [options.rollKey] - Specific roll key (required for methods 3 & 4, e.g., 'acr', 'str')
+   * @returns {Object} Calculation result with { success, result, details, method, actorResults }
+   * 
+   * @example
+   * // Standard Rule example (accepts method as number or string)
+   * const result = FlashRolls5e.calculateGroupRoll({
+   *   method: "Standard Rule", // or method: 1
+   *   rollResults: [
+   *     { actorId: "ABC", total: 15 }, // actorName optional - will be looked up
+   *     { actorId: "DEF", total: 12, actorName: "Rogue" }, // or provided
+   *     { actorId: "GHI", total: 8 }
+   *   ],
+   *   dc: 12
+   * });
+   * // Returns: { 
+   * //   success: true, 
+   * //   result: 1, // 1=success, 0=failure for Standard Rule
+   * //   details: { finalResult: true, successes: 2, failures: 1, summary: "..." },
+   * //   method: 'Standard Rule',
+   * //   actorResults: [{ actorId: "ABC", actorName: "Someone", total: 15, passed: true }, ...]
+   * // }
+   */
+  static calculateGroupRoll(options = {}) {
+    const { rollResults, dc, actors, rollType, rollKey } = options;
+    let { method } = options;
+    
+    // Convert string method names to numbers
+    const methodMap = {
+      "standard rule": 1,
+      "group average": 2, 
+      "leader with help": 3,
+      "weakest link": 4
+    };
+    
+    if (typeof method === 'string') {
+      const normalizedMethod = method.toLowerCase();
+      method = methodMap[normalizedMethod];
+      if (!method) {
+        ui.notifications.error(`Invalid method name: "${options.method}". Valid options: "Standard Rule", "Group Average", "Leader with Help", "Weakest Link", or numbers 1-4`);
+        return null;
+      }
+    }
+    
+    // Validate required parameters
+    if (!method || ![1, 2, 3, 4].includes(method)) {
+      ui.notifications.error("Method must be 1-4 or valid method name: 'Standard Rule', 'Group Average', 'Leader with Help', 'Weakest Link'");
+      return null;
+    }
+    
+    if (!Array.isArray(rollResults) || rollResults.length === 0) {
+      ui.notifications.error("rollResults must be a non-empty array");
+      return null;
+    }
+    
+    if (typeof dc !== 'number' || dc < 0) {
+      ui.notifications.error("dc must be a positive number");
+      return null;
+    }
+    
+    // Validate rollResults format and enhance with actor names
+    const enhancedRollResults = [];
+    for (let i = 0; i < rollResults.length; i++) {
+      const roll = rollResults[i];
+      if (!roll.hasOwnProperty('total') || typeof roll.total !== 'number') {
+        ui.notifications.error(`rollResults[${i}] must have a 'total' property with a numeric value`);
+        return null;
+      }
+      if (!roll.actorId) {
+        ui.notifications.error(`rollResults[${i}] must have an 'actorId' property`);
+        return null;
+      }
+      
+      // Get actor name if not provided
+      let actorName = roll.actorName;
+      if (!actorName) {
+        const actorData = getActorData(roll.actorId);
+        actorName = actorData?.name || roll.actorId;
+      }
+      
+      enhancedRollResults.push({
+        ...roll,
+        actorName,
+        passed: roll.total >= dc
+      });
+    }
+    
+    // Methods 3 and 4 require additional parameters
+    if ([3, 4].includes(method)) {
+      if (!rollType) {
+        ui.notifications.error("rollType is required for Leader with Help and Weakest Link methods");
+        return null;
+      }
+      if (!rollKey) {
+        ui.notifications.error("rollKey is required for Leader with Help and Weakest Link methods");
+        return null;
+      }
+      
+      // Auto-resolve actors from rollResults if not provided
+      if (!Array.isArray(actors) || actors.length === 0) {
+        actors = [];
+        for (const roll of enhancedRollResults) {
+          const actor = getActorData(roll.actorId);
+          if (actor) {
+            actors.push(actor);
+          }
+        }
+        
+        if (actors.length === 0) {
+          ui.notifications.error("No valid actors could be resolved from the rollResults for Leader with Help and Weakest Link methods");
+          return null;
+        }
+      }
+    }
+    
+    try {
+      let calculationResult;
+      let methodName;
+      
+      switch (method) {
+        case 1: // Standard Rule
+          calculationResult = RollHelpers.calculateStandardRule(rollResults, dc);
+          methodName = 'Standard Rule';
+          return {
+            success: calculationResult.finalResult,
+            result: calculationResult.finalResult ? 1 : 0, // 1=success, 0=failure
+            details: calculationResult,
+            method: methodName,
+            actorResults: enhancedRollResults
+          };
+          
+        case 2: // Group Average
+          calculationResult = RollHelpers.calculateGroupAverage(rollResults, dc);
+          methodName = 'Group Average';
+          return {
+            success: calculationResult.success,
+            result: calculationResult.finalResult, // Numeric average result
+            details: calculationResult,
+            method: methodName,
+            actorResults: enhancedRollResults
+          };
+          
+        case 3: // Leader with Help
+          calculationResult = RollHelpers.calculateLeaderWithHelp(rollResults, dc, actors, rollType, rollKey);
+          methodName = 'Leader with Help';
+          // Add isLeadRoll property to identify the leader
+          const enhancedResultsWithLeader = enhancedRollResults.map(result => ({
+            ...result,
+            isLeadRoll: result.actorId === calculationResult.leaderActorId
+          }));
+          return {
+            success: calculationResult.success,
+            result: calculationResult.finalResult, // Modified leader result
+            details: calculationResult,
+            method: methodName,
+            actorResults: enhancedResultsWithLeader
+          };
+          
+        case 4: // Weakest Link
+          calculationResult = RollHelpers.calculateWeakestLink(rollResults, dc, actors, rollType, rollKey);
+          methodName = 'Weakest Link';
+          // Add isLeadRoll property to identify the weakest link (the "lead" in this context)
+          const enhancedResultsWithWeakest = enhancedRollResults.map(result => ({
+            ...result,
+            isLeadRoll: result.actorId === calculationResult.weakestActorId
+          }));
+          return {
+            success: calculationResult.success,
+            result: calculationResult.finalResult, // Modified weakest result
+            details: calculationResult,
+            method: methodName,
+            actorResults: enhancedResultsWithWeakest
+          };
+          
+        default:
+          ui.notifications.error(`Invalid calculation method: ${method}`);
+          return null;
+      }
+    } catch (error) {
+      LogUtil.error('FlashRollsAPI.calculateGroupRoll - Error:', [error]);
+      ui.notifications.error(`Error calculating group roll: ${error.message}`);
+      return null;
+    }
   }
 }

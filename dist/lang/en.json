@@ -15,6 +15,15 @@
       "noTargetedTokens": "No targeted tokens found for the roll.",
       "settingsUpdated": "Settings updated",
       "invalidFormula": "Invalid formula: {formula}",
+      "invalidActorIds": "{numIds} actor(s) not found and skipped: {invalidIds}",
+      "noActorsSelected": "No actors found for the roll request",
+      "invalidActorIdsFormat": "Invalid actor IDs format - must be an array",
+      "invalidMacroData": "Invalid macro data - options must be an object",
+      "missingRequestType": "Invalid macro data - requestType is required",
+      "macroExecutionFailed": "Failed to execute roll request. Please check the macro configuration and try again.",
+      "macroDataMalformed": "Macro execution failed. The macro data may be malformed.",
+      "unknownRequestType": "Unknown request type '{requestType}'. Please check the macro configuration.",
+      "macroCreated": "Macro \"{macroName}\" created successfully",
       "actorAddedToFavorites": "{actor} was added to Flash Rolls favorites",
       "actorRemovedFromFavorites": "{actor} was removed from Flash Rolls favorites",
       "actorBlocked": "{actor} was blocked from Flash Rolls menu",
@@ -86,7 +95,7 @@
         "hint": "Enable to skip the Roll Configuration windows when you request rolls from a player, or when rolling for groups of multiple NPCs. Will use default configurations."
       },
       "rollInterceptionEnabled": {
-        "label": "Redirect GM Rolls from Player sheets (GM)",
+        "label": "Treat Rolls from Player Sheets as Requests (GM)",
         "hint": "When enabled, rolls made by the GM for player characters will be automatically redirected to the owner player, if they are online."
       },
       "showOfflineNotifications": {
@@ -159,6 +168,10 @@
       "compactMode": {
         "label": "Use Compact Mode",
         "hint": "Use compact layout for the roll requests menu. The character information will only show on hover."
+      },
+      "addMacrosToFolder": {
+        "label": "Place new macros on 'Flash Rolls' Folder",
+        "hint": "Check this option to always add new macros inside the 'Flash Rolls' folder. When unchecked, macros will be added to the root of macros directory."
       }
     },
     "groupRoll": {

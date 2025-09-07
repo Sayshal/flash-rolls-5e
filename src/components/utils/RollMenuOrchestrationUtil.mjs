@@ -31,7 +31,11 @@ export class RollMenuOrchestrationUtil {
     const onlinePlayerActors = [];
     let groupRollId = foundry.utils.randomID();
     
-    LogUtil.log('RollMenuOrchestrationUtil.orchestrateRollsForActors', [config, pcActors, npcActors]);
+    LogUtil.log('RollMenuOrchestrationUtil.orchestrateRollsForActors', [
+      'config.sendRequest:', config.sendRequest,
+      'pcActors:', pcActors.map(p => `${p.actor.name}(${p.owner?.name})`),
+      'npcActors:', npcActors.map(n => n.name)
+    ]);
     
     const allActorEntries = [];
     const allActors = [];
@@ -236,17 +240,14 @@ export class RollMenuOrchestrationUtil {
     const rollOption = MODULE.ROLL_REQUEST_OPTIONS[requestType];
     const rollMethodName = (rollOption?.name || requestType)?.toLowerCase();
     
-    // Handle special roll types
     const originalRollKey = rollKey;
     rollKey = await this.handleSpecialRollTypes(rollMethodName, rollKey, selectedUniqueIds, actorsData, actors, menu);
-    // Only treat as cancelled if handleSpecialRollTypes explicitly returned null when rollKey wasn't originally null
     if (rollKey === null && originalRollKey !== null) {
       return; // Operation cancelled or failed
     }
     
     if (!actors.length) {
-      NotificationManager.notify('warn', game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelected") || 
-        "No actors selected. Please select tokens on the canvas or check actors in the menu first.");
+      NotificationManager.notify('warn', game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelected"));
       return;
     }
     

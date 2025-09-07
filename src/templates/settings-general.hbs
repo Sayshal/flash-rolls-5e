@@ -75,16 +75,11 @@
     <input type="checkbox" name="publicPlayerRolls" {{#if publicPlayerRolls}}checked{{/if}} />
     <p class="hint">{{{fields.publicPlayerRolls.hint}}}</p> 
   </div>
+
+  <div class="form-group">
+    <label for="addMacrosToFolder">{{fields.addMacrosToFolder.label}}</label>
+    <input type="checkbox" name="addMacrosToFolder" {{#if addMacrosToFolder}}checked{{/if}} />
+    <p class="hint">{{{fields.addMacrosToFolder.hint}}}</p> 
+  </div>
   
-  {{!-- <div class="form-group">
-    <label for="groupRollResultMode">{{fields.groupRollResultMode.label}}</label>
-    <select name="groupRollResultMode">
-      {{#each fields.groupRollResultMode.choices}}
-      <option value="{{@key}}" {{#if (eq @key ../groupRollResultMode)}}selected{{/if}}>
-        {{this}}
-      </option>
-      {{/each}}
-    </select>
-    <p class="hint">{{{fields.groupRollResultMode.hint}}}</p> 
-  </div> --}}
 </section>

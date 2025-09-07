@@ -30,7 +30,8 @@ export const getSettings = () => {
         'initiateCombatOnRequest',
         'showOnlyPCsWithToken',
         'compactMode',
-        'publicPlayerRolls'
+        'publicPlayerRolls',
+        'addMacrosToFolder'
       ],
       default: {
         showMenuOnLoad: false,
@@ -43,7 +44,8 @@ export const getSettings = () => {
         initiateCombatOnRequest: true,
         showOnlyPCsWithToken: true,
         compactMode: true,
-        publicPlayerRolls: true
+        publicPlayerRolls: true,
+        addMacrosToFolder: true
       },
       scope: SETTING_SCOPE.world,
       config: false, 
@@ -292,6 +294,17 @@ export const getSettings = () => {
       propType: Boolean,
       inputType: SETTING_INPUT.checkbox,
       default: false,
+      scope: SETTING_SCOPE.world,
+      config: false
+    },
+
+    addMacrosToFolder: {
+      tag: "add-macros-to-folder",
+      label: game.i18n.localize("FLASH_ROLLS.settings.addMacrosToFolder.label"),
+      hint: game.i18n.localize("FLASH_ROLLS.settings.addMacrosToFolder.hint"),
+      propType: Boolean,
+      inputType: SETTING_INPUT.checkbox,
+      default: true,
       scope: SETTING_SCOPE.world,
       config: false
     }

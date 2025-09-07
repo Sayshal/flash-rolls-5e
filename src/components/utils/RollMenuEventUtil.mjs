@@ -1,5 +1,6 @@
 import { LogUtil } from '../LogUtil.mjs';
 import { RollMenuDragUtil } from './RollMenuDragUtil.mjs';
+import { delay } from '../helpers/Helpers.mjs';
 
 /**
  * Utility class for handling Roll Requests Menu event listeners
@@ -84,18 +85,17 @@ export class RollMenuEventUtil {
       
       let tooltipCopy = null;
       
-      const showTooltip = (event) => {
+      const showTooltip = async (event) => {
+        
         const existingTooltip = document.querySelector('.actor-data-tooltip');
         if (existingTooltip) {
           existingTooltip.remove();
         }
         
         tooltipCopy = actorData.cloneNode(true);
-        tooltipCopy.className = 'actor-data-tooltip';
         
         const actorRect = actor.getBoundingClientRect();
         const menuRect = html.getBoundingClientRect();
-        
         const isLeftEdge = html.classList.contains('left-edge');
         
         if (isLeftEdge) {
@@ -104,8 +104,13 @@ export class RollMenuEventUtil {
           tooltipCopy.style.right = `${menuRect.right - actorRect.left}px`;
         }
         tooltipCopy.style.top = `${actorRect.top - menuRect.top}px`;
+        tooltipCopy.className = 'actor-data-tooltip';
         
         document.querySelector('#flash-rolls-menu').appendChild(tooltipCopy);
+        
+        setTimeout(()=>{
+          tooltipCopy?.classList.add('visible');
+        }, menu.selectedActors.size > 0 ? 300 : 0);
       };
       
       const hideTooltip = () => {

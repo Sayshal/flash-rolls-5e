@@ -22,6 +22,13 @@ export class RollMenuConfigUtil {
     const SETTINGS = getSettings();
     const rollRequestsEnabled = SettingsUtil.get(SETTINGS.rollRequestsEnabled.tag);
     
+    LogUtil.log('RollMenuConfigUtil.getRollConfiguration', [
+      'configOverrides.sendAsRequest:', configOverrides.sendAsRequest,
+      'hasOwnProperty sendAsRequest:', configOverrides.hasOwnProperty('sendAsRequest'),
+      'rollRequestsEnabled:', rollRequestsEnabled,
+      'pcActors.length:', pcActors.length
+    ]);
+    
     // Show GM configuration dialog (unless skip dialogs is enabled or it's a custom roll)
     if (!skipRollDialog && rollMethodName !== ROLL_TYPES.CUSTOM) {
       // Use appropriate dialog based on roll type
@@ -55,7 +62,7 @@ export class RollMenuConfigUtil {
         chatMessage: true,
         isRollRequest: false,
         skipRollDialog: true,
-        sendRequest: configOverrides.sendAsRequest !== undefined ? configOverrides.sendAsRequest : (rollRequestsEnabled && pcActors.length > 0)
+        sendRequest: configOverrides.hasOwnProperty('sendAsRequest') ? configOverrides.sendAsRequest : (rollRequestsEnabled && pcActors.length > 0)
       };
       
       // Death saves always have DC 10

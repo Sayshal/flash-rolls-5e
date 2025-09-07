@@ -47,6 +47,38 @@ export function getRollTypeDisplay(rollType, rollKey) {
 }
 
 /**
+ * Get the full name for a rollKey based on roll type
+ * @param {string} rollType - The type of roll (normalized to lowercase)
+ * @param {string} rollKey - The key for the specific roll
+ * @returns {string} Full name or original rollKey if not found
+ */
+export function getFullRollName(rollType, rollKey) {
+  if (!rollKey) return '';
+  
+  const normalizedRollType = rollType?.toLowerCase();
+  
+  switch (normalizedRollType) {
+    case ROLL_TYPES.SKILL:
+      return CONFIG.DND5E.skills[rollKey]?.label || rollKey;
+    case ROLL_TYPES.SAVE:
+    case ROLL_TYPES.SAVING_THROW:
+      return CONFIG.DND5E.abilities[rollKey]?.label || rollKey;
+    case ROLL_TYPES.ABILITY:
+    case ROLL_TYPES.ABILITY_CHECK:
+      return CONFIG.DND5E.abilities[rollKey]?.label || rollKey;
+    case ROLL_TYPES.TOOL:
+      const toolData = CONFIG.DND5E.enrichmentLookup?.tools?.[rollKey];
+      if (toolData?.id) {
+        const toolItem = dnd5e.documents.Trait.getBaseItem(toolData.id, { indexOnly: true });
+        return toolItem?.name || rollKey;
+      }
+      return rollKey;
+    default:
+      return rollKey;
+  }
+}
+
+/**
  * Show batched notifications to player
  * @param {Array} pendingNotifications - Array of notification objects
  * @param {Function} getRollTypeDisplayFn - Function to get roll type display (default: getRollTypeDisplay)

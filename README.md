@@ -43,6 +43,346 @@ Four different modes of calculation are available in Settings:
     
   - When Roll Requests are activated, clicking to roll will open a opoup on player side, with all the selected configurations from DM. If you select advantage / disadvantage or situational bonus, the option should appear on player's side
 
+## API
+
+Flash Rolls 5e provides an API that users and other modules can use to interact with its roll request system and group roll calculations.
+
+### Accessing the API
+
+The API is available globally via two methods:
+
+```javascript
+// Global alias (recommended)
+FlashRolls5e.requestRoll(options);
+
+// Module API access
+game.modules.get('flash-rolls-5e').api.requestRoll(options);
+```
+
+### API Methods
+
+#### `requestRoll(options)`
+
+Triggers roll requests for the provided actors using Flash Rolls 5e's roll orchestration flow.
+
+**Parameters:**
+- `options.requestType` (string) - Type of roll: `'skill'`, `'ability'`, `'savingthrow'`, `'tool'`, `'initiative'`, `'deathsave'`, `'hitdie'`, `'custom'`
+- `options.rollKey` (string, optional) - Specific roll key (e.g., `'acr'` for Acrobatics, `'str'` for Strength)
+- `options.actorIds` (string[], optional) - Array of actor IDs or token IDs to roll for
+- `options.dc` (number, optional) - Difficulty Class for the roll
+- `options.situationalBonus` (string, optional) - Situational bonus (e.g., `'+2'`, `'1d4'`)
+- `options.advantage` (boolean, optional) - Roll with advantage
+- `options.disadvantage` (boolean, optional) - Roll with disadvantage
+- `options.skipRollDialog` (boolean, optional) - Skip the roll dialog
+- `options.sendAsRequest` (boolean, optional) - Send to players instead of rolling locally. Default is true.
+
+**Example:**
+```javascript
+// Request Acrobatics skill checks from selected actors
+FlashRolls5e.requestRoll({
+  requestType: 'skill',
+  rollKey: 'acr',
+  actorIds: ['actorId1', 'actorId2', 'actorId3'],
+  dc: 15,
+  situationalBonus: '+2',
+  advantage: false,
+  skipRollDialog: true,
+  sendAsRequest: true
+});
+
+// Request Strength saving throws with disadvantage
+FlashRolls5e.requestRoll({
+  requestType: 'savingthrow',
+  rollKey: 'str',
+  actorIds: ['actorId1', 'actorId2'],
+  dc: 12,
+  disadvantage: true
+});
+```
+
+#### `calculateGroupRoll(options)`
+
+Calculate group roll results using Flash Rolls 5e's group calculation methods. Perfect for other modules that need to evaluate group performance.
+
+**Parameters:**
+- `options.method` (number|string) - Calculation method:
+  - `1` or `"Standard Rule"` - At least half the group must succeed
+  - `2` or `"Group Average"` - Simple average of all rolls, rounded down
+  - `3` or `"Leader with Help"` - Result from best actor in the roll type, modified by group successes/failures
+  - `4` or `"Weakest Link"` - Result from worst actor in the roll type, plus other group successes
+- `options.rollResults` (Object[]) - Array of roll results with `{ actorId, total, actorName? }`
+- `options.dc` (number) - Difficulty Class to check against
+- `options.actors` (Object[], optional) - Array of actor objects. **Auto-resolved from `actorId` values in rollResults if not provided** (checks both token actors and game actors)
+- `options.rollType` (string) - Type of roll, required for methods 3 & 4 (e.g., `'skill'`, `'ability'`, `'savingthrow'`)
+- `options.rollKey` (string) - Specific roll key, required for methods 3 & 4 (e.g., `'acr'` for Acrobatics, `'str'` for Strength)
+
+**Returns:**
+```javascript
+{
+  success: boolean,           // Whether the group succeeded
+  result: number,             // Numeric result (varies by method)
+  method: string,             // Method name used
+  actorResults: [             // Individual actor results
+    {
+      actorId: string,
+      actorName: string,      // Auto-resolved if not provided
+      total: number,
+      passed: boolean,
+      isLeadRoll?: boolean    // Only present for methods 3&4, identifies leader/weakest
+    }
+  ],
+  details: {                  // Detailed calculation breakdown
+    finalResult: any,         // Method-specific result
+    summary: string,          // Localized summary text
+    // ... additional method-specific details
+  }
+}
+```
+
+**Examples:**
+```javascript
+// Standard Rule calculation
+const result = FlashRolls5e.calculateGroupRoll({
+  method: "Standard Rule",  // or method: 1
+  rollResults: [
+    { actorId: "actor1", total: 15 },  // actorName auto-resolved
+    { actorId: "actor2", total: 12, actorName: "Rogue" },
+    { actorId: "actor3", total: 8 }
+  ],
+  dc: 12
+});
+
+// Returns: { success: true, result: 1, method: 'Standard Rule', actorResults: [...], details: {...} }
+
+// Group Average calculation
+const avgResult = FlashRolls5e.calculateGroupRoll({
+  method: 2,
+  rollResults: [
+    { actorId: "actor1", total: 18 },
+    { actorId: "actor2", total: 14 },
+    { actorId: "actor3", total: 10 }
+  ],
+  dc: 15
+});
+
+// Returns: { success: false, result: 14, method: 'Group Average', ... }
+
+// Leader with Help calculation (actors auto-resolved)
+const leaderResult = FlashRolls5e.calculateGroupRoll({
+  method: "Leader with Help",  // or method: 3
+  rollResults: [
+    { actorId: "actor1", total: 15 },
+    { actorId: "actor2", total: 12 },
+    { actorId: "actor3", total: 8 }
+  ],
+  dc: 12,
+  rollType: 'skill',  // Required for methods 3 & 4
+  rollKey: 'acr'      // Required for methods 3 & 4
+  // actors parameter optional - will be auto-resolved from actorIds
+});
+```
+
+#### `getAvailableRollTypes()`
+
+Returns the available roll request options that can be used with `requestRoll()`.
+
+**Example:**
+```javascript
+const rollTypes = FlashRolls5e.getAvailableRollTypes();
+console.log(rollTypes);
+// Returns object with all available roll types and their configurations
+```
+
+#### `getSelectedActors()`
+
+Get currently selected actors from the Flash Rolls menu.
+
+**Returns:** `string[]` - Array of selected actor/token IDs
+
+#### `isMenuOpen()`
+
+Check if the Flash Rolls menu is currently open.
+
+**Returns:** `boolean` - True if menu is rendered and visible
+
+#### `createMacro(macroData)`
+
+Creates a macro that executes Flash Rolls requests with pre-configured settings. This is the same functionality used by the "Create Macro" button in GM roll configuration dialog or in the menu items. The macro is saved to Flash Rolls folder, unless this setting is turned off by the user - in which case it is saved to the root.
+
+**Parameters:**
+- `macroData.requestType` (string) - Type of roll request (e.g., `'skill'`, `'savingthrow'`, `'tool'`, `'initiative'`, `'deathsave'`, `'hitdie'`, `'custom'`)
+- `macroData.rollKey` (string, optional) - Specific roll key (e.g., `'acr'` for Acrobatics, `'str'` for Strength)
+- `macroData.actorIds` (string[]) - Array of actor IDs to include
+- `macroData.config` (Object) - Roll configuration options
+
+**Example:**
+```javascript
+FlashRolls5e.createMacro({
+  requestType: 'skill',
+  rollKey: 'per',
+  actorIds: ['actorId1', 'actorId2'],
+  config: {
+    dc: 15, // optional
+    advantage: true, // optional
+    skipRollDialog: true // optional
+  }
+});
+```
+
+### Macro System
+
+You can turn Flash Rolls 5e into a macro, so you can reuse frequent requests and trigger via keyboard or macro toolbar.
+
+#### Creating Macros
+
+**Via GM Dialog:**
+1. Initiate a roll request via menu or character sheet (skill, save, etc.)
+2. When the GM dialog opens, configure the desired options (DC, situational bonus, advantage/disadvantage)
+3. Click the "Create Macro" button
+4. The macro is saved with all current settings and opens up for editing
+
+**Via API:**
+Use the `createMacro()` method to programmatically create macros with specific configurations (see above).
+
+**Via Manual Creation:**
+Create a script macro manually using the Flash Rolls API:
+
+```javascript
+// Example macro: Request Stealth checks from selected tokens
+const selectedTokens = canvas.tokens.controlled.map(t => t.id);
+
+if (selectedTokens.length === 0) {
+  ui.notifications.warn("Please select some tokens first");
+  return;
+}
+
+FlashRolls5e.requestRoll({
+  requestType: 'skill',
+  rollKey: 'ste',
+  actorIds: selectedTokens,
+  dc: 12,
+  skipRollDialog: true,
+  sendAsRequest: true
+});
+```
+
+#### Macro Structure
+
+Generated macros have the following structure:
+
+```javascript
+// Flash Rolls: Acrobatics
+try {
+  FlashRolls5e.requestRoll({
+    "requestType": "skill",
+    "rollKey": "acr",
+    "actorIds": ["actor1", "actor2"],
+    "dc": 15,
+    "situationalBonus": "+2",
+    "advantage": false,
+    "disadvantage": false,
+    "skipRollDialog": true,
+    "sendAsRequest": true
+  });
+} catch (error) {
+  ui.notifications.error("Flash Rolls: Macro execution failed. The macro data may be malformed.");
+}
+```
+
+#### Advanced Macro Examples
+
+**Conditional Roll Request:**
+```javascript
+// Macro: Perception check with dynamic DC based on scene darkness
+const selectedTokens = canvas.tokens.controlled.map(t => t.id);
+const darkness = canvas.scene.environment.darkness || 0; // 0 = bright, 1 = complete darkness
+const adaptiveDC = darkness > 0.5 ? 15 : (darkness > 0 ? 13 : 10);
+
+FlashRolls5e.requestRoll({
+  requestType: 'skill',
+  rollKey: 'prc',
+  actorIds: selectedTokens,
+  dc: adaptiveDC,
+  skipRollDialog: true
+});
+```
+
+**Multi-Roll Macro:**
+```javascript
+// Macro: Request both Perception and Investigation
+const selectedTokens = canvas.tokens.controlled.map(t => t.id);
+
+// Perception first
+FlashRolls5e.requestRoll({
+  requestType: 'skill',
+  rollKey: 'prc',
+  actorIds: selectedTokens,
+  dc: 13
+});
+
+// Investigation after a short delay
+setTimeout(() => {
+  FlashRolls5e.requestRoll({
+    requestType: 'skill',
+    rollKey: 'inv',
+    actorIds: selectedTokens,
+    dc: 15
+  });
+}, 1000);
+```
+
+### Error Handling
+
+All API methods provide user-friendly error messages via `ui.notifications.error()` rather than throwing exceptions. Methods return `null` on validation errors.
+
+### Integration Examples
+
+#### Custom Module Integration
+```javascript
+// In your module's ready hook
+Hooks.once('ready', () => {
+  if (game.modules.get('flash-rolls-5e')?.active) {
+    // Use Flash Rolls API
+    const groupResult = FlashRolls5e.calculateGroupRoll({
+      method: 'Standard Rule',
+      rollResults: myRollData,
+      dc: 15
+    });
+    
+    if (groupResult?.success) {
+      ui.notifications.info("Group succeeded!");
+    }
+  }
+});
+```
+
+#### Macro Examples
+```javascript
+// Create a macro that requests stealth checks from all selected tokens
+const selectedTokens = canvas.tokens.controlled.map(t => t.id);
+FlashRolls5e.requestRoll({
+  requestType: 'skill',
+  rollKey: 'ste',
+  actorIds: selectedTokens,
+  dc: 12
+});
+
+// Evaluate a group stealth attempt
+const stealthResults = [
+  { actorId: canvas.tokens.controlled[0].actor.id, total: 15 },
+  { actorId: canvas.tokens.controlled[1].actor.id, total: 8 },
+  { actorId: canvas.tokens.controlled[2].actor.id, total: 12 }
+];
+
+const groupStealth = FlashRolls5e.calculateGroupRoll({
+  method: 'Weakest Link',
+  rollResults: stealthResults,
+  dc: 10
+});
+
+console.log(`Group stealth: ${groupStealth.success ? 'SUCCESS' : 'FAILURE'} (${groupStealth.result})`);
+``` 
+
 ## Dependencies
 
 Flash Rolls 5e requires the [socketlib](https://github.com/manuelVo/foundryvtt-socketlib) module to be installed and active.
@@ -50,12 +390,13 @@ Flash Rolls 5e requires the [socketlib](https://github.com/manuelVo/foundryvtt-s
 
 ## Compatibility
 
+### Carolingian UI
+
 This module works best together with [Carolingian UI](https://foundryvtt.com/packages/crlngn-ui).
 
-I am working to make the module fully compatible with Midi-QOL. At the moment, most rolls should work, but you might have some issues with roll interceptions for activity rolls. 
-While this module is in beta, I suggest unchecking the "Intercept GM Rolls for Players" when using Midi-QOL.
+### Midi-QOL and Ready Set Roll
 
-<img width="702" height="667" alt="image" src="https://github.com/user-attachments/assets/1613a2b9-f0cd-4b86-96fa-50ab6a84831d" />
+I suggest you uncheck the setting "Treat Rolls from Player Sheets as Requests" when using Midi-QOL or Ready Set Roll. This setting is off by default.
 
 ## License
 

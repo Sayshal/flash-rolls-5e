@@ -447,7 +447,8 @@ export class ChatMessageUtils {
             isGroupRoll: true,
             groupRollId: data.groupRollId,
             rollData: data
-          }
+          },
+          rsr5e: { processed: true, quickRoll: false}
         }
       };
       if (rollMode) {
@@ -896,6 +897,7 @@ export class ChatMessageUtils {
         messageConfig.data.flags = messageConfig.data.flags || {};
         messageConfig.data.flags[MODULE_ID] = messageConfig.data.flags[MODULE_ID] || {};
         messageConfig.data.flags[MODULE_ID].groupRollId = requestData.groupRollId;
+        messageConfig.data.flags.rsr5e = { processed: true, quickRoll: false};
         
         LogUtil.log('addGroupRollFlag - Added flag to messageConfig', [messageConfig]);
       }

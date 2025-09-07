@@ -376,6 +376,7 @@ export class HooksUtil {
               data.flags = data.flags || {};
               data.flags[MODULE_ID] = data.flags[MODULE_ID] || {};
               data.flags[MODULE_ID].groupRollId = groupRollId;
+              data.flags.rsr5e = { processed: true, quickRoll: false};
               LogUtil.log('_onPreCreateChatMessage - Added groupRollId flag (GM)', [groupRollId, actorId]);
               break;
             }
@@ -413,6 +414,7 @@ export class HooksUtil {
             data.flags = data.flags || {};
             data.flags[MODULE_ID] = data.flags[MODULE_ID] || {};
             data.flags[MODULE_ID].groupRollId = storedGroupRollId || storedInitConfig?.groupRollId || '';
+            data.flags.rsr5e = { processed: true, quickRoll: false};
           }
         }
       }
