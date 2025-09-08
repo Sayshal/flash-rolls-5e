@@ -43,6 +43,30 @@ Four different modes of calculation are available in Settings:
     
   - When Roll Requests are activated, clicking to roll will open a opoup on player side, with all the selected configurations from DM. If you select advantage / disadvantage or situational bonus, the option should appear on player's side
 
+### Actor Ownership for Roll Requests
+
+Flash Rolls 5e follows specific rules for determining if a roll request should be sent to a player or rolled by the GM.
+
+- **Player Characters (PCs)**: Only players who **explicitly own** an actor will receive roll requests for them. If GM gives ownership to all players by default, this is not considered as ownership for receiving roll requests, as it would be impossible to determine which player should receive the request. 
+- **Offline Players**: If a player who owns a character is offline, the GM will automatically roll for that character locally
+- **Multiple Owners**: If multiple players own the same actor, the request is sent to the first online non-GM owner
+
+And of course, GMs don't receive requests for actors they own - they just roll locally.
+
+**Explicit ownership** means the character either:
+
+- Is selected as the main character of a user in the user configuration window (core Foundry)
+- Has a player set as Owner (not Default) in the Ownership configuration window.
+
+*Ownership configuration (right click on actor)*:
+
+<img width="500" alt="image" src="https://github.com/crlngn/flash-rolls-5e/blob/main/demo/docs/owner-configuration.webp?raw=true" />
+
+*User configuration (right click the user name in player list)*:
+
+<img width="500" alt="image" src="https://github.com/crlngn/flash-rolls-5e/blob/main/demo/docs/user-config.webp?raw=true" />
+
+
 ## API
 
 Flash Rolls 5e provides an API that users and other modules can use to interact with its roll request system and group roll calculations.
@@ -142,25 +166,24 @@ Calculate group roll results using Flash Rolls 5e's group calculation methods. P
 **Examples:**
 ```javascript
 // Standard Rule calculation
-const result = FlashRolls5e.calculateGroupRoll({
+const result = await FlashRolls5e.calculateGroupRoll({
   method: "Standard Rule",  // or method: 1
   rollResults: [
-    { actorId: "actor1", total: 15 },  // actorName auto-resolved
-    { actorId: "actor2", total: 12, actorName: "Rogue" },
-    { actorId: "actor3", total: 8 }
+    { actorId: "actorId1", total: 15 },  // actorName auto-resolved
+    { actorId: "actorId2", total: 12, actorName: "Rogue" },
+    { actorId: "actorId3", total: 8 }
   ],
   dc: 12
 });
-
 // Returns: { success: true, result: 1, method: 'Standard Rule', actorResults: [...], details: {...} }
 
 // Group Average calculation
 const avgResult = FlashRolls5e.calculateGroupRoll({
   method: 2,
   rollResults: [
-    { actorId: "actor1", total: 18 },
-    { actorId: "actor2", total: 14 },
-    { actorId: "actor3", total: 10 }
+    { actorId: "actorId1", total: 18 },
+    { actorId: "actorId2", total: 14 },
+    { actorId: "actorId3", total: 10 }
   ],
   dc: 15
 });
@@ -171,14 +194,13 @@ const avgResult = FlashRolls5e.calculateGroupRoll({
 const leaderResult = FlashRolls5e.calculateGroupRoll({
   method: "Leader with Help",  // or method: 3
   rollResults: [
-    { actorId: "actor1", total: 15 },
-    { actorId: "actor2", total: 12 },
-    { actorId: "actor3", total: 8 }
+    { actorId: "actorId1", total: 15 },
+    { actorId: "actorId2", total: 12 },
+    { actorId: "actorId3", total: 8 }
   ],
   dc: 12,
   rollType: 'skill',  // Required for methods 3 & 4
   rollKey: 'acr'      // Required for methods 3 & 4
-  // actors parameter optional - will be auto-resolved from actorIds
 });
 ```
 
@@ -276,7 +298,7 @@ try {
   FlashRolls5e.requestRoll({
     "requestType": "skill",
     "rollKey": "acr",
-    "actorIds": ["actor1", "actor2"],
+    "actorIds": ["actorId1", "actorId2"],
     "dc": 15,
     "situationalBonus": "+2",
     "advantage": false,
@@ -291,7 +313,7 @@ try {
 
 #### Advanced Macro Examples
 
-**Conditional Roll Request:**
+**Roll Request with Conditional DC:**
 ```javascript
 // Macro: Perception check with dynamic DC based on scene darkness
 const selectedTokens = canvas.tokens.controlled.map(t => t.id);
@@ -392,11 +414,11 @@ Flash Rolls 5e requires the [socketlib](https://github.com/manuelVo/foundryvtt-s
 
 ### Carolingian UI
 
-This module works best together with [Carolingian UI](https://foundryvtt.com/packages/crlngn-ui).
+This module works best together with [Carolingian UI](https://foundryvtt.com/packages/crlngn-ui), but also works with core Foundry UI.
 
 ### Midi-QOL and Ready Set Roll
 
-I suggest you uncheck the setting "Treat Rolls from Player Sheets as Requests" when using Midi-QOL or Ready Set Roll. This setting is off by default.
+I suggest you uncheck the setting "Treat Rolls from Player Sheets as Requests" when using Midi-QOL or Ready Set Roll. This setting is off by default, I am working to make it work with these modules.
 
 ## License
 

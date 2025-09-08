@@ -8,6 +8,7 @@ import { RollHandlers } from '../RollHandlers.mjs';
 import { ensureCombatForInitiative, filterActorsForInitiative } from '../helpers/RollValidationHelpers.mjs';
 import { ChatMessageUtils } from '../ChatMessageUtils.mjs';
 import { RollMenuConfigUtil } from './RollMenuConfigUtil.mjs';
+import { OfflinePlayerUtil } from './OfflinePlayerUtil.mjs';
 
 /**
  * Utility class for orchestrating roll requests and execution
@@ -41,18 +42,28 @@ export class RollMenuOrchestrationUtil {
     const allActors = [];
 
     if (config.sendRequest) {
-      for (const { actor, owner } of pcActors) {
-        if (!owner.active) {
-          if(SettingsUtil.get(SETTINGS.showOfflineNotifications.tag)) {
-            NotificationManager.notify('info', game.i18n.format("FLASH_ROLLS.notifications.playerOffline", { 
-              player: owner.name 
-            }));
-          }
-          offlinePlayerActors.push(actor);
-        }else{
-          onlinePlayerActors.push({actor, owner});
+      // Use unified offline player categorization
+      const { onlinePlayerActors: online, offlinePlayerActors: offline } = 
+        OfflinePlayerUtil.categorizeActorsByOnlineStatus(pcActors);
+      
+      onlinePlayerActors.push(...online);
+      offlinePlayerActors.push(...offline);
+      
+      // Show offline notifications
+      if (offline.length > 0) {
+        const SETTINGS = getSettings();
+        if (SettingsUtil.get(SETTINGS.showOfflineNotifications.tag)) {
+          offline.forEach(actor => {
+            const owner = pcActors.find(pc => pc.actor.id === actor.id)?.owner;
+            if (owner) {
+              NotificationManager.notify('info', game.i18n.format("FLASH_ROLLS.notifications.playerOffline", { 
+                player: owner.name 
+              }));
+            }
+          });
         }
       }
+      
       allActors.push(...onlinePlayerActors.map(({actor}) => actor));
     } else {
       npcActors.push(...pcActors.map(({ actor }) => actor));
@@ -67,6 +78,7 @@ export class RollMenuOrchestrationUtil {
 
     const groupRollsMsgEnabled = SettingsUtil.get(SETTINGS.groupRollsMsgEnabled.tag);
     
+    // Create group message FIRST so individual rolls can update it
     if (groupRollsMsgEnabled && allActors.length > 1) {
       await ChatMessageUtils.createGroupRollMessage(
         allActorEntries,
@@ -76,6 +88,14 @@ export class RollMenuOrchestrationUtil {
         groupRollId
       );
       await delay(100);
+    }
+    
+    // Handle offline player actors AFTER creating group message
+    if (offlinePlayerActors.length > 0) {
+      config.skipRollDialog = true;
+      config.groupRollId = groupRollId; // Set group ID so rolls are included in group message
+      
+      await OfflinePlayerUtil.processOfflineActors(offlinePlayerActors, rollMethodName, rollKey, config);
     }
 
     // Special handling for hit die rolls - check ALL actors upfront and refill if needed
@@ -112,21 +132,17 @@ export class RollMenuOrchestrationUtil {
       this.showConsolidatedNotification(successfulRequests, rollMethodName, rollKey);
     }
     
-    // GM Rolls: Actors owned by offline players or NPC actors
-    let gmRolledActors = [];
-    gmRolledActors = gmRolledActors.concat(offlinePlayerActors);
-    gmRolledActors = gmRolledActors.concat(npcActors);
-
-    if (gmRolledActors.length > 0) {
+    // Handle NPC actors using traditional GM rolls
+    if (npcActors.length > 0) {
       config.skipRollDialog = true;
       config.groupRollId = groupRollsMsgEnabled && allActors.length > 1 ? groupRollId : null;
       
-      const gmActorIds = gmRolledActors.map(actor => actor.id);
-      const gmActorEntries = actorsData.filter(entry => 
-        entry && entry.actor && gmActorIds.includes(entry.actor.id)
+      const npcActorIds = npcActors.map(actor => actor.id);
+      const npcActorEntries = actorsData.filter(entry => 
+        entry && entry.actor && npcActorIds.includes(entry.actor.id)
       );
       
-      await menu._handleGMRollsWithTokens(gmActorEntries, rollMethodName, rollKey, config);
+      await menu._handleGMRollsWithTokens(npcActorEntries, rollMethodName, rollKey, config);
     }
   }
 
@@ -359,8 +375,7 @@ export class RollMenuOrchestrationUtil {
     }
     
     if (actorsWithTokens.length === 0) {
-      // ui.notifications.warn(game.i18n.localize("FLASH_ROLLS.notifications.noTokensForInitiative") || 
-      //   "Cannot roll initiative: None of the selected actors have tokens on the scene.");
+      // ui.notifications.warn(game.i18n.localize("FLASH_ROLLS.notifications.noTokensForInitiative"));
       return { success: false };
     }
     

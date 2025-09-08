@@ -137,10 +137,19 @@ export class FlashRollsAPI {
   
   /**
    * Get list of available roll types
-   * @returns {Object} Available roll request options
+   * @returns {Object} Available roll request options with name and label only
    */
   static getAvailableRollTypes() {
-    return MODULE.ROLL_REQUEST_OPTIONS;
+    const cleanedOptions = {};
+    
+    for (const [key, option] of Object.entries(MODULE.ROLL_REQUEST_OPTIONS)) {
+      cleanedOptions[key] = {
+        name: option.name,
+        label: option.label
+      };
+    }
+    
+    return cleanedOptions;
   }
   
   /**
@@ -312,8 +321,8 @@ try {
    * // }
    */
   static calculateGroupRoll(options = {}) {
-    const { rollResults, dc, actors, rollType, rollKey } = options;
-    let { method } = options;
+    const { rollResults, dc, rollType, rollKey } = options;
+    let { method, actors } = options;
     
     // Convert string method names to numbers
     const methodMap = {

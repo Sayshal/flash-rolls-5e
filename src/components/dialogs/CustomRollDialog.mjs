@@ -20,7 +20,6 @@ export class CustomRollDialog extends HandlebarsApplicationMixin(ApplicationV2) 
    */
   static get DEFAULT_OPTIONS() {
     return foundry.utils.mergeObject(super.DEFAULT_OPTIONS, {
-      id: "flash5e-custom-roll-dialog",
       classes: ["flash5e-dialog", "flash5e-custom-roll-dialog"],
       tag: "div",
       window: {
@@ -35,6 +34,24 @@ export class CustomRollDialog extends HandlebarsApplicationMixin(ApplicationV2) 
         height: "auto"
       }
     });
+  }
+  
+  /**
+   * Override to provide unique ID per actor
+   */
+  get id() {
+    return `flash5e-custom-roll-dialog-${this.actor?.id || 'unknown'}`;
+  }
+  
+  /**
+   * Override to provide unique title per actor
+   */
+  get title() {
+    const baseTitle = game.i18n.localize("FLASH_ROLLS.ui.dialogs.customRollTitle");
+    if (this.actor) {
+      return `${baseTitle} - ${this.actor.name}`;
+    }
+    return baseTitle;
   }
   
   /**

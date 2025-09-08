@@ -474,13 +474,9 @@ export class ChatMessageUtils {
     if (!game.user.isGM) {
       return;
     }
-    LogUtil.log('ChatMessageUtils.updateGroupRollMessage', [groupRollId, uniqueId, roll ]);
+    LogUtil.log('ChatMessageUtils.updateGroupRollMessage #0', [groupRollId, uniqueId, roll ]);
     
-    const currentUpdate = this.updateQueue.get(groupRollId) || Promise.resolve();
-    const nextUpdate = currentUpdate.then(() => this._performGroupRollUpdate(groupRollId, uniqueId, roll));
-    this.updateQueue.set(groupRollId, nextUpdate);
-    
-    return nextUpdate;
+    return await this._performGroupRollUpdate(groupRollId, uniqueId, roll);
   }
   
   /**
@@ -531,12 +527,9 @@ export class ChatMessageUtils {
     }
     
     const flagData = message.getFlag(MODULE_ID, 'rollData');
-    
     LogUtil.log('_performGroupRollUpdate - Searching for uniqueId', [uniqueId, 'in results:', flagData.results.map(r => ({uniqueId: r.uniqueId, actorId: r.actorId, tokenId: r.tokenId}))]);
-    
     let resultIndex = flagData.results.findIndex(r => r.uniqueId === uniqueId);
     
-    // If no match found by uniqueId, try multiple fallbacks
     if (resultIndex === -1) {
       // Attempt 1: Try matching by actorId directly
       resultIndex = flagData.results.findIndex(r => r.actorId === uniqueId);
@@ -572,13 +565,6 @@ export class ChatMessageUtils {
       
       try {
         let rollBreakdown = await roll.render();
-        // Remove the dice total element to avoid redundancy in group roll messages
-        // const tempDiv = document.createElement('div');
-        // tempDiv.innerHTML = rollBreakdown;
-        // const diceTotal = tempDiv.querySelector('.dice-tooltip .total');
-        // if (diceTotal) {
-        //   diceTotal.remove();
-        // }
         flagData.results[resultIndex].rollBreakdown = rollBreakdown;
       } catch (error) {
         LogUtil.error('Error rendering roll breakdown', [error]);
@@ -596,7 +582,6 @@ export class ChatMessageUtils {
     
     flagData.allRolled = flagData.results.every(r => r.rolled);
     flagData.messageId = message.id;
-    
     flagData.supportsDC = RollHelpers.shouldShowDC(flagData.rollType);
     
     const SETTINGS = getSettings();

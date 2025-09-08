@@ -141,17 +141,14 @@ export function GMRollConfigMixin(Base) {
         return;
       }
       
-      // Get current form data
       const formData = new FormDataExtended(this.form);
       const situational = formData.get('roll.0.situational') || formData.get('rolls.0.situational') || '';
       const dc = formData.get('dc');
       const sendRequest = formData.get('flash5e-send-request');
       const rollMode = formData.get('rollMode') || game.settings.get("core", "rollMode");
+      const ability = formData.get('ability'); 
       
-      // Get selected actors
       const actorIds = this.actors?.map(actor => actor.id) || [];
-      
-      // Build macro configuration
       const macroData = {
         requestType: this.rollTypeString,
         rollKey: this.rollKey,
@@ -160,11 +157,11 @@ export function GMRollConfigMixin(Base) {
           ...(situational && { situationalBonus: situational }),
           ...(dc && { dc: parseInt(dc) }),
           ...(rollMode !== game.settings.get("core", "rollMode") && { rollMode }),
+          ...(ability && { ability }), // Include selected ability for skill/tool rolls
           sendAsRequest: !!sendRequest,
           skipRollDialog: true, // Always skip roll dialog for macros
-          // Add empty advantage/disadvantage properties for user customization
-          advantage: false,
-          disadvantage: false
+          advantage: false, // added for users to edit if needed
+          disadvantage: false // added for users to edit if needed
         }
       };
       

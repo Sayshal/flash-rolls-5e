@@ -9,6 +9,7 @@ import { RollHandlers } from './RollHandlers.mjs';
 import { ensureCombatForInitiative, filterActorsForInitiative } from './helpers/RollValidationHelpers.mjs';
 import { GeneralUtil } from './helpers/GeneralUtil.mjs';
 import { ModuleHelpers } from './helpers/ModuleHelpers.mjs';
+import { OfflinePlayerUtil } from './utils/OfflinePlayerUtil.mjs';
 /**
  * Handles intercepting D&D5e rolls on the GM side and redirecting them to players
  */
@@ -624,29 +625,14 @@ export class RollInterceptor {
 
     LogUtil.log('_sendRollRequest - requestData', [owner, requestData]);
     
-    // Check if owner exists and is active
-    if(!owner || !requestData){
-      ui.notifications.warn('Flash Rolls: No owner found for actor ' + actor.name);
-      return;
-    }
+    // Use unified offline player handling
+    const wasOffline = await OfflinePlayerUtil.handleOfflinePlayer(owner, actor, rollType, config, {
+      ...config,
+      sendRequest: false 
+    });
     
-    if(!owner.active){
-      const SETTINGS = getSettings();
-      if(SettingsUtil.get(SETTINGS.showOfflineNotifications.tag)) {
-        ui.notifications.info(game.i18n.format("FLASH_ROLLS.notifications.playerOffline", { 
-          player: owner.name 
-        }));
-      }
-      // Execute the roll locally instead
-      await this._executeInterceptedRoll(actor, rollType, config, { 
-        ...config,
-        sendRequest: false 
-      });
-
-      setTimeout(() => {
-        GeneralUtil.removeTemplateForItem(config.subject?.item);
-      }, 3000); 
-      return;
+    if (wasOffline) {
+      return; // Player was offline and roll was handled
     }
     
     // Owner is active, send the request
