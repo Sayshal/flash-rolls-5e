@@ -10,8 +10,15 @@ This is a Foundry VTT module that facilitates rolling for GMs, adding the follow
 - Help new players who are unfamiliar with Foundry or tend to slow down combat
 - Target tokens from template drawing
 
+### Roll for multiple NPCs and request for all players, all at once:
 
-<img width="100%" alt="image" src="https://github.com/crlngn/flash-rolls-5e/blob/main/demo/compact-menu-group-roll.png?raw=true" />
+https://github.com/user-attachments/assets/ae140c5f-5b8f-4c38-976e-238294fc4f2b
+
+### Create and save macros for frequent roll requests
+
+https://github.com/user-attachments/assets/a24505ab-99db-455e-9ec6-163a2bbf4181
+
+### Interface and request from sheets:
 
 https://github.com/user-attachments/assets/c2cae279-e2e0-43a5-91ff-d1bf5fc21458
 
@@ -25,7 +32,7 @@ Four different modes of calculation are available in Settings:
   - **Simple Average:** All rolls are summed up and averaged, then checked against the DC
   - **Leader With Help:** (Daggerheart rule) The roll from the character with highest modifiers is considered, then each other success is added and failure subtracted
   - **Weakest Link** The roll from the character with lowest modifiers is considered, then each other success is added (other failures are discarded)
-
+You can calculate group roll results via API as well, see below.
 
 ## How to use
 
@@ -42,30 +49,6 @@ Four different modes of calculation are available in Settings:
     - **Select All** ON - Selects all characters on PC or NPC list
     
   - When Roll Requests are activated, clicking to roll will open a opoup on player side, with all the selected configurations from DM. If you select advantage / disadvantage or situational bonus, the option should appear on player's side
-
-### Actor Ownership for Roll Requests
-
-Flash Rolls 5e follows specific rules for determining if a roll request should be sent to a player or rolled by the GM.
-
-- **Player Characters (PCs)**: Only players who **explicitly own** an actor will receive roll requests for them. If GM gives ownership to all players by default, this is not considered as ownership for receiving roll requests, as it would be impossible to determine which player should receive the request. 
-- **Offline Players**: If a player who owns a character is offline, the GM will automatically roll for that character locally
-- **Multiple Owners**: If multiple players own the same actor, the request is sent to the first online non-GM owner
-
-And of course, GMs don't receive requests for actors they own - they just roll locally.
-
-**Explicit ownership** means the character either:
-
-- Is selected as the main character of a user in the user configuration window (core Foundry)
-- Has a player set as Owner (not Default) in the Ownership configuration window.
-
-*Ownership configuration (right click on actor)*:
-
-<img width="500" alt="image" src="https://github.com/crlngn/flash-rolls-5e/blob/main/demo/docs/owner-configuration.webp?raw=true" />
-
-*User configuration (right click the user name in player list)*:
-
-<img width="500" alt="image" src="https://github.com/crlngn/flash-rolls-5e/blob/main/demo/docs/user-config.webp?raw=true" />
-
 
 ## API
 
@@ -353,57 +336,29 @@ setTimeout(() => {
 }, 1000);
 ```
 
-### Error Handling
+## Actor Ownership for Roll Requests
 
-All API methods provide user-friendly error messages via `ui.notifications.error()` rather than throwing exceptions. Methods return `null` on validation errors.
+Flash Rolls 5e follows specific rules for determining if a roll request should be sent to a player or rolled by the GM.
 
-### Integration Examples
+- **Player Characters (PCs)**: Only players who **explicitly own** an actor will receive roll requests for them. If GM gives ownership to all players by default, this is not considered as ownership for receiving roll requests, as it would be impossible to determine which player should receive the request. 
+- **Offline Players**: If a player who owns a character is offline, the GM will automatically roll for that character locally
+- **Multiple Owners**: If multiple players own the same actor, the request is sent to the first online non-GM owner
 
-#### Custom Module Integration
-```javascript
-// In your module's ready hook
-Hooks.once('ready', () => {
-  if (game.modules.get('flash-rolls-5e')?.active) {
-    // Use Flash Rolls API
-    const groupResult = FlashRolls5e.calculateGroupRoll({
-      method: 'Standard Rule',
-      rollResults: myRollData,
-      dc: 15
-    });
-    
-    if (groupResult?.success) {
-      ui.notifications.info("Group succeeded!");
-    }
-  }
-});
-```
+And of course, GMs don't receive requests for actors they own - they just roll locally.
 
-#### Macro Examples
-```javascript
-// Create a macro that requests stealth checks from all selected tokens
-const selectedTokens = canvas.tokens.controlled.map(t => t.id);
-FlashRolls5e.requestRoll({
-  requestType: 'skill',
-  rollKey: 'ste',
-  actorIds: selectedTokens,
-  dc: 12
-});
+**Explicit ownership** means the character either:
 
-// Evaluate a group stealth attempt
-const stealthResults = [
-  { actorId: canvas.tokens.controlled[0].actor.id, total: 15 },
-  { actorId: canvas.tokens.controlled[1].actor.id, total: 8 },
-  { actorId: canvas.tokens.controlled[2].actor.id, total: 12 }
-];
+- Is selected as the main character of a user in the user configuration window (core Foundry)
+- Has a player set as Owner (not Default) in the Ownership configuration window.
 
-const groupStealth = FlashRolls5e.calculateGroupRoll({
-  method: 'Weakest Link',
-  rollResults: stealthResults,
-  dc: 10
-});
+- *Ownership configuration (right click on actor)*:
 
-console.log(`Group stealth: ${groupStealth.success ? 'SUCCESS' : 'FAILURE'} (${groupStealth.result})`);
-``` 
+<img width="500" alt="image" src="https://github.com/crlngn/flash-rolls-5e/blob/main/demo/docs/owner-configuration.webp?raw=true" />
+
+- *User configuration (right click the user name in player list)*:
+
+<img width="500" alt="image" src="https://github.com/crlngn/flash-rolls-5e/blob/main/demo/docs/user-config.webp?raw=true" />
+
 
 ## Dependencies
 
