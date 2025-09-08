@@ -219,7 +219,7 @@ FlashRolls5e.requestRoll({
 
 #### `calculateGroupRoll(options)`
 
-Calculate group roll results using Flash Rolls 5e's group calculation methods. Perfect for other modules that need to evaluate group performance.
+Calculate group roll results using Flash Rolls 5e's group calculation methods.
 
 **Parameters:**
 - `options.method` (number|string) - Calculation method:
