@@ -66,6 +66,115 @@ FlashRolls5e.requestRoll(options);
 game.modules.get('flash-rolls-5e').api.requestRoll(options);
 ```
 
+### Macros
+
+You can turn a request from Flash Rolls menu into a macro, so you can reuse frequent requests and trigger via keyboard or macro toolbar.
+
+#### Creating Macros
+
+**Via GM Dialog:**
+1. Initiate a roll request via menu or character sheet (skill, save, etc.). Untoggle "Skip Roll Dialog" if you want to include DC and situational bonus.
+2. When the GM dialog opens, configure the desired options (DC, situational bonus, advantage/disadvantage)
+3. Click the "Create Macro" button (a </> symbol)
+4. The macro is saved with all current settings and opens up for editing
+
+**Via API:**
+Use the `createMacro()` method to programmatically create macros with specific configurations (see above).
+
+**Via Manual Creation:**
+Create a script macro manually using the Flash Rolls API:
+
+```javascript
+// Example macro: Request Stealth checks from selected tokens
+const selectedTokens = canvas.tokens?.controlled.map(t => t.id);
+
+if (selectedTokens.length === 0) {
+  ui.notifications.warn("Please select some tokens first");
+  return;
+}
+
+FlashRolls5e.requestRoll({
+  requestType: 'skill',
+  rollKey: 'ste',
+  actorIds: selectedTokens,
+  dc: 12,
+  skipRollDialog: true,
+  sendAsRequest: true
+});
+```
+
+#### Macro Structure
+
+Generated macros have the following structure:
+
+```javascript
+// Flash Rolls: Acrobatics
+try {
+  FlashRolls5e.requestRoll({
+    "requestType": "skill",
+    "rollKey": "acr",
+    "actorIds": ["actorId1", "actorId2"],
+    "dc": 15,
+    "situationalBonus": "+2",
+    "advantage": false,
+    "disadvantage": false,
+    "skipRollDialog": true,
+    "sendAsRequest": true
+  });
+} catch (error) {
+  ui.notifications.error("Flash Rolls: Macro execution failed. The macro data may be malformed.");
+}
+```
+
+#### Advanced Macro Examples
+
+**Roll Request with Conditional DC:**
+```javascript
+// Macro: Perception check with dynamic DC based on scene darkness
+// First, get the selected tokens (works with both token IDs and actor IDs)
+const selectedTokens = canvas.tokens?.controlled.map(t => t.id) || [];
+
+if (selectedTokens.length === 0) {
+  ui.notifications.warn("Please select some tokens first");
+  return;
+}
+
+const darkness = canvas.scene.environment.darkness || 0; // 0 = bright, 1 = complete darkness
+const adaptiveDC = darkness > 0.5 ? 15 : (darkness > 0 ? 13 : 10);
+
+FlashRolls5e.requestRoll({
+  requestType: 'skill',
+  rollKey: 'prc',
+  actorIds: selectedTokens, // Can be token IDs or actor IDs
+  dc: adaptiveDC,
+  skipRollDialog: true
+});
+```
+
+**Multi-Roll Macro:**
+```javascript
+// Macro: Request both Perception and Investigation
+const selectedTokens = canvas.tokens?.controlled.map(t => t.id) || [];
+
+// Perception first
+FlashRolls5e.requestRoll({
+  requestType: 'skill',
+  rollKey: 'prc',
+  actorIds: selectedTokens,
+  dc: 13
+});
+
+// Investigation after a short delay
+setTimeout(() => {
+  FlashRolls5e.requestRoll({
+    requestType: 'skill',
+    rollKey: 'inv',
+    actorIds: selectedTokens,
+    dc: 15
+  });
+}, 1000);
+```
+
 ### API Methods
 
 #### `requestRoll(options)`
@@ -232,115 +341,6 @@ FlashRolls5e.createMacro({
     skipRollDialog: true // optional
   }
 });
-```
-
-### Macros
-
-You can turn a request from Flash Rolls menu into a macro, so you can reuse frequent requests and trigger via keyboard or macro toolbar.
-
-#### Creating Macros
-
-**Via GM Dialog:**
-1. Initiate a roll request via menu or character sheet (skill, save, etc.). Untoggle "Skip Roll Dialog" if you want to include DC and situational bonus.
-2. When the GM dialog opens, configure the desired options (DC, situational bonus, advantage/disadvantage)
-3. Click the "Create Macro" button (a </> symbol)
-4. The macro is saved with all current settings and opens up for editing
-
-**Via API:**
-Use the `createMacro()` method to programmatically create macros with specific configurations (see above).
-
-**Via Manual Creation:**
-Create a script macro manually using the Flash Rolls API:
-
-```javascript
-// Example macro: Request Stealth checks from selected tokens
-const selectedTokens = canvas.tokens?.controlled.map(t => t.id);
-
-if (selectedTokens.length === 0) {
-  ui.notifications.warn("Please select some tokens first");
-  return;
-}
-
-FlashRolls5e.requestRoll({
-  requestType: 'skill',
-  rollKey: 'ste',
-  actorIds: selectedTokens,
-  dc: 12,
-  skipRollDialog: true,
-  sendAsRequest: true
-});
-```
-
-#### Macro Structure
-
-Generated macros have the following structure:
-
-```javascript
-// Flash Rolls: Acrobatics
-try {
-  FlashRolls5e.requestRoll({
-    "requestType": "skill",
-    "rollKey": "acr",
-    "actorIds": ["actorId1", "actorId2"],
-    "dc": 15,
-    "situationalBonus": "+2",
-    "advantage": false,
-    "disadvantage": false,
-    "skipRollDialog": true,
-    "sendAsRequest": true
-  });
-} catch (error) {
-  ui.notifications.error("Flash Rolls: Macro execution failed. The macro data may be malformed.");
-}
-```
-
-#### Advanced Macro Examples
-
-**Roll Request with Conditional DC:**
-```javascript
-// Macro: Perception check with dynamic DC based on scene darkness
-// First, get the selected tokens (works with both token IDs and actor IDs)
-const selectedTokens = canvas.tokens?.controlled.map(t => t.id) || [];
-
-if (selectedTokens.length === 0) {
-  ui.notifications.warn("Please select some tokens first");
-  return;
-}
-
-const darkness = canvas.scene.environment.darkness || 0; // 0 = bright, 1 = complete darkness
-const adaptiveDC = darkness > 0.5 ? 15 : (darkness > 0 ? 13 : 10);
-
-FlashRolls5e.requestRoll({
-  requestType: 'skill',
-  rollKey: 'prc',
-  actorIds: selectedTokens, // Can be token IDs or actor IDs
-  dc: adaptiveDC,
-  skipRollDialog: true
-});
-```
-
-**Multi-Roll Macro:**
-```javascript
-// Macro: Request both Perception and Investigation
-const selectedTokens = canvas.tokens?.controlled.map(t => t.id) || [];
-
-// Perception first
-FlashRolls5e.requestRoll({
-  requestType: 'skill',
-  rollKey: 'prc',
-  actorIds: selectedTokens,
-  dc: 13
-});
-
-// Investigation after a short delay
-setTimeout(() => {
-  FlashRolls5e.requestRoll({
-    requestType: 'skill',
-    rollKey: 'inv',
-    actorIds: selectedTokens,
-    dc: 15
-  });
-}, 1000);
 ```
 
 ## Actor Ownership for Roll Requests
