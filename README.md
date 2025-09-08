@@ -359,11 +359,11 @@ And of course, GMs don't receive requests for actors they own - they just roll l
 - Is selected as the main character of a user in the user configuration window (core Foundry)
 - Has a player set as Owner (not Default) in the Ownership configuration window.
 
-- *Ownership configuration (right click on actor)*:
+**Ownership configuration (right click on actor)**:
 
 <img width="500" alt="image" src="https://github.com/crlngn/flash-rolls-5e/blob/main/demo/docs/owner-configuration.webp?raw=true" />
 
-- *User configuration (right click the user name in player list)*:
+*User configuration (right click the user name in player list)**:
 
 <img width="500" alt="image" src="https://github.com/crlngn/flash-rolls-5e/blob/main/demo/docs/user-config.webp?raw=true" />
 
@@ -371,7 +371,6 @@ And of course, GMs don't receive requests for actors they own - they just roll l
 ## Dependencies
 
 Flash Rolls 5e requires the [socketlib](https://github.com/manuelVo/foundryvtt-socketlib) module to be installed and active.
-
 
 ## Compatibility
 
