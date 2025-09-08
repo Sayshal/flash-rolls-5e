@@ -251,16 +251,16 @@ FlashRolls5e.createMacro({
 });
 ```
 
-### Macro System
+### Macros
 
-You can turn Flash Rolls 5e into a macro, so you can reuse frequent requests and trigger via keyboard or macro toolbar.
+You can turn a request from Flash Rolls menu into a macro, so you can reuse frequent requests and trigger via keyboard or macro toolbar.
 
 #### Creating Macros
 
 **Via GM Dialog:**
-1. Initiate a roll request via menu or character sheet (skill, save, etc.)
+1. Initiate a roll request via menu or character sheet (skill, save, etc.). Untoggle "Skip Roll Dialog" if you want to include DC and situational bonus.
 2. When the GM dialog opens, configure the desired options (DC, situational bonus, advantage/disadvantage)
-3. Click the "Create Macro" button
+3. Click the "Create Macro" button (a </> symbol)
 4. The macro is saved with all current settings and opens up for editing
 
 **Via API:**

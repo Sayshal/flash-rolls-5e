@@ -442,8 +442,8 @@ export class HooksUtil {
    * Used to add custom situational bonus from data, since the default DnD5e dialog does not seem to handle that
    */
   static _onRenderRollConfigDialog(app, html, data) {
+    LogUtil.log("_onRenderRollConfigDialog #0", [ app, data ]);
     if (app._flashRollsApplied) return;
-    // LogUtil.log("_onRenderRollConfigDialog #0", [ app, data ]);
     
     // const isDamageRoll = app instanceof dnd5e.applications.dice.DamageRollConfigurationDialog;
     // LogUtil.log("_onRenderRollConfigDialog - isDamageRoll?", [isDamageRoll, app.constructor.name]);
@@ -454,6 +454,12 @@ export class HooksUtil {
     if (isInitiativeRoll) {
       const actor = app.config?.subject;
       if (!actor) return;
+      
+      if (!app._flashRollsTitleApplied) {
+        html.querySelector('.window-title').textContent = game.i18n.localize("DND5E.Initiative");
+        html.querySelector('.window-subtitle').textContent = actor.name;
+        app._flashRollsTitleApplied = true;
+      }
       
       const storedConfig = actor.getFlag(MODULE_ID, 'tempInitiativeConfig');      
       if (storedConfig) {
@@ -470,14 +476,12 @@ export class HooksUtil {
       return;
     }else{
       const situationalInputs = html.querySelectorAll('input[name*="situational"]');
-      LogUtil.log("_onRenderRollConfigDialog - found situational inputs", [situationalInputs.length]);
       
       situationalInputs.forEach((input, index) => { 
         LogUtil.log("_onRenderRollConfigDialog - processing input", [index, input.name, input.value]);
         if (!input.value && app.config?.rolls?.[0]?.data?.situational) {
           input.value = app.config.rolls[0].data.situational;
         }
-        LogUtil.log("_onRenderRollConfigDialog #1", [input.value, app.config.rolls]);
         
         // app.config.scaling = true;
         if (input.value) {
@@ -493,7 +497,6 @@ export class HooksUtil {
               bubbles: true,
               cancelable: false
             }));
-            LogUtil.log("_onRenderRollConfigDialog #2 - dispatched change event", []);
           }, 150);
         }
       });
