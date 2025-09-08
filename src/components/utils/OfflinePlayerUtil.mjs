@@ -125,7 +125,9 @@ export class OfflinePlayerUtil {
         groupRollId: config.groupRollId, // Add groupRollId at top level
         config: {
           ...config,
-          ability: rollKey,
+          // Only set ability for ability checks and saving throws (where rollKey is the ability)
+          ...(rollMethodName === 'ability' || rollMethodName === 'abilitycheck' || 
+              rollMethodName === 'save' || rollMethodName === 'savingthrow' ? { ability: rollKey } : {}),
           sendRequest: false,
           isGroupRoll: !!config.groupRollId
         }

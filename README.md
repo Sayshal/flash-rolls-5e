@@ -254,7 +254,7 @@ Create a script macro manually using the Flash Rolls API:
 
 ```javascript
 // Example macro: Request Stealth checks from selected tokens
-const selectedTokens = canvas.tokens.controlled.map(t => t.id);
+const selectedTokens = canvas.tokens?.controlled.map(t => t.id);
 
 if (selectedTokens.length === 0) {
   ui.notifications.warn("Please select some tokens first");
@@ -299,14 +299,21 @@ try {
 **Roll Request with Conditional DC:**
 ```javascript
 // Macro: Perception check with dynamic DC based on scene darkness
-const selectedTokens = canvas.tokens.controlled.map(t => t.id);
+// First, get the selected tokens (works with both token IDs and actor IDs)
+const selectedTokens = canvas.tokens?.controlled.map(t => t.id) || [];
+
+if (selectedTokens.length === 0) {
+  ui.notifications.warn("Please select some tokens first");
+  return;
+}
+
 const darkness = canvas.scene.environment.darkness || 0; // 0 = bright, 1 = complete darkness
 const adaptiveDC = darkness > 0.5 ? 15 : (darkness > 0 ? 13 : 10);
 
 FlashRolls5e.requestRoll({
   requestType: 'skill',
   rollKey: 'prc',
-  actorIds: selectedTokens,
+  actorIds: selectedTokens, // Can be token IDs or actor IDs
   dc: adaptiveDC,
   skipRollDialog: true
 });
@@ -315,7 +322,7 @@ FlashRolls5e.requestRoll({
 **Multi-Roll Macro:**
 ```javascript
 // Macro: Request both Perception and Investigation
-const selectedTokens = canvas.tokens.controlled.map(t => t.id);
+const selectedTokens = canvas.tokens?.controlled.map(t => t.id) || [];
 
 // Perception first
 FlashRolls5e.requestRoll({

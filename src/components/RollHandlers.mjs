@@ -48,7 +48,7 @@ export const RollHandlers = {
       chooseAbility: dialogConfig.configure !== false, 
       ability: requestData.config.ability || defaultAbility 
     });
-    
+    /*
     if (requestData.config.ability && dialogConfig.configure === false) {
       const skillLabel = CONFIG.DND5E.skills[requestData.rollKey]?.label || requestData.rollKey;
       const abilityLabel = CONFIG.DND5E.abilities[requestData.config.ability]?.label || requestData.config.ability;
@@ -58,7 +58,7 @@ export const RollHandlers = {
       });
       messageConfig.data = messageConfig.data || {};
       messageConfig.data.flavor = flavor;
-    }
+    }*/
     await ChatMessageUtils.addGroupRollFlag(messageConfig, requestData, actor);
     await actor.rollSkill(config, dialogConfig, messageConfig);
   },
@@ -74,7 +74,7 @@ export const RollHandlers = {
       chooseAbility: dialogConfig.configure !== false, 
       ability: requestData.config.ability || defaultAbility
     });
-    
+    /*
     if (requestData.config.ability && dialogConfig.configure === false) {
       const toolData = CONFIG.DND5E.enrichmentLookup?.tools?.[requestData.rollKey];
       let toolLabel = requestData.rollKey;
@@ -89,7 +89,7 @@ export const RollHandlers = {
       });
       messageConfig.data = messageConfig.data || {};
       messageConfig.data.flavor = flavor;
-    }
+    }*/
     LogUtil.log('RollHandlers.tool #2', [config, dialogConfig, messageConfig]);
     
     await ChatMessageUtils.addGroupRollFlag(messageConfig, requestData, actor);

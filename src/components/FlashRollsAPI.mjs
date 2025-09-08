@@ -64,13 +64,6 @@ export class FlashRollsAPI {
       const normalizedRequestType = rollOption.name;
       
       if (actorIds.length === 0) {
-        const menu = RollRequestsMenu.getInstance();
-        if (menu && menu.selectedActors) {
-          actorIds = Array.from(menu.selectedActors);
-        }
-      }
-      
-      if (actorIds.length === 0) {
         ui.notifications.warn(game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelected"));
         return;
       }

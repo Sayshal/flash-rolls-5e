@@ -369,6 +369,7 @@ export class ChatMessageUtils {
         const skillLabel = CONFIG.DND5E.skills[rollKey]?.label || rollKey;
         const skillAbility = config?.ability || CONFIG.DND5E.skills[rollKey]?.ability || 'int';
         const skillAbilityLabel = CONFIG.DND5E.abilities[skillAbility]?.label || skillAbility;
+        LogUtil.log('buildFlavorText - skill', [config?.ability, skillLabel, skillAbility, skillAbilityLabel]);
         flavor = game.i18n.format("DND5E.SkillPromptTitle", { 
           skill: skillLabel,
           ability: skillAbilityLabel
