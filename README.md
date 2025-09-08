@@ -50,21 +50,6 @@ You can calculate group roll results via API as well, see below.
     
   - When Roll Requests are activated, clicking to roll will open a opoup on player side, with all the selected configurations from DM. If you select advantage / disadvantage or situational bonus, the option should appear on player's side
 
-## API
-
-Flash Rolls 5e provides an API that users and other modules can use to interact with its roll request system and group roll calculations.
-
-### Accessing the API
-
-The API is available globally via the FlashRolls5e alias:
-
-```javascript
-// Global alias
-FlashRolls5e.requestRoll(options);
-
-// Alternative: Direct module API access
-game.modules.get('flash-rolls-5e').api.requestRoll(options);
-```
 
 ### Macros
 
@@ -173,6 +158,22 @@ setTimeout(() => {
     dc: 15
   });
 }, 1000);
+```
+
+## API
+
+Flash Rolls 5e provides an API that users and other modules can use to interact with its roll request system and group roll calculations.
+
+### Accessing the API
+
+The API is available globally via the FlashRolls5e alias:
+
+```javascript
+// Global alias
+FlashRolls5e.requestRoll(options);
+
+// Alternative: Direct module API access
+game.modules.get('flash-rolls-5e').api.requestRoll(options);
 ```
 
 ### API Methods
