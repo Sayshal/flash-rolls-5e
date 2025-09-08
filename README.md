@@ -56,13 +56,13 @@ Flash Rolls 5e provides an API that users and other modules can use to interact 
 
 ### Accessing the API
 
-The API is available globally via two methods:
+The API is available globally via the FlashRolls5e alias:
 
 ```javascript
-// Global alias (recommended)
+// Global alias
 FlashRolls5e.requestRoll(options);
 
-// Module API access
+// Alternative: Direct module API access
 game.modules.get('flash-rolls-5e').api.requestRoll(options);
 ```
 
