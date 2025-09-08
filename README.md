@@ -259,7 +259,7 @@ Calculate group roll results using Flash Rolls 5e's group calculation methods.
 **Examples:**
 ```javascript
 // Standard Rule calculation
-const result = await FlashRolls5e.calculateGroupRoll({
+const result = FlashRolls5e.calculateGroupRoll({
   method: "Standard Rule",  // or method: 1
   rollResults: [
     { actorId: "actorId1", total: 15 },  // actorName auto-resolved
