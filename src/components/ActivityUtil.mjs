@@ -1,6 +1,9 @@
 import { LogUtil } from './LogUtil.mjs';
 import { ROLL_TYPES, MODULE_ID, ACTIVITY_TYPES } from '../constants/General.mjs';
 import { ModuleHelpers } from './helpers/ModuleHelpers.mjs';
+import { SettingsUtil } from './SettingsUtil.mjs';
+import { getSettings } from '../constants/Settings.mjs';
+import { getConsumptionConfig, getCreateConfig, isPlayerOwned } from './helpers/Helpers.mjs';
 
 /**
  * @typedef {Object} ActivityUseConfiguration
@@ -106,6 +109,8 @@ export class ActivityUtil {
    */
   static async executeActivityRoll(actor, rollType, itemId, activityId, config) {
     LogUtil.log('executeActivityRoll', [actor, rollType, itemId, activityId, config]);
+    const SETTINGS = getSettings();
+    const promptForTemplate = game.user.isGM && SettingsUtil.get(SETTINGS.placeTemplateForPlayer.tag) || !game.user.isGM;
     const isMidiActive = ModuleHelpers.isModuleActive('midi-qol');
     const item = actor.items.get(itemId);
     if (!item) {
@@ -144,7 +149,10 @@ export class ActivityUtil {
             situational: config.usage.rolls?.[0]?.data?.situational,
             advantage: config.usage.advantage,
             disadvantage: config.usage.disadvantage,
-            rollMode: config.message?.rollMode
+            rollMode: config.message?.rollMode,
+            skipRollDialog: config.usage.skipRollDialog,
+            consume: config.usage.consume,
+            create: config.usage.create
           };
           await activity.item.setFlag(MODULE_ID, 'tempAttackConfig', rollRequestConfig);
           
@@ -154,29 +162,11 @@ export class ActivityUtil {
             config.message.create = true;
 
             if(isMidiActive){
-              config.usage.consume = {
-                spellSlot: false,
-                action: false,
-                resources: []
-              }
+              config.usage.consume = getConsumptionConfig(config.usage.consume || {});
             }
             
             await activity.use(config.usage, config.dialog, config.message);
-            // if(isMidiActive) {
-            //   const MidiQOL = ModuleHelpers.getMidiQOL();
-            //   if (MidiQOL) {
-            //     // const workflow = await ActivityUtil.syntheticItemRoll(item, {
-            //     //   ...config,
-            //     //   midiOptions: {
-            //     //     autoFastAttack: false,
-            //     //     autoFastDamage: false,
-            //     //     autoRollAttack: false,
-            //     //     autoRollDamage: false
-            //     //   }
-            //     // });
-            //     return
-            //   }
-            // }
+
           } catch (error) {
             LogUtil.error('executeActivityRoll - attack roll error', [error]);
           } finally {
@@ -188,17 +178,8 @@ export class ActivityUtil {
           LogUtil.log('executeActivityRoll - damage roll #0', [activity, config]);
           if(!isMidiActive) {
             config.message.create = true;
-          }else{
-            config.usage = {
-              ...config.usage,
-              consume: {
-                ...config.usage.consume,
-                spellSlot:false,
-                action: false,
-                resources: []
-              }
-            }
-            config.dialog.configure = true;
+          }else{ // MidiQOL active
+            config.dialog.configure = !game.user.isGM;
           }
           // Extract the roll configuration from the usage config
           damageConfig = {
@@ -207,24 +188,25 @@ export class ActivityUtil {
             rollMode: config.message?.rollMode,
             // rolls: config.usage.rolls[0],
             create: config.message?.create !== false,
-            scaling: config.usage.scaling
+            scaling: config.usage.scaling,
+            skipRollDialog: config.usage.skipRollDialog,
+            consume: config.usage.consume
           };
           config.usage = {
             ...config.usage,
-            consume: {
-              ...config.usage.consume,
-              spellSlot:false,
-              action: false,
-              resources: []
-            }
+            consume: getConsumptionConfig(config.usage.consume || {}),
+            create: getCreateConfig(config.usage.create || {})
           }
 
           // For damage-only and save activities on player side, use() internally triggers rollDamage
           // So we call use() and skip the explicit rollDamage call later
-          let damageHandledByUse = activity.type === ACTIVITY_TYPES.DAMAGE || activity.type === ACTIVITY_TYPES.SAVE || !activity?.attack;
-          if(isMidiActive && damageHandledByUse){
+          const isDamageOnlyActivity = activity.type === ACTIVITY_TYPES.DAMAGE || activity.type === ACTIVITY_TYPES.SAVE || !activity?.attack;
+          const isSaveActivity = activity.type === ACTIVITY_TYPES.SAVE;
+          const isAttackActivity = activity.type === ACTIVITY_TYPES.ATTACK;
+          
+          if(isMidiActive && isDamageOnlyActivity){
             await this.midiActivityRoll(activity, config.usage);
-          } else if(!game.user.isGM && (activity.type === ACTIVITY_TYPES.SAVE || activity.type === ACTIVITY_TYPES.DAMAGE || !activity?.attack)){
+          } else if(!game.user.isGM && isDamageOnlyActivity){ 
             await activity.use(config.usage, {
               ...config.dialog,
               configure: true
@@ -240,13 +222,11 @@ export class ActivityUtil {
                 const workflow = MidiQOL.Workflow?.getWorkflow(activity.uuid);
                 workflow.midiOptions = {
                   fastForward: false,
-                  // autoFastAttack: false,
                   autoFastDamage: false,
-                  // autoRollAttack: false,
                   autoRollDamage: false
                 }
                 LogUtil.log('executeActivityRoll - workflow', [damageHandledByUse]);
-                if(workflow && !damageHandledByUse){ 
+                if(workflow && isSaveActivity){ 
                   const damageRoll = await workflow.activity.rollDamage({
                     ...damageConfig,
                     workflow: workflow
@@ -260,19 +240,25 @@ export class ActivityUtil {
                 return;
               }
             }else{
-              LogUtil.log('executeActivityRoll - damage roll', [activity, damageConfig, config]);
-              // Only call rollDamage if it wasn't already handled by use() on player side
-              if(!damageHandledByUse){
-                config.dialog.consume = {
-                  spellSlot:false,
-                  action: false,
-                  resources: []
+              LogUtil.log('executeActivityRoll - isDamageOnlyActivity', [isDamageOnlyActivity, activity, damageConfig, config]);
+              if(isDamageOnlyActivity && config.usage.skipRollDialog){
+                await activity.use(config.usage, {
+                  ...config.dialog,
+                  configure: !config.usage.skipRollDialog,
+                }, config.message);
+              }
+              if((isDamageOnlyActivity && !isSaveActivity) || (isSaveActivity && config.usage.skipRollDialog) || isAttackActivity){
+                config.usage.consume = getConsumptionConfig(config.usage.consume || {});
+                config.usage.create = getCreateConfig(config.usage.create || {});
+                
+                if(activity.type !== ACTIVITY_TYPES.DAMAGE){
+                  // Only call rollDamage if it wasn't already handled by use() on player side
+                  await activity.rollDamage(damageConfig, config.dialog, config.message);
                 }
-                await activity.rollDamage(damageConfig, config.dialog, config.message);
               }
             }
           } catch (error) {
-            LogUtil.error(['executeActivityRoll - damage roll error', error]);
+            LogUtil.error("executeActivityRoll - damage roll error",[error]);
           } finally {
             await activity.item.unsetFlag(MODULE_ID, 'tempDamageConfig');
           }

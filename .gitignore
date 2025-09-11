@@ -5,4 +5,9 @@ deps/
 local/
 flash-rolls-5e.code-workspace
 foundry-config.yaml
-*.local.md
+*.md
+!README.md
+!LICENSE.md
+
+.*/
+!.github/

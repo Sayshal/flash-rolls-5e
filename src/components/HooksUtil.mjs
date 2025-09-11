@@ -3,7 +3,7 @@ import { getSettings } from "../constants/Settings.mjs";
 import { SettingsUtil } from "./SettingsUtil.mjs";
 import { DiceConfigUtil } from "./DiceConfigUtil.mjs";
 import { RollInterceptor } from "./RollInterceptor.mjs";
-import { updateSidebarClass, isSidebarExpanded } from "./helpers/Helpers.mjs";
+import { updateSidebarClass, isSidebarExpanded, showConsumptionConfig, getConsumptionConfig, getCreateConfig, isPlayerOwned } from "./helpers/Helpers.mjs";
 import { SidebarUtil } from "./SidebarUtil.mjs";
 import { LogUtil } from "./LogUtil.mjs";
 import { ACTIVITY_TYPES, MODULE_ID } from "../constants/General.mjs";
@@ -14,6 +14,7 @@ import RollRequestsMenu from "./RollRequestsMenu.mjs";
 import { ActorStatusUtil } from "./ActorStatusUtil.mjs";
 import { ActorDirectoryIconUtil } from "./utils/ActorDirectoryIconUtil.mjs";
 import { FlashRollsAPI } from "./FlashRollsAPI.mjs";
+import { RollHelpers } from "./helpers/RollHelpers.mjs";
 
 /**
  * Utility class for managing all module hooks in one place
@@ -483,7 +484,7 @@ export class HooksUtil {
           input.value = app.config.rolls[0].data.situational;
         }
         
-        // app.config.scaling = true;
+        app.config.scaling = true;
         if (input.value) {
           app._flashRollsApplied = true;
 
@@ -786,6 +787,15 @@ export class HooksUtil {
   static _onPreRoll(config, dialogOptions, messageOptions, d) {
     LogUtil.log("_onPreRoll #0", [config, dialogOptions, messageOptions, d]);
     
+    // For attack rolls, check if there's a stored flag indicating this should skip the dialog
+    if (config.subject?.item) {
+      const stored = config.subject.item.getFlag(MODULE_ID, 'tempAttackConfig');
+      LogUtil.log("_onPreRoll - flag", [stored]);
+      if (stored?.skipRollDialog === true) {
+        dialogOptions.configure = false;
+        LogUtil.log("_onPreRoll - Local GM roll, skipping dialog via stored flag");
+      }
+    }
   }
   
   /**
@@ -861,19 +871,22 @@ export class HooksUtil {
     
     const stored = config.subject?.item?.getFlag(MODULE_ID, 'tempAttackConfig');
     if (stored) {
-      LogUtil.log("_onPreRollAttackV2 - Found stored request config from flag", [stored]);
+      LogUtil.log("_onPreRollAttackV2 - flag", [stored]);
       
-      if(stored.isRollRequest === false || stored.skipRollDialog === true || stored.sendRequest === false) {
-        LogUtil.log("_onPreRollAttackV2 - Not a roll request, skipping", [stored]);
-        return;
-      }
-
+      // Always apply the stored configuration
       if (stored.attackMode) config.attackMode = stored.attackMode;
       if (stored.ammunition) config.ammunition = stored.ammunition;
       if (stored.mastery !== undefined) config.mastery = stored.mastery;
       config.advantage = stored.advantage || false;
       config.disadvantage = stored.disadvantage || false;
       messageOptions.rollMode = stored.rollMode || messageOptions.rollMode || CONST.DICE_ROLL_MODES.PUBLIC;
+      
+      // If skipRollDialog is true, this is a local GM roll that should skip the dialog
+      if(stored.skipRollDialog === true) {
+        dialogOptions.configure = false;
+        LogUtil.log("_onPreRollAttackV2 - Local GM roll, skipping dialog", [stored]);
+        // Don't return early - we still need to apply situational bonus below
+      }
       
       if (stored.situational) {
         if (!config.rolls || config.rolls.length === 0) {
@@ -901,6 +914,7 @@ export class HooksUtil {
     const stored = config.subject?.item?.getFlag(MODULE_ID, 'tempDamageConfig');
     LogUtil.log("_onPreRollDamageV2 triggered #0", [config, dialogOptions, messageOptions]);
     
+    config.rolls = RollHelpers.consolidateRolls(config.rolls);
     if(config.midiOptions && !game.user.isGM
       && config.subject?.type === ACTIVITY_TYPES.DAMAGE
     ){
@@ -920,15 +934,18 @@ export class HooksUtil {
     if (stored) {
       LogUtil.log("_onPreRollDamageV2 - Found stored request config from flag", [stored, stored.situational]);
       
-      if(stored.isRollRequest === false || stored.skipRollDialog === true || stored.sendRequest === false) {
-        LogUtil.log("_onPreRollDamageV2 - Not a roll request, skipping", [stored]);
-        return;
+      // Always apply the stored configuration
+      if (stored.critical) config.critical = stored.critical;
+      messageOptions.rollMode = stored.rollMode || messageOptions.rollMode || CONST.DICE_ROLL_MODES.PUBLIC;
+      
+      // If skipRollDialog is true, this is a local GM roll that should skip the dialog
+      if(stored.skipRollDialog === true) {
+        dialogOptions.configure = false;
+        LogUtil.log("_onPreRollDamageV2 - Local GM roll, skipping dialog", [stored]);
+        // Don't return early - we still need to apply situational bonus below
       }
       
       LogUtil.log("_onPreRollDamageV2 triggered #1", [config, dialogOptions, messageOptions]);
-
-      if (stored.critical) config.critical = stored.critical;
-      messageOptions.rollMode = stored.rollMode || messageOptions.rollMode || CONST.DICE_ROLL_MODES.PUBLIC;
       
       if (stored.situational) {
         if (!config.rolls || config.rolls.length === 0) {
@@ -961,43 +978,26 @@ export class HooksUtil {
     const requestsEnabled = SettingsUtil.get(SETTINGS.rollRequestsEnabled.tag);
     const rollInterceptionEnabled = SettingsUtil.get(SETTINGS.rollInterceptionEnabled.tag);
     if (!requestsEnabled || !rollInterceptionEnabled) return;  
+
+    const actor = activity.actor;
+    const actorOwner = GeneralUtil.getActorOwner(actor);
+    const isPlayerActor = isPlayerOwned(actor) && actorOwner.active;
+    const isLocalRoll = game.users.isGM ? !isPlayerActor || !config.isRollRequest : !config.isRollRequest;
+
+    LogUtil.log("_onPreUseActivity #1 - isLocalRoll", [config.create, isLocalRoll]); 
     activity.item.unsetFlag(MODULE_ID, 'tempAttackConfig'); 
     activity.item.unsetFlag(MODULE_ID, 'tempDamageConfig'); 
     activity.item.unsetFlag(MODULE_ID, 'tempSaveConfig'); 
 
-    const actor = activity.actor;
     if (!actor) return;
-    LogUtil.log("_onPreUseActivity #1", [activity, config, dialog, message]);
-    // if(GeneralUtil.isModuleOn(MODULE_ID, 'midi-qol')){
-    //   // message.create = false;
-    // }
 
-    const consumptionConfigMode = SettingsUtil.get(SETTINGS.consumptionConfigMode.tag);
-    // LogUtil.log("_onPreUseActivity - Settings", [consumptionConfigMode, requestsEnabled, rollInterceptionEnabled]);
-    LogUtil.log("_onPreUseActivity #2", [activity, config, dialog, message]);
+    const showConsumptionDialog = showConsumptionConfig();
+    dialog.configure = dialog.configure ? showConsumptionDialog : false;
+    // dialog.configure = game.user.isGM && config.skipRollDialog!==undefined ? !config.skipRollDialog : showConsumptionDialog;
 
-    switch (consumptionConfigMode) {
-      case 1:
-        dialog.configure = false;
-        break;
-      case 2:
-        dialog.configure = game.user.isGM;
-        break;
-      case 3:
-        dialog.configure = !game.user.isGM;
-        break;
-      default:
-        dialog.configure = true;
-        break;
-    }
+    config.consume = getConsumptionConfig(config.consume || {}, isLocalRoll);
+    config.create = getCreateConfig(config.create || {}, isLocalRoll);
 
-    if(game.user.isGM){
-      config.consume = {
-        action: false,
-        resources: [],
-        spellSlot: false
-      }
-    }
     if(config.midiOptions && 
       (activity.type === ACTIVITY_TYPES.DAMAGE || activity.type === ACTIVITY_TYPES.SAVE)){
       dialog.configure = false;
@@ -1028,22 +1028,27 @@ export class HooksUtil {
 
     if(!game.user.isGM) return;
     
-    const actorOwner = GeneralUtil.getActorOwner(actor);
-    
-    if (actorOwner && actorOwner.active && !actorOwner.isGM) {
+    if (dialog.configure===true && actorOwner && actorOwner.active && !actorOwner.isGM) {
       LogUtil.log("Preventing usage message for player-owned actor", [actor.name]);
       message.create = false;
     }
   }
 
-  static _onPostUseActivity(activity, config, dialog, message) {
+  /**
+   * 
+   * @param {Activity} activity - Activity being used
+   * @param {ActivityUseConfiguration} config - Configuration info for the activation
+   * @param {ActivityUsageResults} results - Final details on the activation
+   * @returns 
+   */
+  static _onPostUseActivity(activity, config, results) {
     const SETTINGS = getSettings();
     const skipRollDialog = SettingsUtil.get(SETTINGS.skipRollDialog.tag);
     const requestsEnabled = SettingsUtil.get(SETTINGS.rollRequestsEnabled.tag);
     const rollInterceptionEnabled = SettingsUtil.get(SETTINGS.rollInterceptionEnabled.tag);
     const isGM = game.user.isGM;
 
-    LogUtil.log("_onPostUseActivity #0", [activity, config, dialog, message]);
+    LogUtil.log("_onPostUseActivity #0", [activity, config, results]);
 
     if(!game.user.isGM && config.midiOptions){
       config.midiOptions = {
@@ -1058,27 +1063,24 @@ export class HooksUtil {
         }
       }
     }
-
     if(!requestsEnabled || !rollInterceptionEnabled) return;
     const actorOwner = GeneralUtil.getActorOwner(activity.actor);
-    if (!actorOwner?.active || actorOwner.isGM) {
+    const isOwnerActive = actorOwner && actorOwner.active && !actorOwner.isGM;
+    results.configure = game.user.isGM && config.skipRollDialog!==undefined ? !config.skipRollDialog : !game.user.isGM ||(isOwnerActive && !skipRollDialog)
+
+    if (config.skipRollDialog===false && (!actorOwner?.active || actorOwner.isGM)) {
       LogUtil.log("Preventing usage message - no owning player for actor", [activity.actor]);
       return;
     }
     
-    if(game.user.isGM && (activity.type === ACTIVITY_TYPES.SAVE || activity.type === ACTIVITY_TYPES.DAMAGE)){ 
-      const isOwnerActive = actorOwner && actorOwner.active && !actorOwner.isGM;
-      config.scaling = true;
+    if(activity.type === ACTIVITY_TYPES.SAVE && activity.damage?.parts?.length > 0){
+      LogUtil.log("_onPostUseActivity #1 - roll triggered", [activity, config]);
+      activity.rollDamage(config, {
+        configure: config.skipRollDialog!==undefined ? !config.skipRollDialog : !game.user.isGM ||(isOwnerActive && !skipRollDialog)
+        // configure: game.user.isGM && config.skipRollDialog!==undefined ? !config.skipRollDialog : !game.user.isGM ||(isOwnerActive && !skipRollDialog)
+      }, {});
     }
 
-      // LogUtil.log("_onPostUseActivity #1", [activity, config]);
-      // if(activity.damage?.parts?.length > 0){
-      //   LogUtil.log("_onPostUseActivity #2 - roll triggered", [activity, config]);
-      //   activity.rollDamage(config, {
-      //     ...dialog,
-      //     configure: !game.user.isGM || (isOwnerActive && !skipRollDialog)
-      //   }, message)
-      // }
   }
   
   /**

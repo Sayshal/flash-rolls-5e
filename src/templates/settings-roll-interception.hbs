@@ -1,0 +1,49 @@
+<section
+  class="form-content tab {{#if tab.active}} active{{/if}}" data-group="{{tab.group}}" data-tab="{{tab.id}}"
+>
+  <h4><i class="fas fa-globe"></i> {{localize "FLASH_ROLLS.ui.dialogs.worldSettingsLabel"}} <span class="toggle-hint">{{localize 'FLASH_ROLLS.ui.dialogs.toggleHints'}}</span></h4>
+  <hr/>
+
+  <div class="form-group">
+    <label for="rollInterceptionEnabled">{{fields.rollInterceptionEnabled.label}}</label>
+    <input type="checkbox" name="rollInterceptionEnabled" {{#if rollInterceptionEnabled}}checked{{/if}} />
+    <p class="hint">{{fields.rollInterceptionEnabled.hint}}</p> 
+  </div>
+
+  <div class="form-group">
+    <label for="useGMTargetTokens">{{fields.useGMTargetTokens.label}}</label>
+    <input type="checkbox" name="useGMTargetTokens" {{#if useGMTargetTokens}}checked{{/if}} />
+    <p class="hint">{{fields.useGMTargetTokens.hint}}</p> 
+  </div>
+
+  <div class="form-group">
+    <label for="placeTemplateForPlayer">{{fields.placeTemplateForPlayer.label}}</label>
+    <input type="checkbox" name="placeTemplateForPlayer" {{#if placeTemplateForPlayer}}checked{{/if}} />
+    <p class="hint">{{fields.placeTemplateForPlayer.hint}}</p> 
+  </div>
+
+  <div class="form-group">
+    <label for="templateAutoTarget">{{fields.templateAutoTarget.label}}</label>
+    <select name="templateAutoTarget" data-current-value="{{templateAutoTarget}}">
+      {{#each fields.templateAutoTarget.choices}}
+      <option value="{{@key}}" {{#if (eq @key ../templateAutoTarget)}}selected{{/if}}>
+        {{this}}
+      </option>
+      {{/each}}
+    </select>
+    <p class="hint">{{{fields.templateAutoTarget.hint}}}</p> 
+  </div>
+
+  <div class="form-group">
+    <label for="consumptionConfigMode">{{fields.consumptionConfigMode.label}}</label>
+    <select name="consumptionConfigMode" data-current-value="{{consumptionConfigMode}}">
+      {{#each fields.consumptionConfigMode.choices}}
+      <option value="{{@key}}" {{#if (eq @key ../consumptionConfigMode)}}selected{{/if}}>
+        {{this}}
+      </option>
+      {{/each}}
+    </select>
+    <p class="hint">{{{fields.consumptionConfigMode.hint}}}</p> 
+  </div>
+  
+</section>

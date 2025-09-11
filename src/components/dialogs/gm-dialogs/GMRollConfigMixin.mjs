@@ -121,6 +121,7 @@ export function GMRollConfigMixin(Base) {
       }
       
       this.config.sendRequest = this.sendRequest;
+      this.config.skipRollDialog = this.sendRequest ? this.config.skipRollDialog || false : true;
       
       return finalizedRolls;
     }

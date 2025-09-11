@@ -95,8 +95,8 @@
         "hint": "Enable to skip the Roll Configuration windows when you request rolls from a player, or when rolling for groups of multiple NPCs. Will use default configurations."
       },
       "rollInterceptionEnabled": {
-        "label": "Treat Rolls from Player Sheets as Requests (GM)",
-        "hint": "When enabled, rolls made by the GM for player characters will be automatically redirected to the owner player, if they are online."
+        "label": "Send Roll Requests from Player Sheets",
+        "hint": "When enabled, rolls made by the GM for player characters will be automatically redirected to the owner player, if they are online, from character sheets or other modules."
       },
       "showOfflineNotifications": {
         "label": "Show Offline Notifications",
@@ -116,13 +116,18 @@
           "4": "Do not skip dialog"
         }
       },
+      "placeTemplateForPlayer": {
+        "label": "Place Template for Player",
+        "hint": "When enabled, only GM will be prompted to place template. When disabled, the player will be prompted to place template, not the GM."
+      },
       "moduleSettingsMenu": {
         "title": "Module Settings",
         "label": "Configure Options",
         "hint": "",
         "tabs": {
           "groupRolls": "Group Rolls",
-          "generalSettings": "General Settings"
+          "generalSettings": "General Settings",
+          "rollInterception": "Roll Interception"
         }
       },
       "initiateCombatOnRequest": {

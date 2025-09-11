@@ -64,6 +64,11 @@ export class ModuleSettingsMenu extends HandlebarsApplicationMixin(ApplicationV2
       template: "modules/flash-rolls-5e/templates/settings-group-rolls.hbs",
       isGMOnly: true
     },
+    rollInterception: {
+      menuKey: "rollInterceptionSettings",
+      template: "modules/flash-rolls-5e/templates/settings-roll-interception.hbs",
+      isGMOnly: true
+    },
     footer: {
       template: "templates/generic/form-footer.hbs",
       isGMOnly: false

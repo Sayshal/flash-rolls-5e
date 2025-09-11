@@ -39,7 +39,7 @@ export class SettingsUtil {
         settingObj.choices = setting.choices;
       }
 
-      LogUtil.log('registerSettings', [settingObj, settingObj.scope], true);
+      LogUtil.log('registerSettings', [settingObj, settingObj.scope]);
 
       try {
         game.settings.register(MODULE_ID, setting.tag, settingObj);

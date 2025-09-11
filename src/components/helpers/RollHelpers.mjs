@@ -282,7 +282,7 @@ export const RollHelpers = {
       target,
       sendRequest: result.sendRequest,
       isRollRequest: result.sendRequest,
-      skipRollDialog: options.skipRollDialog || false,
+      skipRollDialog: result.config?.skipRollDialog || options.skipRollDialog || false,
       chatMessage: true
     };
     
@@ -649,6 +649,35 @@ export const RollHelpers = {
           details: calculationResult
         };
     }
+  },
+  /**
+   * Consolidate data from multiple rolls into a single roll by merging their data
+   * Uses the first roll as the base and merges data from subsequent rolls
+   * @param {Object[]} rolls - Array of roll configurations to consolidate
+   * @returns {Object[]} Array with single consolidated roll
+   */
+  consolidateRolls(rolls) {
+    if (!rolls || rolls.length === 0) return rolls;
+    if (rolls.length === 1) return rolls;
+    
+    let consolidatedRoll = rolls[0];
+    
+    for (let i = 1; i < rolls.length; i++) {
+      if (rolls[i]) {
+        consolidatedRoll = foundry.utils.mergeObject(
+          consolidatedRoll,
+          rolls[i],
+          {
+            insertKeys: true, // true - add new keys from source
+            insertValues: true, // true - add new array values
+            overwrite: false, // false - don't overwrite existing non-null values in target
+            inplace: true // true - modify the target object in place
+          }
+        );
+      }
+    }
+    
+    return [consolidatedRoll];
   }
 };
 

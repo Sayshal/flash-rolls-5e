@@ -100,7 +100,8 @@ export class GMAttackConfigDialog extends GMRollConfigMixin(dnd5e.applications.d
       const templateData = {
         showDC: false,
         showSendRequest: this.actors.length > 0,
-        sendRequest: this.sendRequest
+        sendRequest: this.sendRequest,
+        showMacroButton: false
       };
       
       const template = await GeneralUtil.renderTemplate(`modules/${MODULE_ID}/templates/gm-roll-config-fields.hbs`, templateData);
@@ -110,16 +111,25 @@ export class GMAttackConfigDialog extends GMRollConfigMixin(dnd5e.applications.d
       wrapper.innerHTML = template;
       
       configSection.parentNode.insertBefore(wrapper, configSection);
-      
-      // Set up macro button click handler
-      const macroButton = this.element.querySelector('.flash5e-macro-button[data-action="create-macro"]');
-      if (macroButton) {
-        LogUtil.log('Attaching click handler to macro button');
-        macroButton.addEventListener('click', this._onCreateMacroClick.bind(this));
-      } else {
-        LogUtil.warn('Macro button not found in dialog');
-      }
     }
+    
+    this._attachButtonListeners();
+  }
+  
+  _attachButtonListeners() {
+    LogUtil.log('_attachButtonListeners', []);
+    
+    const macroButton = this.element.querySelector('.flash5e-macro-button');
+    if (macroButton) {
+      macroButton.addEventListener('click', this._onCreateMacroClick.bind(this));
+    }
+
+    // const buttons = this.element.querySelectorAll('[data-action="advantage"], [data-action="normal"], [data-action="disadvantage"]');
+    // buttons.forEach(button => {
+    //   button.addEventListener('click', (event) => {
+    //     const action = event.currentTarget.dataset.action;
+    //   });
+    // });
   }
   
   /**
@@ -231,7 +241,7 @@ export class GMAttackConfigDialog extends GMRollConfigMixin(dnd5e.applications.d
       target,
       sendRequest: result.sendRequest,
       isRollRequest: result.sendRequest,
-      skipDialog: options.skipDialogs || false,
+      skipRollDialog: result.sendRequest ? options.skipRollDialog || false : true,
       chatMessage: !GeneralUtil.isModuleOn('midi-qol') || true
     };
     

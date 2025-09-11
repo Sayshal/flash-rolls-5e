@@ -236,7 +236,10 @@ export const RollHandlers = {
           ...(rollOptions.ammunition && { ammunition: rollOptions.ammunition }),
           ...(rollOptions.mastery !== undefined && { mastery: rollOptions.mastery })
         },
-        dialog: dialogConfig,
+        dialog: {
+          ...dialogConfig,
+          configure: game.user.isGM && requestData.config.skipRollDialog!==undefined ? !requestData.config.skipRollDialog : dialogConfig.configure
+        },
         message: messageConfig
       };
       

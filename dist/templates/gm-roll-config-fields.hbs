@@ -5,6 +5,12 @@
 </div>
 {{/if}}
 
+{{#if showMacroButton}}
+<button type="button" class="flash5e-macro-button" data-action="create-macro" data-tooltip="{{localize 'FLASH_ROLLS.ui.buttons.createMacro'}}" data-tooltip-direction="UP">
+  <i class="fas fa-code"></i>
+</button>
+{{/if}}
+
 {{#if showSendRequest}}
 <div class="form-group send-request">
   <label for="flash5e-send-request" class="flash5e-switch">
@@ -15,6 +21,3 @@
   </label>
 </div>
 {{/if}}
-<button type="button" class="flash5e-macro-button" data-action="create-macro" data-tooltip="{{localize 'FLASH_ROLLS.ui.buttons.createMacro'}}" data-tooltip-direction="UP">
-  <i class="fas fa-code"></i>
-</button>

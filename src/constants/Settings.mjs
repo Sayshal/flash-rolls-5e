@@ -26,6 +26,7 @@ export const getSettings = () => {
         'templateAutoTarget',
         'removeTemplate',
         'consumptionConfigMode',
+        'placeTemplateForPlayer',
         'showOfflineNotifications',
         'initiateCombatOnRequest',
         'showOnlyPCsWithToken',
@@ -39,7 +40,8 @@ export const getSettings = () => {
         useGMTargetTokens: true,
         templateAutoTarget: 1,
         removeTemplate: true,
-        consumptionConfigMode: 4,
+        consumptionConfigMode: 2,
+        placeTemplateForPlayer: false,
         showOfflineNotifications: true,
         initiateCombatOnRequest: true,
         showOnlyPCsWithToken: true,
@@ -137,7 +139,7 @@ export const getSettings = () => {
     },
 
     consumptionConfigMode: {
-      tag: "consumption-config-mode",
+      tag: "consumption-config",
       label: game.i18n.localize("FLASH_ROLLS.settings.consumptionConfigMode.label"),
       hint: game.i18n.localize("FLASH_ROLLS.settings.consumptionConfigMode.hint"),
       propType: Number, 
@@ -148,7 +150,18 @@ export const getSettings = () => {
         3: game.i18n.localize("FLASH_ROLLS.settings.consumptionConfigMode.choices.3"),
         4: game.i18n.localize("FLASH_ROLLS.settings.consumptionConfigMode.choices.4")
       },
-      default: 4,
+      default: 2,
+      scope: SETTING_SCOPE.world,
+      config: false
+    },
+    
+    placeTemplateForPlayer: {
+      tag: "place-template-for-player",
+      label: game.i18n.localize("FLASH_ROLLS.settings.placeTemplateForPlayer.label"),
+      hint: game.i18n.localize("FLASH_ROLLS.settings.placeTemplateForPlayer.hint"),
+      propType: Boolean,
+      inputType: SETTING_INPUT.checkbox,
+      default: false,
       scope: SETTING_SCOPE.world,
       config: false
     },

@@ -1,4 +1,5 @@
 import { LogUtil } from "../../LogUtil.mjs";
+import { MODULE_ID } from "../../../constants/General.mjs";
 import { getSettings } from "../../../constants/Settings.mjs";
 import { SettingsUtil } from "../../SettingsUtil.mjs";
 import { GeneralUtil } from "../../helpers/GeneralUtil.mjs";
@@ -76,23 +77,52 @@ export class GMDamageConfigDialog extends GMRollConfigMixin(dnd5e.applications.d
     // Prevent dialog flicker
     GeneralUtil.preventDialogFlicker(this.element);
     
-    // Inject send request checkbox if we have actors
-    if (this.actors.length > 0) {
-      const buttonGroup = this.element.querySelector('.rolls + .dialog-buttons');
-      if (buttonGroup && !this.element.querySelector('.gm-roll-config-fields')) {
-        const wrapper = document.createElement('div');
-        wrapper.className = 'gm-roll-config-fields';
-        wrapper.innerHTML = `
-          <div class="form-group">
-            <label class="checkbox">
-              <input type="checkbox" name="flash5e-send-request" ${this.sendRequest ? 'checked' : ''}>
-              ${game.i18n.localize("FLASH_ROLLS.ui.dialogs.sendRequestToPlayers")}
-            </label>
-          </div>
-        `;
-        buttonGroup.insertAdjacentElement('beforebegin', wrapper);
-      }
+    // Skip if already rendered
+    if (this.element.querySelector('.gm-roll-config-fields')) {
+      return;
     }
+    
+    GeneralUtil.preventDialogFlicker(this.element);
+    if (this.element.querySelector('.gm-roll-config-fields')) {
+      return;
+    }
+    
+    let configSection = this.element.querySelector('.rolls .formulas');
+    
+    if (configSection && (this.showDC || this.actors.length > 0)) {
+      const templateData = {
+        showDC: false,
+        showSendRequest: this.actors.length > 0,
+        sendRequest: this.sendRequest,
+        showMacroButton: false
+      };
+      
+      const template = await GeneralUtil.renderTemplate(`modules/${MODULE_ID}/templates/gm-roll-config-fields.hbs`, templateData);
+      
+      const wrapper = document.createElement('div');
+      wrapper.className = 'gm-roll-config-fields';
+      wrapper.innerHTML = template;
+      
+      configSection.parentNode.insertBefore(wrapper, configSection);
+    }
+    
+    this._attachButtonListeners();
+  }
+  
+  _attachButtonListeners() {
+    LogUtil.log('_attachButtonListeners', []);
+    
+    const macroButton = this.element.querySelector('.flash5e-macro-button');
+    if (macroButton) {
+      macroButton.addEventListener('click', this._onCreateMacroClick.bind(this));
+    }
+
+    // const buttons = this.element.querySelectorAll('[data-action="advantage"], [data-action="normal"], [data-action="disadvantage"]');
+    // buttons.forEach(button => {
+    //   button.addEventListener('click', (event) => {
+    //     const action = event.currentTarget.dataset.action;
+    //   });
+    // });
   }
 
   /**
@@ -176,7 +206,7 @@ export class GMDamageConfigDialog extends GMRollConfigMixin(dnd5e.applications.d
       isCritical: firstRoll?.options?.isCritical || firstRoll?.isCritical || false,
       sendRequest: result.sendRequest,
       isRollRequest: result.sendRequest,
-      skipRollDialog: options.skipRollDialog || false,
+      skipRollDialog: result.sendRequest ? options.skipRollDialog || false : true,
       chatMessage: true
     };
     LogUtil.log('GMDamageConfigDialog, initConfiguration #6', [rollProcessConfig]); 

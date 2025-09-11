@@ -92,6 +92,17 @@ export class RollInterceptor {
    */
   static _handlePreRoll(rollType, config, dialog, message) {
     LogUtil.log('_handlePreRoll #0', [rollType, config, dialog, message]);
+    const SETTINGS = getSettings();
+    const requestsEnabled = SettingsUtil.get(SETTINGS.rollRequestsEnabled.tag);
+    const rollInterceptionEnabled = SettingsUtil.get(SETTINGS.rollInterceptionEnabled.tag);
+    const skipRollDialog = SettingsUtil.get(SETTINGS.skipRollDialog.tag);
+    
+    LogUtil.log('_handlePreRoll #1', [requestsEnabled, rollInterceptionEnabled]);
+    if (!requestsEnabled || !rollInterceptionEnabled) {
+      dialog.configure = !skipRollDialog;
+      return; 
+    }
+
     // Only intercept on GM side
     if (!game.user.isGM || config.isRollRequest === false ) return;
     const isMidiRequest = GeneralUtil.isModuleOn(MODULE_ID, 'midi-qol');
@@ -99,9 +110,10 @@ export class RollInterceptor {
     const hookNames = config?.hookNames || dialog?.hookNames || message?.hookNames || [];
     const isInitiativeRoll = hookNames.includes('initiativeDialog') || hookNames.includes('initiative');
     
-    if(rollType === ROLL_TYPES.ATTACK){
-      const moduleFlags = config.subject?.item?.getFlag(MODULE_ID, 'tempAttackConfig');
-      LogUtil.log('_handlePreRoll - is Attack roll', [config.subject?.item, moduleFlags]);
+    if(rollType === ROLL_TYPES.ATTACK || rollType === ROLL_TYPES.DAMAGE){
+      const moduleFlags = config.subject?.item?.getFlag(MODULE_ID, 'tempAttackConfig') || config.subject?.item?.getFlag(MODULE_ID, 'tempDamageConfig');
+      dialog.configure = false;
+      LogUtil.log('_handlePreRoll - attack / damage - flag', [moduleFlags]);
       if(moduleFlags){
         LogUtil.log('_handlePreRoll - found module flags, skipping interception', [moduleFlags]);
         return;
@@ -145,10 +157,6 @@ export class RollInterceptor {
       actor = config.subject?.actor || config.subject || config.actor;
     }
 
-    const SETTINGS = getSettings();
-    const rollInterceptionEnabled = SettingsUtil.get(SETTINGS.rollInterceptionEnabled.tag);
-    // const rollRequestsEnabled = SettingsUtil.get(SETTINGS.rollRequestsEnabled.tag);
-
     if(!rollInterceptionEnabled || //!rollRequestsEnabled ||
       !actor || actor.documentName !== 'Actor') {
       return;
@@ -180,15 +188,16 @@ export class RollInterceptor {
         }
       }
     }
+
+    if (config.sendRequest===false || config.skipRollDialog===true) { //|| config.fastForward===true || config.skipRollDialog===true || 
+      LogUtil.log('_handlePreRoll - skipping interception', [dialog.configure, config.sendRequest]);
+      return;
+    }
+    
     if(isMidiActive && game.user.isGM){
       LogUtil.log('_handlePreRoll - isMidiActive', [isMidiActive]);
       this._showGMConfigDialog(actor, owner, rollType, config, dialog, message); 
       return false;
-    }
-
-    if (config.sendRequest===false) { //|| config.fastForward===true || config.skipRollDialog===true || 
-      LogUtil.log('_handlePreRoll - skipping interception', [dialog.configure, config.sendRequest]);
-      return;
     }
     
     LogUtil.log('_handlePreRoll - intercepting roll #1', [config, message]);
@@ -481,6 +490,7 @@ export class RollInterceptor {
         rollMode: dialogResult.rollMode || originalConfig.rollMode,
         situational: situational,
         isRollRequest: false,
+        skipRollDialog: dialogResult.skipRollDialog,
         ability: originalConfig.ability
       }
     };
@@ -512,7 +522,6 @@ export class RollInterceptor {
     
     try {
       const handlerMap = ROLL_TYPES;
-      
       const handler = RollHandlers[normalizedRollType];
       
       if (handler) {
@@ -520,6 +529,7 @@ export class RollInterceptor {
         if (normalizedRollType === ROLL_TYPES.ATTACK || normalizedRollType === ROLL_TYPES.DAMAGE || normalizedRollType === ROLL_TYPES.SAVE) {
           requestData.rollKey = originalConfig.subject?.item?.id;
           requestData.activityId = originalConfig.subject?.id;
+          requestData.config.skipRollDialog = true;
         }
         
         await handler(actor, requestData, rollConfig, dialogConfig, messageConfig);

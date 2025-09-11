@@ -4,6 +4,8 @@
 import { MODULE, ROLL_TYPES } from '../../constants/General.mjs';
 import { LogUtil } from '../LogUtil.mjs';
 import { GeneralUtil } from './GeneralUtil.mjs';
+import { SettingsUtil } from '../SettingsUtil.mjs';
+import { getSettings } from '../../constants/Settings.mjs';
 
 /**
  * Get display name for roll type with optional details
@@ -515,4 +517,47 @@ export function getActorData(uniqueId){
   const tokenDoc = game.scenes.active?.tokens.get(uniqueId);
    
   return actor || token?.actor || tokenDoc?.actor || null;
+}
+
+export function showConsumptionConfig(){
+  const SETTINGS = getSettings();
+  const consumptionConfigMode = SettingsUtil.get(SETTINGS.consumptionConfigMode.tag);
+
+  switch (consumptionConfigMode) {
+    case 1:
+      return false;
+    case 2:
+      return game.user.isGM;
+    case 3:
+      return !game.user.isGM;
+    default:
+      return true;
+  }
+}
+  
+
+export function getConsumptionConfig(consume){
+  const showConsumtionDialog = showConsumptionConfig();
+  const response = {
+    action: showConsumtionDialog,
+    resources: showConsumtionDialog ?consume.resources : [],
+    spellSlot: showConsumtionDialog
+  }
+  return response;
+}
+
+/**
+ * 
+ * @param {*} createConfig 
+ * @param {*} isLocalRoll 
+ * @returns 
+ */
+export function getCreateConfig(createConfig, isLocalRoll=true){
+  const SETTINGS = getSettings();
+  const placeTemplateForPlayer = SettingsUtil.get(SETTINGS.placeTemplateForPlayer.tag);
+  const promptForTemplate = game.user.isGM ? placeTemplateForPlayer || isLocalRoll : isLocalRoll || !placeTemplateForPlayer;
+  return {
+    ...createConfig,
+    measuredTemplate: createConfig.measuredTemplate ? promptForTemplate : false
+  }
 }

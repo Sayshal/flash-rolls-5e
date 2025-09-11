@@ -140,9 +140,11 @@ export class GMRollConfigDialog extends GMRollConfigMixin(dnd5e.applications.dic
         showDC: this.showDC,
         dcValue: this.dcValue,
         showSendRequest: this.actors.length > 0,
-        sendRequest: this.sendRequest
+        sendRequest: this.sendRequest,
+        showMacroButton: true
       };
       
+      // toggle and dc template
       const template = await GeneralUtil.renderTemplate(`modules/${MODULE_ID}/templates/gm-roll-config-fields.hbs`, templateData);
       
       const wrapper = document.createElement('div');
@@ -150,36 +152,25 @@ export class GMRollConfigDialog extends GMRollConfigMixin(dnd5e.applications.dic
       wrapper.innerHTML = template;
       
       configSection.parentNode.insertBefore(wrapper, configSection);
-      configSection.parentNode.insertBefore(wrapper, configSection);
     }
-    
+
     this._attachButtonListeners();
   }
   
-  /**
-   * Attach listeners to advantage/disadvantage buttons.
-   * Sets up click handlers for the advantage mode toggle buttons.
-   * Currently logs the action but does not implement custom behavior.
-   * @private
-   */
   _attachButtonListeners() {
-    LogUtil.log('_attachButtonListeners', [this.element]);
+    LogUtil.log('_attachButtonListeners', []);
     
-    // Set up macro button click handler
-    const macroButton = this.element.querySelector('.flash5e-macro-button[data-action="create-macro"]');
+    const macroButton = this.element.querySelector('.flash5e-macro-button');
     if (macroButton) {
-      LogUtil.log('Attaching click handler to macro button');
       macroButton.addEventListener('click', this._onCreateMacroClick.bind(this));
-    } else {
-      LogUtil.warn('Macro button not found in dialog');
     }
-    
-    const buttons = this.element.querySelectorAll('[data-action="advantage"], [data-action="normal"], [data-action="disadvantage"]');
-    buttons.forEach(button => {
-      button.addEventListener('click', (event) => {
-        const action = event.currentTarget.dataset.action;
-      });
-    });
+
+    // const buttons = this.element.querySelectorAll('[data-action="advantage"], [data-action="normal"], [data-action="disadvantage"]');
+    // buttons.forEach(button => {
+    //   button.addEventListener('click', (event) => {
+    //     const action = event.currentTarget.dataset.action;
+    //   });
+    // });
   }
   
   
