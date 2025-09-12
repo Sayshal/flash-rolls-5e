@@ -1,5 +1,5 @@
 import { LogUtil } from "../LogUtil.mjs";
-import { ROLL_TYPES } from "../../constants/General.mjs";
+import { ROLL_TYPES, MODULE_ID } from "../../constants/General.mjs";
 import { getSettings } from "../../constants/Settings.mjs";
 import { SettingsUtil } from "../SettingsUtil.mjs";
 import { getPlayerOwner } from "./Helpers.mjs";
@@ -28,6 +28,33 @@ export const RollHelpers = {
       LogUtil.log("Config after adding bonus:", [config]);
     }
     return config;
+  },
+
+  /**
+   * Async helper to unset activity config flag
+   * @param {Item5e} item - The item to update
+   * @returns {Promise<void>}
+   */
+  async unsetActivityFlag(item) {
+    if(!game.user.isGM || !item) return;
+    // Clean up any existing config first
+    const existingConfig = item.getFlag(MODULE_ID, 'tempActivityConfig');
+    if (existingConfig) {
+      LogUtil.log('updateActivityConfigFlag - cleaning up existing config', [existingConfig]);
+      await item.unsetFlag(MODULE_ID, 'tempActivityConfig');
+    }
+  },
+
+  /**
+   * Async helper to update activity config flag
+   * @param {Item5e} item - The item to update
+   * @param {Object} newConfig - The new configuration to store
+   * @returns {Promise<void>}
+   */
+  async updateActivityConfigFlag(item, newConfig) {
+    // Set the new config
+    LogUtil.log('updateActivityConfigFlag - storing new activity config', [newConfig]);
+    await item.setFlag(MODULE_ID, 'tempActivityConfig', newConfig);
   },
 
   /**

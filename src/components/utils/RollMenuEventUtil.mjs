@@ -68,6 +68,70 @@ export class RollMenuEventUtil {
   static attachActorHandlers(menu, html) {
     html.querySelectorAll('.actor.drag-wrapper').forEach(wrapper => {
       wrapper.addEventListener('click', menu._onActorClick.bind(menu));
+      
+      // Add click handler for character sheet icon
+      const sheetIcon = wrapper.querySelector('.icon-sheet');
+      if (sheetIcon) {
+        sheetIcon.addEventListener('click', (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          
+          const actorId = wrapper.dataset.actorId;
+          const tokenId = wrapper.dataset.tokenId;
+          
+          if (actorId) {
+            let actor;
+            if (tokenId) {
+              const token = canvas.tokens.get(tokenId);
+              actor = token?.actor || game.actors.get(actorId);
+            }
+            actor?.sheet.render(true);
+          }
+        });
+      }
+
+      // Add click handler for target icon
+      const targetIcon = wrapper.querySelector('.icon-target');
+      if (targetIcon) {
+        targetIcon.addEventListener('click', (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          
+          const tokenId = wrapper.dataset.tokenId;
+          const actorId = wrapper.dataset.actorId;
+          
+          let token = tokenId ? canvas.tokens.get(tokenId) : null;
+          if (!token && actorId) {
+            token = canvas.tokens.placeables.find(t => t.actor?.id === actorId);
+          }
+          
+          if (token) {
+            const isTargeted = game.user.targets.has(token);
+            token.setTarget(!isTargeted, { releaseOthers: false });
+          }
+        });
+      }
+
+      // Add right-click handler for actor image to center token on screen
+      const actorImg = wrapper.querySelector('.actor-img');
+      if (actorImg) {
+        actorImg.addEventListener('contextmenu', (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          
+          const tokenId = wrapper.dataset.tokenId;
+          const actorId = wrapper.dataset.actorId;
+          
+          let token = tokenId ? canvas.tokens.get(tokenId) : null;
+          if (!token && actorId) {
+            token = canvas.tokens.placeables.find(t => t.actor?.id === actorId);
+          }
+          
+          if (token) {
+            canvas.animatePan({ x: token.x, y: token.y, duration: 250 });
+          }
+        });
+      }
     });
   }
   

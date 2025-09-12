@@ -207,7 +207,9 @@
   min-width: 5rem;
   padding: 1.2em 0.5em 1.5em 0.5rem;
   z-index:10;
+  gap: 2px;
 }
+
 /*
 #flash-rolls-menu.compact > div *:not(img){
   overflow-x: visible !important;
@@ -300,7 +302,7 @@ body > .actor.drag-wrapper {
   }
 
   > .actor-img{
-    width: 2.75rem;
+    width: 3.6rem;
     height: auto;
     max-height: 4rem;
     flex-shrink: 0;
@@ -322,13 +324,53 @@ body > .actor.drag-wrapper {
       border: 0;
       pointer-events: none;
     }
+
+    span.icons{
+      position: absolute;
+      opacity: 0;
+      bottom: -16px;
+      display: none;
+      z-index:10;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      padding: 0;
+      width: 100%;
+      height: 20px;
+      background: linear-gradient(to top, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0));
+      transition: opacity 0.15s ease-out, bottom 0.15s ease-out;
+    }
+    i.icon-sheet,
+    i.favorite,
+    i.icon-target {
+      position: relative;
+      z-index:10;
+      text-shadow: 0px 1px 2px rgba(0, 0, 0, 0.5);
+      color: rgba(245,245,245,1);
+      width: auto;
+      flex: 1 1 auto;
+      height: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: var(--font-size-12);
+    }
+    i.icon-sheet,
+    i.icon-target {
+      background: var(--fr5e-menu-background, rgba(20, 20, 20, 0.9));
+      padding: 2px;
+    }
+
+    &:hover span.icons {
+      opacity: 1;
+      display: flex;
+      bottom: 0;
+    }
+
     i.favorite {
       position: absolute;
       right: 2px;
       top: 2px;
-      z-index:10;
-      text-shadow: 0px 2px 4px rgba(0, 0, 0, 0.35);
-      color: rgba(200,200,200,0.7);
     }
   }
 
@@ -336,22 +378,23 @@ body > .actor.drag-wrapper {
     align-self: stretch;
     align-items: flex-start;
     display: flex;
-    flex: 0 0 calc(100% - 3.15rem);
+    flex: 0 0 calc(100% - 4rem);
     flex-direction: column;
     gap: 0.25rem;
     row-gap: 0.1rem;
-    width: calc(100% - 3.15rem);
+    width: calc(100% - 4rem);
   
     .actor-name {
       width: 100%;
       display: block;
-      font-weight: bold;
+      font-weight: 600;
       padding: 2px 0 0 0;
       margin-left: 4px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      font-size: var(--font-size-12);
+      font-size: var(--font-size-13);
+      opacity: 0.75;
     }
     .actor-stats {
       width: 100%;
@@ -371,11 +414,13 @@ body > .actor.drag-wrapper {
         width: 48%;
         flex: 1 1 48%;
         gap: 2px;
+        font-size: var(--font-size-12);
   
         .stat-abbrev{
           font-weight: bold;
           width: 50%;
           flex: 1 1 50%;
+          
         }
       }
     }
@@ -1021,7 +1066,7 @@ body.crlngn-tabs #flash-rolls-menu.docked-right {
 }
 #flash-rolls-menu.compact > div > ul.actors > li.actor-list > ul > li > .actor > .actor-img{
   width: 100%;
-  max-height: 3rem;
+  max-height: 3.5rem;
 }
 
 #flash-rolls-menu.compact > div > ul.actors > li.options .selection-row,
@@ -1076,13 +1121,14 @@ body.crlngn-tabs #flash-rolls-menu.docked-right {
   .actor-name {
     width: auto;
     display: block;
-    font-weight: bold;
+    font-weight: 600;
     padding: 2px 0;
     margin-left: 4px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    font-size: var(--font-size-12);
+    font-size: var(--font-size-13);
+    opacity: 0.75;
   }
   .actor-stats {
     margin: 0;

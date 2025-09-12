@@ -560,11 +560,15 @@ export class GeneralUtil {
   static removeTemplateForItem (item) {
     const SETTINGS = getSettings();
     const removeTemplateSettingOn = SettingsUtil.get(SETTINGS.removeTemplate.tag);
+    LogUtil.log("removeTemplateForItem", [item, removeTemplateSettingOn]);
     if(!removeTemplateSettingOn){ return; }
     const templates = canvas.templates.objects.children.filter(mt => {
       return mt.document.flags.dnd5e.item === item?.uuid;
     });
 
-    canvas.scene.deleteEmbeddedDocuments('MeasuredTemplate', templates.map(i=>i.id));
+    if(templates.length > 0){
+      canvas.scene.deleteEmbeddedDocuments('MeasuredTemplate', templates.map(i=>i.id));
+    }
+    
   }
 }

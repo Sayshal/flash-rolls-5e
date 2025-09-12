@@ -4,6 +4,7 @@ import { ModuleHelpers } from './helpers/ModuleHelpers.mjs';
 import { SettingsUtil } from './SettingsUtil.mjs';
 import { getSettings } from '../constants/Settings.mjs';
 import { getConsumptionConfig, getCreateConfig, isPlayerOwned } from './helpers/Helpers.mjs';
+import { RollHelpers } from './helpers/RollHelpers.mjs';
 
 /**
  * @typedef {Object} ActivityUseConfiguration
@@ -114,7 +115,8 @@ export class ActivityUtil {
     const isMidiActive = ModuleHelpers.isModuleActive('midi-qol');
     const item = actor.items.get(itemId);
     if (!item) {
-      throw new Error(`Item ${itemId} not found on actor ${actor.name}`);
+      LogUtil.error(`Item not found on actor`, [actor, itemId]);
+      return;
     }
     
     let activity = null;

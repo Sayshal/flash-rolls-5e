@@ -6,7 +6,7 @@ import { GeneralUtil } from "../../helpers/GeneralUtil.mjs";
 import { RollHelpers } from "../../helpers/RollHelpers.mjs";
 import { GMRollConfigMixin } from "./GMRollConfigMixin.mjs";
 import { GMRollConfigDialog } from "./GMRollConfigDialog.mjs";
-
+import { HooksUtil } from "../../HooksUtil.mjs";
 /**
  * GM Damage Roll Configuration Dialog
  * Extends DamageRollConfigurationDialog to add send request toggle
@@ -144,6 +144,20 @@ export class GMDamageConfigDialog extends GMRollConfigMixin(dnd5e.applications.d
     if (!actors) return null;
     
     const actor = actors[0];
+    
+    // Check for stored activity configuration in cache
+    const subjectItem = originalConfig.subject?.item;
+    const actorItem = actor.items.get(rollKey);
+    const itemId = actorItem?.id || subjectItem?.id;
+    
+    let storedActivityConfig = {};
+    if (itemId) {
+      // Import HooksUtil dynamically to avoid circular dependency
+      
+      storedActivityConfig = HooksUtil.activityConfigCache.get(itemId) || {};
+    }
+    
+    LogUtil.log('GMDamageConfigDialog - retrieved activity config from cache', [itemId, storedActivityConfig]);
     const SETTINGS = getSettings();
     const isPublicRollsOn = SettingsUtil.get(SETTINGS.publicPlayerRolls.tag) === true;
     const rollMode = RollHelpers.determineRollMode(isPublicRollsOn, originalConfig.rollMode);
@@ -207,9 +221,15 @@ export class GMDamageConfigDialog extends GMRollConfigMixin(dnd5e.applications.d
       sendRequest: result.sendRequest,
       isRollRequest: result.sendRequest,
       skipRollDialog: result.sendRequest ? options.skipRollDialog || false : true,
-      chatMessage: true
+      chatMessage: true,
+      // Preserve spell slot and scaling information from activity usage
+      spell: storedActivityConfig.spell || originalConfig.spell || {},
+      scaling: storedActivityConfig.scaling !== undefined ? storedActivityConfig.scaling : originalConfig.scaling,
+      consume: storedActivityConfig.consume || originalConfig.consume || {},
+      create: storedActivityConfig.create || originalConfig.create || {}
     };
     LogUtil.log('GMDamageConfigDialog, initConfiguration #6', [rollProcessConfig]); 
+    // await item?.unsetFlag(MODULE_ID, 'tempActivityConfig');
     
     const finalRollMode = RollHelpers.determineRollMode(isPublicRollsOn, result.message?.rollMode);
     rollProcessConfig.rollMode = finalRollMode;

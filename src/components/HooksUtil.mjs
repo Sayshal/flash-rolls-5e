@@ -23,6 +23,7 @@ export class HooksUtil {
   static registeredHooks = new Map();
   static midiTimeout = null;
   static throttleTimers = {};
+  static activityConfigCache = new Map(); // In-memory cache for activity configs
   
   /**
    * Initialize main module hooks
@@ -555,9 +556,18 @@ export class HooksUtil {
     this._addSelectTargetsButton(message, html);
 
     if(game.user.isGM){
-      const item = context.subject?.item;
+      // Try to get item from context first, then from message flags
+      let item = context.subject?.item;
+      if (!item && message.flags?.dnd5e?.item?.uuid) {
+        item = fromUuidSync(message.flags.dnd5e.item.uuid);
+      }
+      
+      LogUtil.log("_onRenderChatMessageHTML - item", [item, context, message.flags?.dnd5e?.item]);
       if (item) {
+        // Clear the activity config cache for this item after the message is rendered
         setTimeout(() => {
+          HooksUtil.activityConfigCache.delete(item.id);
+          LogUtil.log("_onRenderChatMessageHTML - cleared activity config cache", [item.id]);
           GeneralUtil.removeTemplateForItem(item);
         }, 3000); 
       }
@@ -1028,9 +1038,11 @@ export class HooksUtil {
 
     if(!game.user.isGM) return;
     
-    if (dialog.configure===true && actorOwner && actorOwner.active && !actorOwner.isGM) {
-      LogUtil.log("Preventing usage message for player-owned actor", [actor.name]);
-      message.create = false;
+    if (actorOwner && actorOwner.active && !actorOwner.isGM) {
+      if (dialog.configure===true) {
+        LogUtil.log("Preventing usage message for player-owned actor", [actor.name]);
+        message.create = false;
+      }
     }
   }
 
@@ -1073,6 +1085,27 @@ export class HooksUtil {
       return;
     }
     
+    // Store activity configuration for GM dialogs to access spell/scaling/consume/create data
+    if (game.user.isGM && activity.item) {
+      const activityConfig = {
+        spell: config.spell || {},
+        scaling: config.scaling,
+        consume: config.consume || {},
+        create: config.create || {}
+      };
+      
+      // Use in-memory cache with item ID as key - synchronous and immediate
+      const cacheKey = activity.item.id;
+      HooksUtil.activityConfigCache.set(cacheKey, activityConfig);
+      LogUtil.log('_onPostUseActivity - storing activity config in cache', [cacheKey, activityConfig]);
+      
+      // Clear old entries after 30 seconds to prevent memory leaks
+      setTimeout(() => {
+        HooksUtil.activityConfigCache.delete(cacheKey);
+        LogUtil.log('_onPostUseActivity - cleared old cache entry', [cacheKey]);
+      }, 30000);
+    }
+
     if(activity.type === ACTIVITY_TYPES.SAVE && activity.damage?.parts?.length > 0){
       LogUtil.log("_onPostUseActivity #1 - roll triggered", [activity, config]);
       activity.rollDamage(config, {

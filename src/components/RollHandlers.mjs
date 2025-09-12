@@ -234,7 +234,12 @@ export const RollHandlers = {
           rolls: processConfig.rolls,
           ...(rollOptions.attackMode && { attackMode: rollOptions.attackMode }),
           ...(rollOptions.ammunition && { ammunition: rollOptions.ammunition }),
-          ...(rollOptions.mastery !== undefined && { mastery: rollOptions.mastery })
+          ...(rollOptions.mastery !== undefined && { mastery: rollOptions.mastery }),
+          // Ensure spell slot and scaling information is applied
+          ...(requestData.config.spell && { spell: requestData.config.spell }),
+          ...(requestData.config.scaling !== undefined && { scaling: requestData.config.scaling }),
+          ...(requestData.config.consume && { consume: requestData.config.consume }),
+          ...(requestData.config.create && { create: requestData.config.create })
         },
         dialog: {
           ...dialogConfig,

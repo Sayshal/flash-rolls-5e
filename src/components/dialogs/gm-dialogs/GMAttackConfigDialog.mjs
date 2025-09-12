@@ -6,6 +6,7 @@ import { GeneralUtil } from "../../helpers/GeneralUtil.mjs";
 import { RollHelpers } from "../../helpers/RollHelpers.mjs";
 import { GMRollConfigMixin } from "./GMRollConfigMixin.mjs";
 import { GMRollConfigDialog } from "./GMRollConfigDialog.mjs";
+import { HooksUtil } from "../../HooksUtil.mjs";
 
 /**
  * GM Attack Roll Configuration Dialog
@@ -170,6 +171,18 @@ export class GMAttackConfigDialog extends GMRollConfigMixin(dnd5e.applications.d
     const actor = actors[0];
     LogUtil.log('GMAttackConfigDialog, initConfiguration', []);
     
+    // Check for stored activity configuration in cache
+    const subjectItem = originalConfig.subject?.item;
+    const actorItem = actor.items.get(rollKey);
+    const itemId = actorItem?.id || subjectItem?.id;
+    
+    let storedActivityConfig = {};
+    if (itemId) {
+      storedActivityConfig = HooksUtil.activityConfigCache.get(itemId) || {};
+    }
+    
+    LogUtil.log('GMAttackConfigDialog - retrieved activity config from cache', [itemId, storedActivityConfig]);
+    
     const SETTINGS = getSettings();
     const isPublicRollsOn = SettingsUtil.get(SETTINGS.publicPlayerRolls.tag) === true;
     
@@ -242,8 +255,14 @@ export class GMAttackConfigDialog extends GMRollConfigMixin(dnd5e.applications.d
       sendRequest: result.sendRequest,
       isRollRequest: result.sendRequest,
       skipRollDialog: result.sendRequest ? options.skipRollDialog || false : true,
-      chatMessage: !GeneralUtil.isModuleOn('midi-qol') || true
+      chatMessage: !GeneralUtil.isModuleOn('midi-qol') || true,
+      // Preserve spell slot and scaling information from activity usage
+      spell: storedActivityConfig?.spell || originalConfig?.spell || {},
+      scaling: storedActivityConfig?.scaling !== undefined ? storedActivityConfig?.scaling : originalConfig?.scaling,
+      consume: storedActivityConfig?.consume || originalConfig?.consume || {},
+      create: storedActivityConfig?.create || originalConfig?.create || {}
     };
+    // await item?.unsetFlag(MODULE_ID, 'tempActivityConfig');
     
     const finalRollMode = RollHelpers.determineRollMode(isPublicRollsOn, result.message?.rollMode);
     rollProcessConfig.rollMode = finalRollMode;
