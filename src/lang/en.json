@@ -205,7 +205,7 @@
     "ui": {
       
       "search": {
-        "placeholder": "Find a roll type..."
+        "placeholder": "Search"
       },
       "buttons": {
         "rollRequestsToggleOn": "Roll Requests ON",
@@ -217,10 +217,16 @@
         "createMacro": "Create Macro"
       },
       "inputs": {
-        "selectAll": "Select All",
+        "lockMenu": "Lock Menu",
         "toggleRollRequests": "Request Rolls",
         "skipRollDialog": "Skip Roll Dialog",
-        "groupRollsMsg": "Group Rolls"
+        "groupRollsMsg": "Group Rolls",
+        "selectAll": "Select All",
+        "toggleTargets": "Toggle Targets",
+        "healAll": "Heal Selected",
+        "killAll": "Kill Selected",
+        "removeStatus": "Remove Status",
+        "openSheets": "Open Sheets"
       },
       "forms": {
         "pixelsRollTitle": "Pixels Dice - Roll Resolver",
@@ -271,7 +277,7 @@
         "pcs": "PCs",
         "rollRequestsTitle": "Roll Requests",
         "dragHandleTooltip": "Drag menu",
-        "noActors": "No actors in this list.",
+        "noActors": "No actors",
         "noActorsDropHint": "No actors in this list. Drag some here from the Actor Directory, or simply add tokens to the active scene."
       }
     },

@@ -55,6 +55,7 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
     
     this.selectedActors = new Set();
     this.currentTab = 'pc';
+    this.selectedSubmenu = 'request-types';
     this.selectedRequestType = null;
     this.isLocked = false; 
     this.optionsExpanded = game.user.getFlag(MODULE.ID, 'menuOptionsExpanded') ?? false;
@@ -403,6 +404,39 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
   }
 
   /**
+   * Handle submenu tab click (rolls vs status effects)
+   */
+  async _onSubmenuTabClick(event) {
+    const tab = event.currentTarget.dataset.tab;
+    LogUtil.log('_onSubmenuTabClick', [tab]);
+    
+    if (tab === this.selectedSubmenu) return;
+    
+    this.selectedSubmenu = tab;
+    await this.render();
+    
+    // Re-apply hover-visible class after render since mouse is still over the menu
+    const accordion = this.element.querySelector('.request-types-accordion');
+    if (accordion && this.selectedActors.size > 0) {
+      accordion.classList.add('hover-visible');
+    }
+  }
+
+  /**
+   * Handle status effect click to apply to selected actors
+   */
+  async _onStatusEffectClick(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    const statusEffectId = event.currentTarget.dataset.id;
+    LogUtil.log('_onStatusEffectClick', [statusEffectId]);
+    
+    const { RollMenuStatusUtil } = await import('./utils/RollMenuStatusUtil.mjs');
+    await RollMenuStatusUtil.toggleStatusOnSelected(statusEffectId, this);
+  }
+
+  /**
    * Handle click on actor row
    */
   _onActorClick(event) {
@@ -456,41 +490,59 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
    */
   _onSearchInput(event) {
     const searchTerm = event.target.value.toLowerCase().trim();
-    const requestTypesContainer = this.element.querySelector('.request-types');
     
-    if (!requestTypesContainer) return;
-    const requestItems = requestTypesContainer.querySelectorAll('.request-type-item');
-    
-    requestItems.forEach(requestItem => {
-      const requestName = requestItem.querySelector('.request-type-name')?.textContent.toLowerCase() || '';
-      const subItems = requestItem.querySelectorAll('.sub-item');
-      let hasVisibleSubItems = false;
+    // Handle request-types tab
+    if (this.selectedSubmenu === 'request-types') {
+      const requestTypesContainer = this.element.querySelector('.request-types');
+      if (!requestTypesContainer) return;
       
-      if (subItems.length > 0) {
-        subItems.forEach(subItem => {
-          const subItemName = subItem.querySelector('.sub-item-name')?.textContent.toLowerCase() || '';
-          const isVisible = subItemName.includes(searchTerm);
-          subItem.classList.toggle('hidden', !isVisible);
-          if (isVisible) hasVisibleSubItems = true;
-        });
+      const requestItems = requestTypesContainer.querySelectorAll('.request-type-item');
+      
+      requestItems.forEach(requestItem => {
+        const requestName = requestItem.querySelector('.request-type-name')?.textContent.toLowerCase() || '';
+        const subItems = requestItem.querySelectorAll('.sub-item');
+        let hasVisibleSubItems = false;
         
-        const categoryMatches = requestName.includes(searchTerm);
-        const shouldShowCategory = searchTerm === '' || categoryMatches || hasVisibleSubItems;
-        requestItem.classList.toggle('hidden', !shouldShowCategory);
-        
-        if (searchTerm && hasVisibleSubItems) {
-          const nestedList = requestItem.querySelector('.roll-types-nested');
-          const accordionToggle = requestItem.querySelector('.accordion-toggle');
-          if (nestedList && accordionToggle) {
-            nestedList.style.display = 'block';
-            accordionToggle.classList.add('expanded');
+        if (subItems.length > 0) {
+          subItems.forEach(subItem => {
+            const subItemName = subItem.querySelector('.sub-item-name')?.textContent.toLowerCase() || '';
+            const isVisible = subItemName.includes(searchTerm);
+            subItem.classList.toggle('hidden', !isVisible);
+            if (isVisible) hasVisibleSubItems = true;
+          });
+          
+          const categoryMatches = requestName.includes(searchTerm);
+          const shouldShowCategory = searchTerm === '' || categoryMatches || hasVisibleSubItems;
+          requestItem.classList.toggle('hidden', !shouldShowCategory);
+          
+          if (searchTerm && hasVisibleSubItems) {
+            const nestedList = requestItem.querySelector('.roll-types-nested');
+            const accordionToggle = requestItem.querySelector('.accordion-toggle');
+            if (nestedList && accordionToggle) {
+              nestedList.style.display = 'block';
+              accordionToggle.classList.add('expanded');
+            }
           }
+        } else {
+          const isVisible = searchTerm === '' || requestName.includes(searchTerm);
+          requestItem.classList.toggle('hidden', !isVisible);
         }
-      } else {
-        const isVisible = searchTerm === '' || requestName.includes(searchTerm);
-        requestItem.classList.toggle('hidden', !isVisible);
-      }
-    });
+      });
+    }
+    // Handle status-effects tab
+    else if (this.selectedSubmenu === 'status-effects') {
+      const statusEffectsContainer = this.element.querySelector('.status-effects');
+      if (!statusEffectsContainer) return;
+      
+      const statusItems = statusEffectsContainer.querySelectorAll('.status-effect');
+      
+      statusItems.forEach(statusItem => {
+        const statusName = statusItem.querySelector('.status-effect-name')?.textContent.toLowerCase() || '';
+        const statusId = statusItem.dataset.id?.toLowerCase() || '';
+        const isVisible = searchTerm === '' || statusName.includes(searchTerm) || statusId.includes(searchTerm);
+        statusItem.classList.toggle('hidden', !isVisible);
+      });
+    }
   }
 
   /**
@@ -852,6 +904,16 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
     this.#instance.render();
     SettingsUtil.updateColorScheme();
     this.#instance.element.classList.add('theme-' + SettingsUtil.coreColorScheme);
+  }
+
+  /**
+   * Get DOM elements for currently selected actors
+   * @returns {HTMLElement[]} Array of actor wrapper elements for selected actors
+   */
+  getSelectedActorElements() {
+    if (!this.element) return [];
+    
+    return Array.from(this.element.querySelectorAll('.actor.drag-wrapper.selected'));
   }
 
   /**

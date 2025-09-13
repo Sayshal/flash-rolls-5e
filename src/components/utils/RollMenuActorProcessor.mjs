@@ -5,6 +5,7 @@ import { getSettings } from '../../constants/Settings.mjs';
 import { buildRollTypes } from '../helpers/Helpers.mjs';
 import { RollMenuActorUtil } from './RollMenuActorUtil.mjs';
 import { ActorStatusUtil } from '../ActorStatusUtil.mjs';
+import { RollMenuStatusUtil } from './RollMenuStatusUtil.mjs';
 
 /**
  * Utility class for processing actors for the Roll Requests Menu
@@ -48,6 +49,7 @@ export class RollMenuActorProcessor {
     
     const requestTypes = this.buildRequestTypes(menu);
     const rollTypes = buildRollTypes(menu.selectedRequestType, menu.selectedActors);
+    const statusEffects = RollMenuStatusUtil.getStatusEffectsForTemplate();
     
     return {
       ...baseContext,
@@ -56,6 +58,7 @@ export class RollMenuActorProcessor {
       isPCTab: menu.currentTab === 'pc',
       isNPCTab: menu.currentTab === 'npc',
       selectedTab: menu.currentTab,
+      selectedSubmenu: menu.selectedSubmenu,
       rollRequestsEnabled,
       skipRollDialog,
       groupRollsMsgEnabled,
@@ -63,6 +66,7 @@ export class RollMenuActorProcessor {
       hasSelectedActors: menu.selectedActors.size > 0,
       requestTypes,
       rollTypes,
+      statusEffects,
       showNames: true,
       actorsLocked: menu.isLocked,
       optionsExpanded: menu.optionsExpanded,

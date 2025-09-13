@@ -213,8 +213,7 @@ export class RollMenuStateUtil {
     const requestTypesContainer = menu.element.querySelector('.request-types');
     
     if (requestTypesContainer) {
-      requestTypesContainer.classList.toggle('disabled', !hasSelection);
-      
+      // Only disable individual request items, not the container
       const requestItems = requestTypesContainer.querySelectorAll('.request-type-item');
       requestItems.forEach(item => {
         item.classList.toggle('disabled', !hasSelection);
@@ -229,6 +228,14 @@ export class RollMenuStateUtil {
       if (hitDieItem) {
         hitDieItem.style.display = hasPlayerCharacter ? '' : 'none';
       }
+    }
+
+    // Status effects should work regardless of actor selection
+    // Don't disable status effects container or items
+    const statusEffectsContainer = menu.element.querySelector('.status-effects');
+    if (statusEffectsContainer) {
+      // Status effects can be applied even without selection (they just won't do anything)
+      // Keep them enabled for better UX
     }
   }
 

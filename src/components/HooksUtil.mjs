@@ -208,12 +208,11 @@ export class HooksUtil {
     ActorDirectoryIconUtil.initialize();
     SidebarUtil.addSidebarControls(ui.sidebar, ui.sidebar?.element);
     if(ModuleHelpers.isModuleActive("midi-qol")){
-      LogUtil.log("HooksUtil.initialize", ["midi-qol is active. Awaiting for it to be ready..."]);
       Hooks.once(HOOKS_MIDI_QOL.READY, this._initModule.bind(this));
     }else{
-      LogUtil.log("HooksUtil.initialize", ["midi-qol is NOT active. Starting..."]);
       this._initModule();
     }
+    LogUtil.log("HooksUtil.ready", [CONFIG.statusEffects]);
   }
 
   static async _initModule() {

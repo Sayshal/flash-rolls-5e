@@ -1,11 +1,17 @@
 import { LogUtil } from '../LogUtil.mjs';
 import { RollMenuDragUtil } from './RollMenuDragUtil.mjs';
-import { delay } from '../helpers/Helpers.mjs';
+import { delay, getActorData, updateCanvasTokenSelection } from '../helpers/Helpers.mjs';
 
 /**
  * Utility class for handling Roll Requests Menu event listeners
  */
 export class RollMenuEventUtil {
+  
+  /**
+   * Set to track tokens that were temporarily selected on hover
+   * @type {Set<Token>}
+   */
+  static _hoveredTokens = new Set();
   
   /**
    * Attach all event listeners to the menu
@@ -18,9 +24,12 @@ export class RollMenuEventUtil {
     this.attachDragHandlers(menu, html);
     this.attachTabHandlers(menu, html);
     this.attachActorHandlers(menu, html);
+    this.attachActionIconHandlers(menu, html);
     this.attachCompactTooltipHandlers(menu, html);
     this.attachSearchHandlers(menu, html);
     this.attachAccordionHandlers(menu, html);
+    this.attachSubmenuHandlers(menu, html);
+    this.attachStatusEffectHandlers(menu, html);
     this.attachOutsideClickHandler(menu);
   }
   
@@ -54,14 +63,44 @@ export class RollMenuEventUtil {
    */
   static attachTabHandlers(menu, html) {
     const tabs = html.querySelectorAll('.actor-tab');
-    LogUtil.log('RollMenuEventUtil.attachTabHandlers - found tabs:', tabs.length);
+    LogUtil.log('RollMenuEventUtil.attachTabHandlers - found tabs:', [tabs.length]);
     tabs.forEach(tab => {
-      LogUtil.log('RollMenuEventUtil.attachTabHandlers - attaching to tab:', tab.dataset.tab);
+      LogUtil.log('RollMenuEventUtil.attachTabHandlers - attaching to tab:', [tab.dataset.tab]);
       tab.addEventListener('click', menu._onTabClick.bind(menu));
       tab.addEventListener('dblclick', menu._onTabDoubleClick.bind(menu));
     });
   }
   
+  /**
+   * Attach action icon handlers for bulk operations
+   */
+  static attachActionIconHandlers(menu, html) {
+    // Toggle targets for selected actors
+    html.querySelector('#flash5e-targets')?.addEventListener('click', () => {
+      this.toggleTargetsForSelected(menu);
+    });
+    
+    // Heal all selected actors
+    html.querySelector('#flash5e-heal-selected')?.addEventListener('click', () => {
+      this.healSelectedActors(menu);
+    });
+    
+    // Kill all selected actors
+    html.querySelector('#flash5e-kill-selected')?.addEventListener('click', () => {
+      this.killSelectedActors(menu);
+    });
+    
+    // Open sheets for all selected actors
+    html.querySelector('#flash5e-sheets')?.addEventListener('click', () => {
+      this.openSheetsForSelected(menu);
+    });
+    
+    // Remove all status effects from selected actors
+    html.querySelector('#flash5e-remove-effects')?.addEventListener('click', () => {
+      this.removeAllStatusEffectsFromSelected(menu);
+    });
+  }
+
   /**
    * Attach actor selection handlers
    */
@@ -79,14 +118,7 @@ export class RollMenuEventUtil {
           const actorId = wrapper.dataset.actorId;
           const tokenId = wrapper.dataset.tokenId;
           
-          if (actorId) {
-            let actor;
-            if (tokenId) {
-              const token = canvas.tokens.get(tokenId);
-              actor = token?.actor || game.actors.get(actorId);
-            }
-            actor?.sheet.render(true);
-          }
+          this.openActorSheetById(actorId, tokenId);
         });
       }
 
@@ -97,18 +129,10 @@ export class RollMenuEventUtil {
           event.preventDefault();
           event.stopPropagation();
           
-          const tokenId = wrapper.dataset.tokenId;
           const actorId = wrapper.dataset.actorId;
+          const tokenId = wrapper.dataset.tokenId;
           
-          let token = tokenId ? canvas.tokens.get(tokenId) : null;
-          if (!token && actorId) {
-            token = canvas.tokens.placeables.find(t => t.actor?.id === actorId);
-          }
-          
-          if (token) {
-            const isTargeted = game.user.targets.has(token);
-            token.setTarget(!isTargeted, { releaseOthers: false });
-          }
+          this.toggleActorTargetById(actorId, tokenId);
         });
       }
 
@@ -130,6 +154,15 @@ export class RollMenuEventUtil {
           if (token) {
             canvas.animatePan({ x: token.x, y: token.y, duration: 250 });
           }
+        });
+
+        // Add hover handlers for temporary token selection preview
+        actorImg.addEventListener('mouseenter', (event) => {
+          this.showTokenSelectionPreview(wrapper, menu);
+        });
+
+        actorImg.addEventListener('mouseleave', (event) => {
+          this.hideTokenSelectionPreview(wrapper, menu);
         });
       }
     });
@@ -163,9 +196,9 @@ export class RollMenuEventUtil {
         const isLeftEdge = html.classList.contains('left-edge');
         
         if (isLeftEdge) {
-          tooltipCopy.style.left = `${actorRect.right - menuRect.left}px`;
+          tooltipCopy.style.left = `${actorRect.right - menuRect.left - 8}px`;
         } else {
-          tooltipCopy.style.right = `${menuRect.right - actorRect.left}px`;
+          tooltipCopy.style.right = `${menuRect.right - actorRect.left - 8}px`;
         }
         tooltipCopy.style.top = `${actorRect.top - menuRect.top}px`;
         tooltipCopy.className = 'actor-data-tooltip';
@@ -202,6 +235,16 @@ export class RollMenuEventUtil {
     const searchInput = html.querySelector('.search-input');
     if (searchInput) {
       searchInput.addEventListener('input', menu._onSearchInput.bind(menu));
+      
+      // Select all text on click for quick deletion
+      searchInput.addEventListener('click', (event) => {
+        event.target.select();
+      });
+      
+      // Also select all on focus (useful for keyboard navigation)
+      searchInput.addEventListener('focus', (event) => {
+        event.target.select();
+      });
     }
   }
   
@@ -295,6 +338,40 @@ export class RollMenuEventUtil {
       });
     }
   }
+
+  /**
+   * Attach submenu tab handlers
+   */
+  static attachSubmenuHandlers(menu, html) {
+    try {
+      const submenuTabs = html.querySelectorAll('.submenu-tabs li[data-tab]');
+      LogUtil.log('RollMenuEventUtil.attachSubmenuHandlers - found tabs:', [submenuTabs.length]);
+      submenuTabs.forEach(tab => {
+        tab.addEventListener('click', menu._onSubmenuTabClick.bind(menu));
+      });
+    } catch (error) {
+      LogUtil.error('RollMenuEventUtil.attachSubmenuHandlers error:', [error]);
+    }
+  }
+
+  /**
+   * Attach status effect handlers
+   */
+  static attachStatusEffectHandlers(menu, html) {
+    try {
+      const statusEffects = html.querySelectorAll('.status-effects .status-effect');
+      LogUtil.log('RollMenuEventUtil.attachStatusEffectHandlers - found effects:', [statusEffects.length]);
+      statusEffects.forEach(statusElement => {
+        // Check if listener already attached to prevent duplicates
+        if (!statusElement.dataset.listenerAttached) {
+          statusElement.dataset.listenerAttached = 'true';
+          statusElement.addEventListener('click', menu._onStatusEffectClick.bind(menu));
+        }
+      });
+    } catch (error) {
+      LogUtil.error('RollMenuEventUtil.attachStatusEffectHandlers error:', [error]);
+    }
+  }
   
   /**
    * Attach outside click handler with delay to prevent immediate closure
@@ -303,5 +380,345 @@ export class RollMenuEventUtil {
     setTimeout(() => {
       document.addEventListener('click', menu._onClickOutside, true);
     }, 100);
+  }
+
+  /**
+   * Toggle targeting for all selected actors
+   * @param {RollRequestsMenu} menu - The menu instance
+   */
+  static toggleTargetsForSelected(menu) {
+    menu.selectedActors.forEach(uniqueId => {
+      const actor = getActorData(uniqueId);
+      if (!actor) return;
+      
+      const actorId = actor.id;
+      const tokenId = game.actors.get(uniqueId) ? null : uniqueId;
+      
+      this.toggleActorTargetById(actorId, tokenId);
+    });
+  }
+
+  /**
+   * Open character sheets for all selected actors
+   * @param {RollRequestsMenu} menu - The menu instance
+   */
+  static openSheetsForSelected(menu) {
+    menu.selectedActors.forEach(uniqueId => {
+      const actor = getActorData(uniqueId);
+      if (!actor) return;
+      
+      const actorId = actor.id;
+      const tokenId = game.actors.get(uniqueId) ? null : uniqueId;
+      
+      this.openActorSheetById(actorId, tokenId);
+    });
+  }
+
+  /**
+   * Heal all selected actors to full HP
+   * @param {RollRequestsMenu} menu - The menu instance
+   */
+  static healSelectedActors(menu) {
+    menu.selectedActors.forEach(uniqueId => {
+      const actor = getActorData(uniqueId);
+      if (!actor) return;
+      
+      const actorId = actor.id;
+      const tokenId = game.actors.get(uniqueId) ? null : uniqueId;
+      
+      this.healActorById(actorId, tokenId);
+    });
+  }
+
+  /**
+   * Set HP to 0 for all selected actors
+   * @param {RollRequestsMenu} menu - The menu instance
+   */
+  static killSelectedActors(menu) {
+    menu.selectedActors.forEach(uniqueId => {
+      const actor = getActorData(uniqueId);
+      if (!actor) return;
+      
+      const actorId = actor.id;
+      const tokenId = game.actors.get(uniqueId) ? null : uniqueId;
+      
+      this.killActorById(actorId, tokenId);
+    });
+  }
+
+  /**
+   * Remove all status effects from selected actors
+   * @param {RollRequestsMenu} menu - The menu instance
+   */
+  static async removeAllStatusEffectsFromSelected(menu) {
+    if (menu.selectedActors.size === 0) {
+      ui.notifications.warn("No actors selected");
+      return;
+    }
+
+    let totalRemoved = 0;
+    let totalActors = 0;
+
+    for (const uniqueId of menu.selectedActors) {
+      const actor = getActorData(uniqueId);
+      if (!actor) continue;
+      
+      totalActors++;
+      
+      // Get all status effects on the actor
+      const statusEffects = actor.effects.filter(effect => 
+        effect.statuses?.size > 0 || effect.flags?.core?.statusId
+      );
+      
+      if (statusEffects.length > 0) {
+        // Remove all status effects
+        for (const effect of statusEffects) {
+          try {
+            await effect.delete();
+            totalRemoved++;
+          } catch (error) {
+            LogUtil.error(`Failed to remove status effect from ${actor.name}`, [error]);
+          }
+        }
+      }
+    }
+    
+    if (totalRemoved > 0) {
+      ui.notifications.info(`Removed ${totalRemoved} status effects from ${totalActors} actor(s)`);
+    } else {
+      ui.notifications.info(`No status effects to remove from selected actors`);
+    }
+  }
+
+  /**
+   * Toggle target state for a single actor
+   * @param {HTMLElement} wrapper - The actor wrapper element
+   */
+  static toggleActorTarget(wrapper) {
+    const tokenId = wrapper.dataset.tokenId;
+    const actorId = wrapper.dataset.actorId;
+    
+    let token = tokenId ? canvas.tokens.get(tokenId) : null;
+    if (!token && actorId) {
+      token = canvas.tokens.placeables.find(t => t.actor?.id === actorId);
+    }
+    
+    if (token) {
+      const isTargeted = game.user.targets.has(token);
+      token.setTarget(!isTargeted, { releaseOthers: false });
+    }
+  }
+
+  /**
+   * Open character sheet for a single actor
+   * @param {HTMLElement} wrapper - The actor wrapper element
+   */
+  static openActorSheet(wrapper) {
+    const actorId = wrapper.dataset.actorId;
+    const tokenId = wrapper.dataset.tokenId;
+    
+    if (actorId) {
+      let actor;
+      if (tokenId) {
+        const token = canvas.tokens.get(tokenId);
+        actor = token?.actor || game.actors.get(actorId);
+      } else {
+        actor = game.actors.get(actorId);
+      }
+      actor?.sheet.render(true);
+    }
+  }
+
+  /**
+   * Heal actor to full HP
+   * @param {HTMLElement} wrapper - The actor wrapper element
+   */
+  static healActor(wrapper) {
+    const actorId = wrapper.dataset.actorId;
+    const tokenId = wrapper.dataset.tokenId;
+    
+    let actor;
+    if (tokenId) {
+      const token = canvas.tokens.get(tokenId);
+      actor = token?.actor || game.actors.get(actorId);
+    } else {
+      actor = game.actors.get(actorId);
+    }
+    
+    if (actor && actor.system?.attributes?.hp) {
+      const maxHP = actor.system.attributes.hp.max;
+      actor.update({ 'system.attributes.hp.value': maxHP });
+    }
+  }
+
+  /**
+   * Set actor HP to 0
+   * @param {HTMLElement} wrapper - The actor wrapper element
+   */
+  static killActor(wrapper) {
+    const actorId = wrapper.dataset.actorId;
+    const tokenId = wrapper.dataset.tokenId;
+    
+    let actor;
+    if (tokenId) {
+      const token = canvas.tokens.get(tokenId);
+      actor = token?.actor || game.actors.get(actorId);
+    } else {
+      actor = game.actors.get(actorId);
+    }
+    
+    if (actor && actor.system?.attributes?.hp) {
+      actor.update({ 'system.attributes.hp.value': 0 });
+    }
+  }
+
+  /**
+   * Toggle target state for a single actor by ID
+   * @param {string} actorId - The actor ID
+   * @param {string} tokenId - The token ID (optional)
+   */
+  static toggleActorTargetById(actorId, tokenId) {
+    let token = tokenId ? canvas.tokens.get(tokenId) : null;
+    if (!token && actorId) {
+      token = canvas.tokens.placeables.find(t => t.actor?.id === actorId);
+    }
+    
+    if (token) {
+      const isTargeted = game.user.targets.has(token);
+      token.setTarget(!isTargeted, { releaseOthers: false });
+    }
+  }
+
+  /**
+   * Open character sheet for a single actor by ID
+   * @param {string} actorId - The actor ID
+   * @param {string} tokenId - The token ID (optional)
+   */
+  static openActorSheetById(actorId, tokenId) {
+    if (actorId) {
+      let actor;
+      if (tokenId) {
+        const token = canvas.tokens.get(tokenId);
+        actor = token?.actor || game.actors.get(actorId);
+      } else {
+        actor = game.actors.get(actorId);
+      }
+      actor?.sheet.render(true);
+    }
+  }
+
+  /**
+   * Heal actor to full HP by ID
+   * @param {string} actorId - The actor ID
+   * @param {string} tokenId - The token ID (optional)
+   */
+  static healActorById(actorId, tokenId) {
+    let actor;
+    if (tokenId) {
+      const token = canvas.tokens.get(tokenId);
+      actor = token?.actor || game.actors.get(actorId);
+    } else {
+      actor = game.actors.get(actorId);
+    }
+    
+    if (actor && actor.system?.attributes?.hp) {
+      const maxHP = actor.system.attributes.hp.max;
+      actor.update({ 'system.attributes.hp.value': maxHP });
+    }
+  }
+
+  /**
+   * Set actor HP to 0 by ID
+   * @param {string} actorId - The actor ID
+   * @param {string} tokenId - The token ID (optional)
+   */
+  static killActorById(actorId, tokenId) {
+    let actor;
+    if (tokenId) {
+      const token = canvas.tokens.get(tokenId);
+      actor = token?.actor || game.actors.get(actorId);
+    } else {
+      actor = game.actors.get(actorId);
+    }
+    
+    if (actor && actor.system?.attributes?.hp) {
+      actor.update({ 'system.attributes.hp.value': 0 });
+    }
+  }
+
+  /**
+   * Show temporary token selection preview on hover
+   * @param {HTMLElement} wrapper - The actor wrapper element
+   * @param {RollRequestsMenu} menu - The menu instance
+   */
+  static showTokenSelectionPreview(wrapper, menu) {
+    const tokenId = wrapper.dataset.tokenId;
+    const actorId = wrapper.dataset.actorId;
+    const uniqueId = wrapper.dataset.id;
+    
+    let token = tokenId ? canvas.tokens.get(tokenId) : null;
+    if (!token && actorId) {
+      token = canvas.tokens.placeables.find(t => t.actor?.id === actorId);
+    }
+    
+    if (token) {
+      const wasAlreadySelected = menu.selectedActors.has(uniqueId);
+      const wasAlreadyControlled = token._controlled;
+      
+      // Only control if not already controlled
+      if (!wasAlreadyControlled) {
+        // Temporarily ignore token control changes to prevent menu selection updates
+        menu._ignoreTokenControl = true;
+        
+        token.control({ releaseOthers: false });
+        
+        // Restore token control listening after a brief delay
+        setTimeout(() => {
+          menu._ignoreTokenControl = false;
+        }, 50);
+        
+        // Track this token as temporarily controlled by hover
+        this._hoveredTokens.add(token);
+        token._flashRollsWasSelected = wasAlreadySelected;
+      }
+    }
+  }
+
+  /**
+   * Hide temporary token selection preview on mouse leave
+   * @param {HTMLElement} wrapper - The actor wrapper element
+   * @param {RollRequestsMenu} menu - The menu instance
+   */
+  static hideTokenSelectionPreview(wrapper, menu) {
+    const tokenId = wrapper.dataset.tokenId;
+    const actorId = wrapper.dataset.actorId;
+    const uniqueId = wrapper.dataset.id;
+    
+    let token = tokenId ? canvas.tokens.get(tokenId) : null;
+    if (!token && actorId) {
+      token = canvas.tokens.placeables.find(t => t.actor?.id === actorId);
+    }
+    
+    if (token && this._hoveredTokens.has(token)) {
+      const isActuallySelected = menu.selectedActors.has(uniqueId);
+      const wasSelected = token._flashRollsWasSelected;
+      
+      // Only release if the actor is not actually selected in the menu
+      if (!isActuallySelected && !wasSelected) {
+        // Temporarily ignore token control changes to prevent menu selection updates
+        menu._ignoreTokenControl = true;
+        
+        token.release();
+        
+        // Restore token control listening after a brief delay
+        setTimeout(() => {
+          menu._ignoreTokenControl = false;
+        }, 50);
+      }
+      
+      // Clean up tracking
+      this._hoveredTokens.delete(token);
+      delete token._flashRollsWasSelected;
+    }
   }
 }

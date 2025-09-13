@@ -315,7 +315,8 @@ export const RollHelpers = {
     
     const SETTINGS = getSettings();
     const isPublicRollsOn = SettingsUtil.get(SETTINGS.publicPlayerRolls.tag) === true;
-    const rollMode = this.determineRollMode(isPublicRollsOn, result.message?.rollMode);
+    // Pass the first actor to check ownership (all actors in batch should have same ownership type)
+    const rollMode = this.determineRollMode(isPublicRollsOn, result.message?.rollMode, actors[0]);
     rollProcessConfig.rollMode = rollMode;
     
     if (result.config?.ability && [ROLL_TYPES.SKILL, ROLL_TYPES.TOOL].includes(normalizedType)) {
