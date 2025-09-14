@@ -17,6 +17,18 @@
   </div>
 
   <div class="form-group">
+    <label for="menuLayout">{{fields.menuLayout.label}}</label>
+    <select name="menuLayout" data-current-value="{{menuLayout}}">
+      {{#each fields.menuLayout.choices}}
+      <option value="{{@key}}">
+        {{this}}
+      </option>
+      {{/each}}
+    </select>
+    <p class="hint">{{{fields.menuLayout.hint}}}</p> 
+  </div>
+
+  <div class="form-group">
     <label for="showOfflineNotifications">{{fields.showOfflineNotifications.label}}</label>
     <input type="checkbox" name="showOfflineNotifications" {{#if showOfflineNotifications}}checked{{/if}} />
     <p class="hint">{{fields.showOfflineNotifications.hint}}</p> 

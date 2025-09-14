@@ -1,7 +1,29 @@
+/* ===== CSS Custom Properties ===== */
+:root {
+  /* Vertical Layout Dimensions */
+  --fr5e-width-compact: 6.5rem;
+  --fr5e-width-regular: 13rem;
+  --fr5e-actors-width-compact: 4.5rem;
+  --fr5e-actors-width-regular: 11rem;
+  --fr5e-actions-width: 2rem;
+  
+  /* Horizontal Layout Dimensions */
+  --fr5e-height-compact: 8rem;
+  --fr5e-height-regular: 14.5rem;
+  --fr5e-actors-height-compact: 5rem;
+  --fr5e-actors-height-regular: 11rem;
+  --fr5e-actions-height: 2rem;
+  --fr5e-max-width-horizontal: 500px;
+  
+  /* Actor Item Dimensions */
+  --fr5e-actor-img-size: 3.5rem;
+  --fr5e-actor-img-size-compact: 3.75rem;
+}
+
+/* ===== Base Menu Container ===== */
 #flash-rolls-menu {
   box-sizing: border-box;
   border-radius: 0;
-  /*color: var(--color-text-light-highlight, var(--color-light-1));*/
   color: inherit;
   display: block;
   font-size: 0.75rem;
@@ -55,24 +77,44 @@
   }
 }
 
+/* ===== Vertical Layout (Default) ===== */
 #flash-rolls-menu > div[data-application-part=main] {
   display: flex;
   flex-direction: row-reverse;
   position: relative;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
   border-radius: 4px;
-  width: 13rem;
-  /*max-height: 600px;
-  height: auto;
-  min-height: 228px;*/
+  width: var(--fr5e-width-regular);
+}
+
+/* Vertical Compact Mode */
+#flash-rolls-menu.compact > div[data-application-part=main] {
+  width: var(--fr5e-width-compact);
+}
+
+/* ===== Horizontal Layout ===== */
+#flash-rolls-menu[data-layout="horizontal"] > div[data-application-part=main] {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  border-radius: 4px;
+  width: auto;
+  height: var(--fr5e-height-regular);
+  max-width: var(--fr5e-max-width-horizontal);
+}
+
+/* Horizontal Compact Mode */
+#flash-rolls-menu[data-layout="horizontal"].compact > div[data-application-part=main] {
+  height: var(--fr5e-height-compact);
 }
 
 #flash-rolls-menu .main-content,
 #flash-rolls-menu .request-types-accordion{
   position: relative;
   pointer-events: all;
-  width: 13rem;
-  min-width: 13rem;
+  width: var(--fr5e-width-regular);
+  min-width: var(--fr5e-width-regular);
   margin: 0;
   padding: 1em 1em 0.75em 1em;
   max-height: 100%;
@@ -86,26 +128,38 @@
   background: var(--fr5e-menu-background);
   color: var(--fr5e-text-color);
 }
+#flash-rolls-menu .request-types-accordion{ 
+  gap: 0.25rem;
+}
 #flash-rolls-menu .main-content {
   padding: 1.25em 0 0 0;
-  width: 13rem;
-  min-width: 13rem;
+  width: var(--fr5e-width-regular);
+  min-width: var(--fr5e-width-regular);
   flex-direction: row;
   gap: 0;
 }
 #flash-rolls-menu .main-content ul.actors {
   list-style: none;
-  width: 11rem;
+  width: var(--fr5e-actors-width-regular);
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.5rem;
+}
+
+/* Horizontal Layout Actor Lists */
+#flash-rolls-menu[data-layout="horizontal"] .main-content ul.actors {
+  width: 100%;
+  height: var(--fr5e-actors-height-regular);
+  flex-direction: row;
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 
 #flash-rolls-menu .main-content ul.action-icons{
   list-style: none;
-  width: 2rem;
+  width: var(--fr5e-actions-width);
   margin: 0;
   padding:  0.25rem 0;
   display: flex;
@@ -114,6 +168,55 @@
   align-items: center;
   background: rgba(255, 255, 255, 0.05);
 }
+
+/* Horizontal Layout Action Icons */
+#flash-rolls-menu[data-layout="horizontal"] .main-content ul.action-icons {
+  width: 100%;
+  height: var(--fr5e-actions-height);
+  flex-direction: row;
+  padding: 0 0.25rem;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+/* Horizontal Layout Main Content */
+#flash-rolls-menu[data-layout="horizontal"] .main-content {
+  padding: 1rem 0.25rem 0.25rem 0.25rem;
+  width: auto;
+  height: var(--fr5e-height-regular);
+  min-width: unset;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* Horizontal Layout Request Types Accordion */
+#flash-rolls-menu[data-layout="horizontal"] .request-types-accordion {
+  position: absolute;
+  transform: translateY(-100%);
+  left: 0;
+  z-index: 102;
+  height: fit-content;
+  max-height: 400px;
+}
+
+/* Horizontal Layout Top Edge - Show accordion below menu when not enough space above */
+#flash-rolls-menu[data-layout="horizontal"].top-edge .request-types-accordion {
+  transform: translateY(var(--fr5e-height-regular));
+  flex-direction: column;
+}
+
+#flash-rolls-menu[data-layout="horizontal"].compact.top-edge .request-types-accordion {
+  transform: translateY(var(--fr5e-height-compact));
+  flex-direction: column;
+}
+
+/* Horizontal Layout Top Edge - Accordion Contents (Same for compact and regular) */
+#flash-rolls-menu[data-layout="horizontal"].top-edge > div ul.request-types,
+#flash-rolls-menu[data-layout="horizontal"].top-edge > div ul.status-effects {
+  mask-image: linear-gradient(to bottom, transparent 0rem, rgba(0,0,0,1) 1rem);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0rem, rgba(0,0,0,1) 1rem);
+  padding: 0.5rem;
+}
 #flash-rolls-menu .main-content ul.actors{
   order: 1;
 }
@@ -121,14 +224,22 @@
   order: 0;
 }
 
-#flash-rolls-menu.left-edge .main-content ul.actors{
-  order: 0;
+/* Horizontal Layout Order */
+#flash-rolls-menu[data-layout="horizontal"] .main-content ul.actors{
+  order: 2;
 }
-#flash-rolls-menu.left-edge .main-content ul.action-icons{
+#flash-rolls-menu[data-layout="horizontal"] .main-content ul.action-icons{
   order: 1;
 }
 
-#flash-rolls-menu.left-edge {
+#flash-rolls-menu[data-layout="vertical"].left-edge .main-content ul.actors{
+  order: 0;
+}
+#flash-rolls-menu[data-layout="vertical"].left-edge .main-content ul.action-icons{
+  order: 1;
+}
+
+#flash-rolls-menu[data-layout="vertical"].left-edge {
   > div:not(.actor-data-tooltip){
     flex-direction: row;
   }
@@ -149,9 +260,9 @@
   cursor: pointer;
 
   &:hover, &:focus{
-    background: var(--color-main-2);
-    color: var(--color-warm-2);
-    opacity: 0.6;
+    /*background: var(--color-main-2);
+    color: var(--color-warm-2);*/
+    opacity: 0.75;
     outline: 0;
   }
 }
@@ -166,9 +277,7 @@
   min-height: 0;
 
   &:hover, &:focus{
-    background: transparent;
-    color: var(--color-warm-2);
-    opacity: 0.6;
+    opacity: 0.75;
     outline: 0;
   }
 }
@@ -180,6 +289,25 @@
   height: 1px;
   width: 1rem;
 }
+#flash-rolls-menu[data-layout="horizontal"] .main-content ul.action-icons hr{
+  margin: 0 0.5rem;
+  height: 1rem;
+  width: 1px;
+}
+
+/* Horizontal Layout Actor Tabs */
+#flash-rolls-menu[data-layout="horizontal"] div.main-content > ul.actors > li.actors-tabs {
+  flex-direction: column;
+  justify-content: stretch;
+  align-items: center;
+  height: 100%;
+  padding: 0.25rem 0 0.35rem 0;
+
+  button {
+    width: 100%;
+    height: 50%;
+  }
+}
 
 #flash-rolls-menu.compact > div > .request-types-accordion .submenu-tabs {
   display: flex;
@@ -187,7 +315,6 @@
   list-style: none;
   padding: 0;
   margin: 0;
-  z-index: 10;
 }
 
 #flash-rolls-menu.compact > div > .request-types-accordion .submenu-tabs li {
@@ -205,6 +332,7 @@
   color: var(--fr5e-text-color);
   transition: all 0.2s ease;
   height: 1.8rem;
+  margin: 0;
 }
 
 #flash-rolls-menu.compact > div > .request-types-accordion .submenu-tabs li:hover {
@@ -223,7 +351,10 @@
   display: flex;
   gap: 0.2rem;
   list-style: none;
-  margin-bottom: 0.5rem;
+  margin: 0.25rem 0;
+  padding: 0;
+  position: relative;
+  z-index: 10;
 }
 
 #flash-rolls-menu > div > .request-types-accordion .submenu-tabs li {
@@ -239,6 +370,7 @@
   font-weight: bold;
   color: var(--fr5e-text-color);
   transition: all 0.2s ease;
+  margin: 0;
 }
 
 #flash-rolls-menu > div > .request-types-accordion .submenu-tabs li:hover {
@@ -356,13 +488,29 @@
   }
 }
 
-#flash-rolls-menu.compact > div[data-application-part=main] {
-  width: 6.5rem;
+/* Horizontal Layout Actor List */
+#flash-rolls-menu[data-layout="horizontal"] .main-content ul.actors > li.actor-list {
+  flex: 1;
+  overflow-x: auto;
+  overflow-y: hidden;
+  max-height: unset;
+  min-height: unset;
+  margin: 0 0.5rem 0 0;
+  padding: 0.15rem 0;
+  
+  > ul {
+    flex-direction: row;
+    gap: 0.25rem;
+    width: max-content;
+    min-width: 100%;
+  }
 }
+
+/* Vertical Compact Mode Updates */
 #flash-rolls-menu.compact .main-content {
-  width: 6.5rem;
-  max-width: 6.5rem;
-  min-width: 6.5rem;
+  width: var(--fr5e-width-compact);
+  max-width: var(--fr5e-width-compact);
+  min-width: var(--fr5e-width-compact);
   padding: 1.2em 0 0 0;
   z-index:10;
   gap: 2px;
@@ -370,25 +518,67 @@
   flex-direction: row;
 }
 
+/* Horizontal Compact Mode Updates */
+#flash-rolls-menu[data-layout="horizontal"].compact .main-content {
+  width: auto;
+  max-width: unset;
+  min-width: unset;
+  height: var(--fr5e-height-compact);
+  padding: 1rem 0 0 0.25rem;
+  flex-direction: column;
+  gap: 2px;
+}
+
 #flash-rolls-menu.compact .main-content ul.actors{
-  width: 4.5rem;
+  width: var(--fr5e-actors-width-compact);
 }
 #flash-rolls-menu.compact .main-content ul.action-icons{
-  width: 2rem;
+  width: var(--fr5e-actions-width);
 }
 
-/*
-#flash-rolls-menu.compact > div *:not(img){
-  overflow-x: visible !important;
-  overflow-y: auto !important;
+/* Horizontal Compact Mode Actor Lists */
+#flash-rolls-menu[data-layout="horizontal"].compact .main-content ul.actors{
+  width: 100%;
+  height: var(--fr5e-actors-height-compact);
 }
-  */
+#flash-rolls-menu[data-layout="horizontal"].compact .main-content ul.action-icons{
+  width: 100%;
+  height: var(--fr5e-actions-height);
+}
 
-#flash-rolls-menu.compact > div .request-types-accordion{
+#flash-rolls-menu.compact .main-content {
+  width: var(--fr5e-width-compact);
+  min-width: var(--fr5e-width-compact);
+}
+
+#flash-rolls-menu.compact .request-types-accordion{
+  width: var(--fr5e-width-regular);
+  min-width: var(--fr5e-width-regular);
+}
+
+#flash-rolls-menu[data-layout="horizontal"] > div > .request-types-accordion .submenu-tabs {
+  margin: 0.5rem 0;
+  padding: 0;
+}
+
+/* Override for Horizontal Compact Mode */
+#flash-rolls-menu[data-layout="horizontal"].compact .main-content{
+  width: auto;
+  min-width: unset;
+  height: var(--fr5e-height-compact);
+}
+
+#flash-rolls-menu.compact .request-types-accordion{
   overflow: auto;
   display: flex;
   flex-direction: column;
   border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+#flash-rolls-menu[data-layout="horizontal"] .request-types-accordion{
+  width: 100%;
+  min-width: var(--fr5e-width-regular);
+  flex-direction: column-reverse;
 }
 
 #flash-rolls-menu.compact div.main-content > ul.actors > li.actor-list > ul {
@@ -504,12 +694,13 @@ body > .actor.drag-wrapper {
       display: none;
       z-index:10;
       flex-direction: column;
-      align-items: flex-end;
-      justify-content: center;
+      align-items: center;
+      justify-content: flex-end;
       padding: 0;
       width: 20px;
       height: 100%;
       transition: opacity 0.2s ease-out 0.2s, right 0.2s ease-out 0.2s;
+      background: var(--fr5e-bg-50);
     }
     i.icon-sheet,
     i.favorite,
@@ -520,7 +711,8 @@ body > .actor.drag-wrapper {
       color: rgba(245,245,245,1);
       width: 20px;
       height: auto;
-      flex: 1 1 auto;
+      padding: 0.25rem 0;
+      flex: 0 0 auto;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -529,11 +721,6 @@ body > .actor.drag-wrapper {
       &:before{
         font-size: var(--font-size-10);
       }
-    }
-    i.icon-sheet,
-    i.icon-target {
-      background: var(--fr5e-menu-background, rgba(20, 20, 20, 0.6));
-      padding: 2px;
     }
 
     &:hover span.icons {
@@ -544,7 +731,7 @@ body > .actor.drag-wrapper {
 
     i.favorite {
       position: absolute;
-      right: 2px;
+      right: 0;
       top: 2px;
     }
   }
@@ -618,7 +805,35 @@ body > .actor.drag-wrapper {
   }
 
 }
-#flash-rolls-menu.left-edge > div.main-content > ul.actors > li.actor-list > ul > li .actor > .actor-img {
+#flash-rolls-menu[data-layout="horizontal"] div.main-content > ul.actors > li .actor {
+  justify-content: center;
+  align-items: center;
+  width: 6.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 2px;
+
+  > .actor-img,
+  > .actor-data {
+    width: 100%;
+  }
+
+  > .actor-img {
+    height: 5.5rem;
+    max-height: 5.5rem;
+  }
+  > .actor-stat-bar{
+    flex: 0 0 4px;
+    height: 4px;
+    width: 100%;
+    margin: 0;
+  }
+}
+#flash-rolls-menu[data-layout="horizontal"].compact div.main-content > ul.actors > li .actor {
+  width: 4rem;
+}
+#flash-rolls-menu[data-layout="vertical"].left-edge > div.main-content > ul.actors > li.actor-list > ul > li .actor > .actor-img {
   span.icons {
     right: auto !important;
     left: 0px !important;
@@ -629,6 +844,7 @@ body > .actor.drag-wrapper {
   &:hover span.icons {
     left: 0;
     opacity: 1;
+    justify-content: flex-end;
   }
 }
 #flash-rolls-menu div.main-content > ul.actors .actor-list-empty {
@@ -723,21 +939,26 @@ body > .actor.drag-wrapper {
 #flash-rolls-menu > div ul.status-effects {
   left: calc(-13rem + 1px);
   top: 0;
-  height: 100%;
-  max-height: 70vh;
+  left: 0;
+  padding: 7rem .5rem 0 0.5rem;
+  margin: 0;
+  height: calc(100% - 1rem);
+  max-height: 100%;
   min-height: 280px;
   width: 100%;
   position: absolute;
   display: none;
   overflow-y: auto;
   pointer-events: all;
+  flex-direction: column;
   
   /* Fade in from top using mask */
-  mask-image: linear-gradient(to bottom, transparent 4rem, rgba(0,0,0,1) 6rem);
-  -webkit-mask-image: linear-gradient(to bottom, transparent 4rem, rgba(0,0,0,1) 6rem);
+  mask-image: linear-gradient(to bottom, transparent 5rem, rgba(0,0,0,1) 6.5rem);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 5rem, rgba(0,0,0,1) 6.5rem);
 
   &.active {
     display: flex;
+    flex-direction: column;
   }
 }
 #flash-rolls-menu.compact > div ul.request-types,
@@ -755,12 +976,28 @@ body > .actor.drag-wrapper {
   flex-direction: column;
   
   /* Fade in from top using mask */
-  mask-image: linear-gradient(to bottom, transparent 4rem, rgba(0,0,0,1) 6rem);
-  -webkit-mask-image: linear-gradient(to bottom, transparent 4rem, rgba(0,0,0,1) 6rem);
+  mask-image: linear-gradient(to bottom, transparent 5rem, rgba(0,0,0,1) 6.5rem);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 5rem, rgba(0,0,0,1) 6.5rem);
 
   &.active {
     display: flex;
   }
+}
+
+/* Horizontal Layout Request Types Menu (Same for compact and regular) */
+#flash-rolls-menu[data-layout="horizontal"] > div ul.request-types,
+#flash-rolls-menu[data-layout="horizontal"] > div ul.status-effects {
+  position: relative;
+  margin: 0;
+  padding: 0.5rem;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: auto;
+  min-height: 60px;
+  
+  mask-image: linear-gradient(to top, transparent 0rem, rgba(0,0,0,1) 1rem);
+  -webkit-mask-image: linear-gradient(to top, transparent 0rem, rgba(0,0,0,1) 1rem);
 }
 
 
@@ -778,6 +1015,7 @@ body > .actor.drag-wrapper {
   line-height: 1.5;
   pointer-events: all;
   width: 100%;
+  border-color: 0;
 
   i {
     margin-right: 3px;
@@ -804,7 +1042,6 @@ body > .actor.drag-wrapper {
 #flash-rolls-menu > div ul.status-effects > li.status-effect {
   cursor: pointer;
   padding: 0.25rem 0.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   transition: background-color 0.2s ease;
 }
 
@@ -862,8 +1099,11 @@ body > .actor.drag-wrapper {
 
 #flash-rolls-menu .search-container{
   position: relative;
-  height: 3.5em;
+  height: 3em;
+  flex: 0 0 3rem;
   width: 100%;
+  display: flex;
+  align-items: center;
   z-index: 1;
 
   .search-input{
@@ -871,12 +1111,17 @@ body > .actor.drag-wrapper {
     font-size: var(--font-size-13);
     font-weight: 400;
     box-shadow: 2px 2px 4px inset rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255,255,255,0.15);
   }
   .icon{
     position: absolute;
+    height: 100%;
     right: 0.75em;
-    top: 1.25em;
+    top: 2em;
     transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    align-self: center;
   }
 }
 
@@ -892,8 +1137,8 @@ body > .actor.drag-wrapper {
   overflow: auto;
   
   /* Fade in from top using mask */
-  mask-image: linear-gradient(to bottom, transparent 4rem, rgba(0,0,0,1) 6rem);
-  -webkit-mask-image: linear-gradient(to bottom, transparent 4rem, rgba(0,0,0,1) 6rem);
+  mask-image: linear-gradient(to bottom, transparent 5rem, rgba(0,0,0,1) 6.5rem);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 5rem, rgba(0,0,0,1) 6.5rem);
 
   > li {
     width: calc(100% - 0.35em);
@@ -1036,19 +1281,35 @@ body > .actor.drag-wrapper {
   justify-content: center;
   pointer-events: all;
   z-index: 101;
+}
+
+/* Horizontal Layout Drag Handle */
+#flash-rolls-menu[data-layout="horizontal"] .drag-handle {
+  /*top: 0;
+  left: 0;
+  right: auto;
+  bottom: 0;
+  width: 1.2em;
+  height: auto;
+  border-bottom: 1px solid var(--fr5e-menu-background, rgba(20, 20, 20, 0.9));
+  border-right: none;
+  border-top-right-radius: 0;
+  border-bottom-left-radius: 4px;
+  flex-direction: column;*/
+}
+
+#flash-rolls-menu .drag-handle i {
+  color: var(--color-text-light-highlight, var(--color-light-1));
+  opacity: 0.5;
+  font-size: 0.8em;
+}
   
-  i {
-    color: var(--color-text-light-highlight, var(--color-light-1));
-    opacity: 0.5;
-    font-size: 0.8em;
-  }
-  
-  &:hover {
-    opacity: 0.8;
-    i {
-      opacity: 0.8;
-    }
-  }
+#flash-rolls-menu .drag-handle:hover {
+  opacity: 0.8;
+}
+
+#flash-rolls-menu .drag-handle:hover i {
+  opacity: 0.8;
 }
 
 /* Dragging State */
@@ -1078,31 +1339,41 @@ body > .actor.drag-wrapper {
 #flash-rolls-menu.custom-position {
   transition: none;
   z-index: var(--z-index-app);
-  max-width: 12.5rem;
+  max-width: var(--fr5e-width-regular);
   overflow: visible;
   --flash-rolls-menu-offset: 0px;
 
-  &.compact{
-    max-width: 6.5rem;
+  &.compact:not([data-layout="horizontal"]){
+    max-width: var(--fr5e-width-compact);
   }
-  
-  .drag-handle {
-    background:  rgba(0, 0, 0, 0.1);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    
-    i {
-      opacity: 0.8;
-    }
-  }
+}
 
-  &.left-edge {
-    > div:not(.actor-data-tooltip){
-      flex-direction: row;
-    }
-    div.main-content:not(.actor-data-tooltip) > ul.actors > li.actor-list > ul > li.actor {
-      flex-direction: row-reverse;
-    }
-  }
+/* Horizontal Layout Custom Position Override */
+#flash-rolls-menu[data-layout="horizontal"].custom-position {
+  max-width: var(--fr5e-max-width-horizontal);
+  max-height: var(--fr5e-height-regular);
+}
+
+#flash-rolls-menu[data-layout="horizontal"].custom-position.compact {
+  max-width: var(--fr5e-max-width-horizontal);
+  max-height: var(--fr5e-height-compact);
+}
+
+#flash-rolls-menu.custom-position .drag-handle {
+  background:  rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+    
+#flash-rolls-menu.custom-position .drag-handle i {
+  opacity: 0.8;
+}
+
+#flash-rolls-menu.custom-position[data-layout="vertical"].left-edge > div:not(.actor-data-tooltip){
+  flex-direction: row;
+}
+
+#flash-rolls-menu.custom-position[data-layout="vertical"].left-edge div.main-content:not(.actor-data-tooltip) > ul.actors > li.actor-list > ul > li.actor {
+  flex-direction: row-reverse;
 }
 
 /* Near Snap Indicator */
@@ -1325,7 +1596,7 @@ body.crlngn-tabs #flash-rolls-menu.docked-right {
   */
 
 #flash-rolls-menu.compact div.main-content > ul.actors > li.actor-list > ul > li > .actor {
-  gap: 2px;
+  gap: 0.1rem;
   padding: 0.1rem;
 }
 #flash-rolls-menu.compact div.main-content > ul.actors > li.actor-list > ul > li > .actor > .actor-img{
@@ -1439,9 +1710,15 @@ body.crlngn-tabs #flash-rolls-menu.docked-right {
     position: absolute;
     margin: 0;
     width: 1.2rem;
+    height: 1.2rem;
     pointer-events: none;
   }
 
+}
+
+/* Ensure toggle-list styling works properly */
+#flash-rolls-menu label[for="flash5e-toggle-list"].flash5e-switch-compact:has(input:checked) {
+  color: var(--color-warm-2) !important;
 }
 
 @keyframes drop-zone-pulse {

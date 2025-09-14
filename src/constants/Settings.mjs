@@ -31,6 +31,8 @@ export const getSettings = () => {
         'initiateCombatOnRequest',
         'showOnlyPCsWithToken',
         'compactMode',
+        'menuLayout',
+        'showOptionsListOnHover',
         'publicPlayerRolls',
         'addMacrosToFolder'
       ],
@@ -46,6 +48,8 @@ export const getSettings = () => {
         initiateCombatOnRequest: true,
         showOnlyPCsWithToken: true,
         compactMode: true,
+        menuLayout: "vertical",
+        showOptionsListOnHover: true,
         publicPlayerRolls: true,
         addMacrosToFolder: true
       },
@@ -252,11 +256,36 @@ export const getSettings = () => {
     },
 
     compactMode: {
-      tag: "prevent-fade-out",
+      tag: "compact-mode",
       label: game.i18n.localize("FLASH_ROLLS.settings.compactMode.label"),
       hint: game.i18n.localize("FLASH_ROLLS.settings.compactMode.hint"),
       propType: Boolean,
       inputType: SETTING_INPUT.checkbox,
+      default: true,
+      scope: SETTING_SCOPE.world,
+      config: false
+    },
+
+    menuLayout: {
+      tag: "menu-layout",
+      label: game.i18n.localize("FLASH_ROLLS.settings.menuLayout.label"),
+      hint: game.i18n.localize("FLASH_ROLLS.settings.menuLayout.hint"),
+      propType: String, 
+      inputType: SETTING_INPUT.select,
+      choices: {
+        "vertical": game.i18n.localize("FLASH_ROLLS.settings.menuLayout.choices.vertical"),
+        "horizontal": game.i18n.localize("FLASH_ROLLS.settings.menuLayout.choices.horizontal")
+      },
+      default: "vertical",
+      scope: SETTING_SCOPE.world,
+      config: false
+    },
+
+    showOptionsListOnHover: {
+      tag: "show-list-on-hover",
+      label: game.i18n.localize("FLASH_ROLLS.settings.showOptionsListOnHover.label"),
+      hint: game.i18n.localize("FLASH_ROLLS.settings.showOptionsListOnHover.hint"),
+      propType: Boolean,
       default: true,
       scope: SETTING_SCOPE.world,
       config: false

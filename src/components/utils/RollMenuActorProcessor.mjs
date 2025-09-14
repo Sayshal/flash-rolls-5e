@@ -42,6 +42,8 @@ export class RollMenuActorProcessor {
     const skipRollDialog = SettingsUtil.get(SETTINGS.skipRollDialog.tag);
     const groupRollsMsgEnabled = SettingsUtil.get(SETTINGS.groupRollsMsgEnabled.tag);
     const showOnlyPCsWithToken = SettingsUtil.get(SETTINGS.showOnlyPCsWithToken.tag);
+    const showOptionsListOnHover = SettingsUtil.get(SETTINGS.showOptionsListOnHover.tag) ?? SETTINGS.showOptionsListOnHover.default;
+    LogUtil.log('Template context showOptionsListOnHover:', [showOptionsListOnHover, typeof showOptionsListOnHover, 'tag:', SETTINGS.showOptionsListOnHover.tag]);
     
     const currentActors = menu.currentTab === 'pc' ? pcActors : npcActors;
     const selectAllOn = currentActors.length > 0 && 
@@ -62,6 +64,7 @@ export class RollMenuActorProcessor {
       rollRequestsEnabled,
       skipRollDialog,
       groupRollsMsgEnabled,
+      showOptionsListOnHover,
       selectAllOn,
       hasSelectedActors: menu.selectedActors.size > 0,
       requestTypes,

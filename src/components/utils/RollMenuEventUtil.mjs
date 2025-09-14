@@ -1,6 +1,8 @@
 import { LogUtil } from '../LogUtil.mjs';
 import { RollMenuDragUtil } from './RollMenuDragUtil.mjs';
 import { delay, getActorData, updateCanvasTokenSelection } from '../helpers/Helpers.mjs';
+import { getSettings } from '../../constants/Settings.mjs';
+import { SettingsUtil } from '../SettingsUtil.mjs';
 
 /**
  * Utility class for handling Roll Requests Menu event listeners
@@ -93,6 +95,11 @@ export class RollMenuEventUtil {
     // Open sheets for all selected actors
     html.querySelector('#flash5e-sheets')?.addEventListener('click', () => {
       this.openSheetsForSelected(menu);
+    });
+    
+    // Toggle list checkbox
+    html.querySelector('#flash5e-toggle-list')?.addEventListener('change', () => {
+      this.toggleOptionsListOnHover(menu);
     });
     
     // Remove all status effects from selected actors
@@ -194,13 +201,30 @@ export class RollMenuEventUtil {
         const actorRect = actor.getBoundingClientRect();
         const menuRect = html.getBoundingClientRect();
         const isLeftEdge = html.classList.contains('left-edge');
+        const isHorizontalLayout = html.hasAttribute('data-layout') && html.getAttribute('data-layout') === 'horizontal';
         
-        if (isLeftEdge) {
-          tooltipCopy.style.left = `${actorRect.right - menuRect.left - 8}px`;
+        if (isHorizontalLayout) {
+          // Position above and centered on the actor image in horizontal layout
+          const actorImg = actor.querySelector('.actor-img');
+          const imgRect = actorImg ? actorImg.getBoundingClientRect() : actorRect;
+          
+          // Calculate the center of the image relative to the menu
+          const imgCenterX = imgRect.left + (imgRect.width / 2) - menuRect.left - 16;
+          
+          tooltipCopy.style.left = `${imgCenterX}px`;
+          tooltipCopy.style.transform = 'translateX(-50%)';
+          tooltipCopy.style.bottom = `${menuRect.bottom - actorRect.top + 8}px`;
+          tooltipCopy.style.top = 'auto';
+          tooltipCopy.style.right = 'auto';
         } else {
-          tooltipCopy.style.right = `${menuRect.right - actorRect.left - 8}px`;
+          // Original vertical layout positioning
+          if (isLeftEdge) {
+            tooltipCopy.style.left = `${actorRect.right - menuRect.left - 8}px`;
+          } else {
+            tooltipCopy.style.right = `${menuRect.right - actorRect.left - 8}px`;
+          }
+          tooltipCopy.style.top = `${actorRect.top - menuRect.top}px`;
         }
-        tooltipCopy.style.top = `${actorRect.top - menuRect.top}px`;
         tooltipCopy.className = 'actor-data-tooltip';
         
         document.querySelector('#flash-rolls-menu').appendChild(tooltipCopy);
@@ -244,6 +268,18 @@ export class RollMenuEventUtil {
       // Also select all on focus (useful for keyboard navigation)
       searchInput.addEventListener('focus', (event) => {
         event.target.select();
+        menu.isSearchFocused = true;
+        game.user.setFlag('flash-rolls-5e', 'searchFocused', true);
+      });
+      
+      // Hide accordion when search loses focus (if not hovering over menu)
+      searchInput.addEventListener('blur', () => {
+        menu.isSearchFocused = false;
+        game.user.setFlag('flash-rolls-5e', 'searchFocused', false);
+        const accordion = html.querySelector('.request-types-accordion');
+        if (accordion && !html.matches(':hover')) {
+          accordion.classList.remove('hover-visible');
+        }
       });
     }
   }
@@ -251,18 +287,40 @@ export class RollMenuEventUtil {
   /**
    * Attach accordion and request type handlers
    */
-  static attachAccordionHandlers(menu, html) {
+  static attachAccordionHandlers(menu, html) {    
+    const SETTINGS = getSettings();
+    const showOnHover = SettingsUtil.get(SETTINGS.showOptionsListOnHover.tag);
+    
     const accordion = html.querySelector('.request-types-accordion');
     if (accordion) {
-      html.addEventListener('mouseenter', () => {
-        if (menu.selectedActors.size > 0) {
-          accordion.classList.add('hover-visible');
+      // Always create the handlers but store them so we can add/remove them dynamically
+      const mouseEnterHandler = () => {
+        const showOptionsListOnHover = SettingsUtil.get(SETTINGS.showOptionsListOnHover.tag);
+        LogUtil.log('Accordion mouseEnter', [menu.isSearchFocused]);
+        if (menu.selectedActors.size > 0 && showOptionsListOnHover) {
+          accordion?.classList.add('hover-visible');
         }
-      });
+      };
       
-      html.addEventListener('mouseleave', () => {
-        accordion.classList.remove('hover-visible');
-      });
+      const mouseLeaveHandler = () => {
+        LogUtil.log('Accordion mouseLeave', [menu.isSearchFocused]);
+        if (!menu.isSearchFocused) {
+          accordion?.classList.remove('hover-visible');
+        }
+      };
+      
+      // Store handlers on the menu for dynamic management
+      menu._accordionMouseEnter = mouseEnterHandler;
+      menu._accordionMouseLeave = mouseLeaveHandler;
+      
+      // Only attach if setting is enabled
+      if (showOnHover) {
+        html.addEventListener('mouseenter', mouseEnterHandler);
+        html.addEventListener('mouseleave', mouseLeaveHandler);
+        menu._accordionListenersAttached = true;
+      } else {
+        menu._accordionListenersAttached = false;
+      }
     }
     
     const requestTypesContainer = html.querySelector('.request-types');
@@ -681,6 +739,89 @@ export class RollMenuEventUtil {
         this._hoveredTokens.add(token);
         token._flashRollsWasSelected = wasAlreadySelected;
       }
+    }
+  }
+
+  /**
+   * Toggle the show options list on hover setting
+   * @param {RollRequestsMenu} menu - The menu instance
+   */
+  static async toggleOptionsListOnHover(menu) {    
+    const SETTINGS = getSettings();
+    const currentValue = SettingsUtil.get(SETTINGS.showOptionsListOnHover.tag);
+    const accordion = menu.element.querySelector('.request-types-accordion');
+    const accordionVisible = accordion?.classList.contains('hover-visible');
+    
+    const newValue = !currentValue;
+    await SettingsUtil.set(SETTINGS.showOptionsListOnHover.tag, newValue);
+
+    RollMenuEventUtil.updateAccordionHoverBehaviorNoRender(menu, newValue);
+
+    if(newValue===false || menu.selectedActors.size === 0){
+      accordion?.classList.remove('hover-visible');
+    }else if(newValue===true && menu.selectedActors.size > 0){
+      accordion?.classList.add('hover-visible');
+    }
+
+    /*
+    // Special case: If hover is currently disabled and accordion is hidden, 
+    // show it manually without changing the setting
+    if (currentValue===false && accordionVisible===false && menu.selectedActors.size > 0) {
+      accordion.classList.add('hover-visible');
+      return; // Don't change the setting, just show accordion this time
+    }
+    
+    // Update checkbox state immediately
+    const toggleCheckbox = menu.element.querySelector('#flash5e-toggle-list');
+    if (toggleCheckbox) {
+      toggleCheckbox.checked = newValue;
+    }
+    
+    // Update accordion behavior without full re-render
+    RollMenuEventUtil.updateAccordionHoverBehaviorNoRender(menu, newValue);
+    
+    if (!newValue) {
+      // Toggle OFF: Hide accordion and disable hover
+      accordion?.classList.remove('hover-visible');
+    } else {
+      // Toggle ON: Show accordion if actors are selected (enable hover)
+      if (menu.selectedActors.size > 0) {
+        accordion?.classList.add('hover-visible');
+      }
+    }
+    */
+  }
+
+  /**
+   * Update accordion hover behavior based on setting
+   * @param {RollRequestsMenu} menu - The menu instance
+   * @param {boolean} showOnHover - Whether to show accordion on hover
+   */
+  static updateAccordionHoverBehavior(menu, showOnHover) {
+    // Re-render the menu to update event listeners based on new setting
+    menu.render();
+  }
+
+  /**
+   * Update accordion hover behavior without re-rendering
+   * @param {RollRequestsMenu} menu - The menu instance
+   * @param {boolean} showOnHover - Whether to show accordion on hover
+   */
+  static updateAccordionHoverBehaviorNoRender(menu, showOnHover) {
+    const html = menu.element;
+    const accordion = html.querySelector('.request-types-accordion');
+    if (!accordion || !menu._accordionMouseEnter) return;
+
+    html.removeEventListener('mouseenter', menu._accordionMouseEnter);
+    html.removeEventListener('mouseleave', menu._accordionMouseLeave);
+    // menu._accordionListenersAttached = false;
+    accordion.classList.remove('hover-visible');
+
+    if(showOnHover) {
+      // Add the stored handlers
+      html.addEventListener('mouseenter', menu._accordionMouseEnter);
+      html.addEventListener('mouseleave', menu._accordionMouseLeave);
+      // menu._accordionListenersAttached = true;
     }
   }
 

@@ -107,6 +107,20 @@ export class RollMenuDragUtil {
       menu.element.classList.remove('left-edge');
     }
     
+    // Handle top-edge for horizontal layout
+    const isHorizontalLayout = menu.element.hasAttribute('data-layout') && 
+                              menu.element.getAttribute('data-layout') === 'horizontal';
+    if (isHorizontalLayout) {
+      if (dragData.currentTop < 400) {
+        menu.element.classList.add('top-edge');
+      } else {
+        menu.element.classList.remove('top-edge');
+      }
+    } else {
+      // Remove top-edge class if not in horizontal layout
+      menu.element.classList.remove('top-edge');
+    }
+    
     const computed = window.getComputedStyle(menu.element);
 
     const snapInfo = this.calculateSnapDistance(menu);
@@ -169,6 +183,13 @@ export class RollMenuDragUtil {
       if (dragData.currentLeft < remInPixels) {
         menu.element.classList.add('left-edge');
       }
+      
+      // Handle top-edge for horizontal layout
+      const isHorizontalLayout = menu.element.hasAttribute('data-layout') && 
+                                menu.element.getAttribute('data-layout') === 'horizontal';
+      if (isHorizontalLayout && dragData.currentTop < 400) {
+        menu.element.classList.add('top-edge');
+      }
     }
   }
   
@@ -215,6 +236,15 @@ export class RollMenuDragUtil {
     menu.element.classList.remove('custom-position', 'left-edge');
     menu.element.classList.add('docked-right', 'snapping');
     
+    // Handle top-edge for horizontal layout in docked position
+    const isHorizontalLayout = menu.element.hasAttribute('data-layout') && 
+                              menu.element.getAttribute('data-layout') === 'horizontal';
+    if (isHorizontalLayout && currentTop < 400) {
+      menu.element.classList.add('top-edge');
+    } else {
+      menu.element.classList.remove('top-edge');
+    }
+    
     menu.element.style.position = 'fixed';
     menu.element.style.inset = '';
     menu.element.style.left = '';
@@ -244,6 +274,7 @@ export class RollMenuDragUtil {
     
     menu.element.classList.remove('custom-position');
     menu.element.classList.remove('left-edge');
+    menu.element.classList.remove('top-edge');
     menu.element.classList.add('snapping');
     
     menu.element.style.position = '';
@@ -305,6 +336,15 @@ export class RollMenuDragUtil {
       menu.element.classList.add('docked-right');
       menu.element.classList.remove('custom-position', 'left-edge');
       
+      // Handle top-edge for horizontal layout in docked position
+      const isHorizontalLayout = menu.element.hasAttribute('data-layout') && 
+                                menu.element.getAttribute('data-layout') === 'horizontal';
+      if (isHorizontalLayout && position.y < 400) {
+        menu.element.classList.add('top-edge');
+      } else {
+        menu.element.classList.remove('top-edge');
+      }
+      
       adjustMenuOffset();
     } else {
       document.body.appendChild(menu.element);
@@ -325,6 +365,13 @@ export class RollMenuDragUtil {
       const remInPixels = parseFloat(getComputedStyle(document.documentElement).fontSize) * 15;
       if (position.x < remInPixels) {
         menu.element.classList.add('left-edge');
+      }
+      
+      // Handle top-edge for horizontal layout
+      const isHorizontalLayout = menu.element.hasAttribute('data-layout') && 
+                                menu.element.getAttribute('data-layout') === 'horizontal';
+      if (isHorizontalLayout && position.y < 400) {
+        menu.element.classList.add('top-edge');
       }
     }
   }

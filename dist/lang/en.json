@@ -174,9 +174,21 @@
         "label": "Use Compact Mode",
         "hint": "Use compact layout for the roll requests menu. The character information will only show on hover."
       },
+      "menuLayout": {
+        "label": "Menu Layout",
+        "hint": "Choose the layout direction for the roll requests menu.",
+        "choices": {
+          "vertical": "Vertical",
+          "horizontal": "Horizontal"
+        }
+      },
       "addMacrosToFolder": {
         "label": "Place new macros on 'Flash Rolls' Folder",
         "hint": "Check this option to always add new macros inside the 'Flash Rolls' folder. When unchecked, macros will be added to the root of macros directory."
+      },
+      "showOptionsListOnHover": {
+        "label": "Show Roll Options on Hover",
+        "hint": "When enabled, the roll options accordion will appear when you hover over the menu with actors selected. When disabled, click the toggle list button to show roll options."
       }
     },
     "groupRoll": {
@@ -226,7 +238,8 @@
         "healAll": "Heal Selected",
         "killAll": "Kill Selected",
         "removeStatus": "Remove Status",
-        "openSheets": "Open Sheets"
+        "openSheets": "Open Sheets",
+        "showOptionsListOnHover": "Toggle List"
       },
       "forms": {
         "pixelsRollTitle": "Pixels Dice - Roll Resolver",

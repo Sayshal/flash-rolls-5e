@@ -24,6 +24,7 @@ import { RollMenuOrchestrationUtil } from './utils/RollMenuOrchestrationUtil.mjs
 import { RollMenuActorProcessor } from './utils/RollMenuActorProcessor.mjs';
 import { RollMenuExecutionUtil } from './utils/RollMenuExecutionUtil.mjs';
 import { RollMenuStateUtil } from './utils/RollMenuStateUtil.mjs';
+import { RollMenuStatusUtil } from './utils/RollMenuStatusUtil.mjs';
 
 /**
  * Roll Requests Menu Application
@@ -60,6 +61,7 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
     this.isLocked = false; 
     this.optionsExpanded = game.user.getFlag(MODULE.ID, 'menuOptionsExpanded') ?? false;
     this.accordionStates = game.user.getFlag(MODULE.ID, 'menuAccordionStates') ?? {};
+    this.isSearchFocused = game.user.getFlag('flash-rolls-5e', 'searchFocused') ?? false;
     
     this.isDragging = false;
     this.isCustomPosition = false;
@@ -94,6 +96,11 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
     const preparedContext = await RollMenuActorProcessor.prepareActorContext(this, context);
+    
+    // Add layout information to context
+    const SETTINGS = getSettings();
+    preparedContext.menuLayout = SettingsUtil.get(SETTINGS.menuLayout.tag);
+    
     this._lastPreparedContext = preparedContext;
     return preparedContext;
   }
@@ -136,6 +143,9 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
       }else{
         menu.classList.remove("compact");
       }
+      
+      const menuLayout = SettingsUtil.get(SETTINGS.menuLayout.tag);
+      menu.setAttribute("data-layout", menuLayout);
     }
     
     RollMenuDragUtil.applyCustomPosition(this, this.customPosition);
@@ -432,7 +442,6 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
     const statusEffectId = event.currentTarget.dataset.id;
     LogUtil.log('_onStatusEffectClick', [statusEffectId]);
     
-    const { RollMenuStatusUtil } = await import('./utils/RollMenuStatusUtil.mjs');
     await RollMenuStatusUtil.toggleStatusOnSelected(statusEffectId, this);
   }
 
@@ -783,6 +792,9 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
     this.selectedActors.clear();
     this.selectedRequestType = null;
     document.removeEventListener('click', this._onClickOutside, true);
+    
+    // Clean up search focus flag
+    game.user.setFlag('flash-rolls-5e', 'searchFocused', false);
     
     this._cleanupHooks();
     this._cleanupTimeouts();

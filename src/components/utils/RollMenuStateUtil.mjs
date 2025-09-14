@@ -48,6 +48,7 @@ export class RollMenuStateUtil {
    * @param {RollRequestsMenu} menu - Menu instance
    */
   static handleToggleSelectAll(event, menu) {
+    const SETTINGS = getSettings();
     const selectAll = event.target.checked;
     menu._ignoreTokenControl = true;
     
@@ -79,11 +80,12 @@ export class RollMenuStateUtil {
     
     menu.render();
     this.updateRequestTypesVisibility(menu);
+    const showOptionsListOnHover = SettingsUtil.get(SETTINGS.showOptionsListOnHover.tag);
     
     // Show/hide request types accordion based on selection
     const accordion = menu.element.querySelector('.request-types-accordion');
     if (accordion) {
-      if (menu.selectedActors.size > 0) {
+      if (menu.selectedActors.size > 0 && showOptionsListOnHover) {
         accordion.classList.add('hover-visible');
       } else {
         accordion.classList.remove('hover-visible');
@@ -136,6 +138,7 @@ export class RollMenuStateUtil {
    * @param {RollRequestsMenu} menu - Menu instance
    */
   static toggleActorSelection(uniqueId, actorId, tokenId, menu) {
+    const SETTINGS = getSettings();
     menu._ignoreTokenControl = true;
     
     if (menu.selectedActors.has(uniqueId)) {
@@ -161,11 +164,12 @@ export class RollMenuStateUtil {
     this.updateActorSelectionUI(uniqueId, menu);
     this.updateSelectAllState(menu);
     this.updateRequestTypesVisibilityNoRender(menu);
+    const showOptionsListOnHover = SettingsUtil.get(SETTINGS.showOptionsListOnHover.tag);
     
     // Show request types accordion if we have selected actors
     const accordion = menu.element.querySelector('.request-types-accordion');
     if (accordion) {
-      if (menu.selectedActors.size > 0) {
+      if (menu.selectedActors.size > 0 && showOptionsListOnHover) {
         accordion.classList.add('hover-visible');
       } else {
         accordion.classList.remove('hover-visible');
