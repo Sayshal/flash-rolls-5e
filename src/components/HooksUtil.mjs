@@ -217,7 +217,8 @@ export class HooksUtil {
    */
   static _registerHooks() {
     this._registerHook(HOOKS_CORE.RENDER_SIDEBAR, this._onRenderSidebar.bind(this));
-    this._registerHook(HOOKS_CORE.PRE_CREATE_CHAT_MESSAGE, this._onPreCreateChatMessage.bind(this));
+    // this._registerHook(HOOKS_CORE.PRE_CREATE_CHAT_MESSAGE, this._onPreCreateChatMessage.bind(this));
+    this._registerHook(HOOKS_CORE.CREATE_CHAT_MESSAGE, this._onCreateChatMessage.bind(this));
     this._registerHook(HOOKS_CORE.PRE_CREATE_CHAT_MESSAGE, this._onPreCreateChatMessageFlavor.bind(this));
     this._registerHook(HOOKS_CORE.RENDER_CHAT_MESSAGE, this._onRenderChatMessageHTML.bind(this));
     this._registerHook(HOOKS_CORE.RENDER_CHAT_LOG, this._onRenderChatLog.bind(this));
@@ -238,7 +239,7 @@ export class HooksUtil {
    */
   static _registerGMHooks() {
     this._registerHook(HOOKS_CORE.USER_CONNECTED, this._onUserConnected.bind(this));
-    this._registerHook(HOOKS_CORE.PRE_CREATE_CHAT_MESSAGE, this._onPreCreateChatMessageGM.bind(this));
+    // this._registerHook(HOOKS_CORE.PRE_CREATE_CHAT_MESSAGE, this._onPreCreateChatMessageGM.bind(this));
     this._registerHook(HOOKS_DND5E.PRE_ROLL_V2, this._onPreRoll.bind(this));
     
     // Token hooks for updating roll requests menu
@@ -294,10 +295,57 @@ export class HooksUtil {
   //   }, 3000); 
   // }
   
+  static _onCreateChatMessage(a, b, c, d) {
+    LogUtil.log('_onCreateChatMessage', [a, b, c, d]);
+
+    // if(data.isFlashRollRequest){
+    //   const originatingMessage = data.getFlag("dnd5e", "originatingMessage");
+    //   LogUtil.log("_onCreateChatMessage #2", [originatingMessage]);
+    // }
+  }
+
   /**
    * Handle data before creating chat message for requested rolls
    */
   static _onPreCreateChatMessage(chatMessage, data, options, userId) {
+    LogUtil.log('_onPreCreateChatMessage', [chatMessage, data, options, userId]);
+
+    // if(data.isFlashRollRequest){
+    //   const originatingMessage = data.getFlag("dnd5e", "originatingMessage");
+    //   LogUtil.log("_onPreCreateChatMessage #2", [originatingMessage]);
+    // }
+
+    /*
+    if (!game.user.isGM) {
+      // Check if this is a Flash Rolls request by looking for our flags
+      const hasFlashRollsFlag = message.flags?.[MODULE_ID]?.isFlashRollRequest || 
+                               message.flags?.[MODULE_ID]?.groupRollId ||
+                               message.getFlag('dnd5e', 'roll')?._requestedBy;
+      
+      LogUtil.log("_onPreCreateChatMessage #0", [hasFlashRollsFlag]);
+      if (hasFlashRollsFlag) {
+        const challengeVisibility = game.settings.get("dnd5e", "challengeVisibility");
+        LogUtil.log("_onPreCreateChatMessage #1", [challengeVisibility]);
+        
+        let showDC = true;
+        switch(challengeVisibility) {
+          case "none":
+            showDC = false;
+            break;
+          case "all":
+            showDC = true;
+            break;
+          case "player":
+            showDC = message.author.id === game.user.id || !message.author.isGM;
+            break;
+          default:
+            showDC = true;
+            break;
+        }
+      }
+    }
+      */
+
     if (data._showRequestedBy && data.rolls?.length > 0) {
       const requestedBy = data._requestedBy || 'GM';
       const requestedText = game.i18n.format('FLASH_ROLLS.chat.requestedBy', { gm: requestedBy });
@@ -473,51 +521,18 @@ export class HooksUtil {
    * Intercept group roll message creation (GM only) - currently unused
    */
   static _onPreCreateChatMessageGM(message, data, options, userId) {
-    // LogUtil.log("_onPreCreateChatMessageGM", [message, data, options, userId]);
+    LogUtil.log("_onPreCreateChatMessageGM", [message, data, options, userId]);
   }
   
   /**
    * Intercept rendered chat messages to handle group rolls
    */
   static _onRenderChatMessageHTML(message, html, context) {
-    ChatMessageUtils.interceptRollMessage(message, html, context);
-    
     // Check if we should hide challenge visibility for Flash Rolls messages
     // This handles the case where the player is the message author but shouldn't see DCs
-    if (!game.user.isGM && message.author === game.user) {
-      // Check if this is a Flash Rolls request by looking for our flags
-      const hasFlashRollsFlag = message.flags?.[MODULE_ID]?.isFlashRollRequest || 
-                               message.flags?.[MODULE_ID]?.groupRollId ||
-                               message.getFlag('dnd5e', 'roll')?._requestedBy;
-      
-      if (hasFlashRollsFlag) {
-        const challengeVisibility = game.settings.get("dnd5e", "challengeVisibility");
-        
-        // Only hide if challenge visibility is set to "hide" 
-        if (challengeVisibility === "hide") {
-          // Remove the data-display-challenge attribute that D&D 5e added
-          const chatCard = html.find("[data-display-challenge]");
-          chatCard.each((i, el) => {
-            delete el.dataset.displayChallenge;
-          });
-          
-          // Remove success/failure/critical/fumble classes from dice totals
-          const diceTotals = html.find(".dice-total");
-          diceTotals.removeClass("success failure critical fumble");
-          
-          // Remove the success/failure icons
-          diceTotals.find(".icons").remove();
-          
-          // Optionally hide DC values in the message content
-          html.find(".save-dc, .dc, .target-dc").each((i, el) => {
-            const text = el.textContent;
-            if (text && text.includes("DC")) {
-              el.textContent = text.replace(/DC\s*\d+/gi, "DC ?");
-            }
-          });
-        }
-      }
-    }
+    LogUtil.log("_onRenderChatMessageHTML #0", [message, html, context]);
+
+    ChatMessageUtils.interceptRollMessage(message, html, context);
     
     // Handle group roll messages
     if (message.getFlag(MODULE_ID, 'isGroupRoll')) {
@@ -574,6 +589,62 @@ export class HooksUtil {
     }
 
     LogUtil.log("_onRenderChatMessageHTML", [message, html, context]);
+
+    if (!game.user.isGM) {
+      // Check if this is a Flash Rolls request by looking for our flags
+      const hasFlashRollsFlag = message.flags?.[MODULE_ID]?.isFlashRollRequest || 
+                               message.flags?.[MODULE_ID]?.groupRollId ||
+                               message.getFlag('dnd5e', 'roll')?._requestedBy;
+      
+      LogUtil.log("_onRenderChatMessageHTML #1", [hasFlashRollsFlag]);
+      if (hasFlashRollsFlag) {
+        const challengeVisibility = game.settings.get("dnd5e", "challengeVisibility");
+        LogUtil.log("_onRenderChatMessageHTML #2", [challengeVisibility]);
+        
+        let showDC = true;
+        switch(challengeVisibility) {
+          case "none":
+            showDC = false;
+            break;
+          case "all":
+            showDC = true;
+            break;
+          case "player":
+            showDC = message.author.id === game.user.id || !message.author.isGM;
+            LogUtil.log("_onRenderChatMessageHTML #3", [message.author.id, game.user.id, showDC]);
+            break;
+          default:
+            showDC = true;
+            break;
+        }
+        
+        if (showDC===false) {
+          setTimeout(() => {
+            const chatCard = html.querySelectorAll("[data-display-challenge]");
+            chatCard.forEach((el) => delete el.dataset.displayChallenge);
+            
+            const diceTotals = html.querySelectorAll(".success, .failure, .critical, .fumble");
+            LogUtil.log("_onRenderChatMessageHTML #4", [html, diceTotals]);
+            diceTotals?.forEach((el) => {
+              LogUtil.log("_onRenderChatMessageHTML #4b", [el]);
+              el.classList.remove("success", "failure", "critical", "fumble");
+            });
+              
+            // Remove the success/failure icons
+            diceTotals?.forEach((el) => el.querySelector(".icons")?.remove());
+            LogUtil.log("_onRenderChatMessageHTML #5", [html]);
+            
+            // Optionally hide DC values in the message content
+            html.querySelectorAll(".save-dc, .dc, .target-dc").forEach((el) => {
+              const text = el.textContent;
+              if (text && text.includes("DC")) {
+                el.textContent = text.replace(/DC\s*\d+/gi, "");
+              }
+            });
+          }, 50);
+        }
+      }
+    }
     return false
     
   }
