@@ -315,8 +315,7 @@ export const RollHelpers = {
     
     const SETTINGS = getSettings();
     const isPublicRollsOn = SettingsUtil.get(SETTINGS.publicPlayerRolls.tag) === true;
-    // Pass the first actor to check ownership (all actors in batch should have same ownership type)
-    const rollMode = this.determineRollMode(isPublicRollsOn, result.message?.rollMode, actors[0]);
+    const rollMode = this.determineRollMode(isPublicRollsOn, result.message?.rollMode);
     rollProcessConfig.rollMode = rollMode;
     
     if (result.config?.ability && [ROLL_TYPES.SKILL, ROLL_TYPES.TOOL].includes(normalizedType)) {
@@ -327,7 +326,7 @@ export const RollHelpers = {
   },
 
   /**
-   * Determine the final roll mode
+   * Determine the final roll mode for GM dialogs
    * @param {boolean} isPublicRollsOn - Whether public rolls setting is enabled
    * @param {string} messageRollMode - Roll mode from message (user's selection in dialog)
    * @returns {string} Final roll mode
@@ -338,10 +337,9 @@ export const RollHelpers = {
       return messageRollMode;
     }
     
-    // Otherwise, use the default based on settings
-    return isPublicRollsOn ? 
-      CONST.DICE_ROLL_MODES.PUBLIC : 
-      game.settings.get("core", "rollMode");
+    // For GM dialogs, always default to the GM's core roll mode setting
+    // Individual actor roll modes will be determined later based on actor type
+    return game.settings.get("core", "rollMode");
   },
 
   /**
@@ -706,6 +704,34 @@ export const RollHelpers = {
     }
     
     return [consolidatedRoll];
+  },
+
+  /**
+   * Determine if challenge details (DC, success/failure) should be displayed for a player
+   * Based on D&D 5e's challengeVisibility setting
+   * @param {Object} rollProcessConfig - Roll process configuration from GM
+   * @returns {boolean} True if challenge details should be shown
+   */
+  shouldDisplayChallengeForPlayer(rollProcessConfig) {
+    // GM and message author always see challenges
+    if (game.user.isGM) return true;
+    
+    // Check if this message was sent by the current player
+    const requestedBy = rollProcessConfig._requestedBy;
+    if (requestedBy === game.user.name) return true;
+    
+    // Check D&D 5e challenge visibility setting
+    const challengeVisibility = game.settings.get("dnd5e", "challengeVisibility");
+    switch (challengeVisibility) {
+      case "all": 
+        return true;
+      case "player": 
+        // Show if the message author is not the GM (i.e., another player)
+        return requestedBy !== game.users.find(u => u.isGM)?.name;
+      default: 
+        // "hide" or any other value
+        return false;
+    }
   }
 };
 

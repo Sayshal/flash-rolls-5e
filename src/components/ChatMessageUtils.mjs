@@ -841,20 +841,9 @@ export class ChatMessageUtils {
     const groupRollsMsgEnabled = SettingsUtil.get(SETTINGS.groupRollsMsgEnabled.tag);
     
     LogUtil.log('addGroupRollFlag called', [messageConfig, requestData.groupRollId, this.isGroupRoll(requestData.groupRollId)]);
-    LogUtil.log('addGroupRollFlag - detailed check', [
-      'groupRollId:', requestData.groupRollId, 
-      'type:', typeof requestData.groupRollId,
-      'isGM:', game.user.isGM,
-      'actor:', actor?.name,
-      'requestData keys:', Object.keys(requestData)
-    ]);
     
     if (!game.user.isGM && requestData.groupRollId && actor) {
       await actor.setFlag(MODULE_ID, 'tempGroupRollId', requestData.groupRollId);
-      LogUtil.log('addGroupRollFlag - Stored tempGroupRollId on actor for player', [requestData.groupRollId, actor.id]);
-      
-      // Also set the flag on the base actor if this is a token actor
-      // This ensures the flag is found when dialogs are shown and roll context changes
       if (actor.isToken && actor.actor) {
         await actor.actor.setFlag(MODULE_ID, 'tempGroupRollId', requestData.groupRollId);
         LogUtil.log('addGroupRollFlag - Also stored tempGroupRollId on base actor for player', [requestData.groupRollId, actor.actor.id]);

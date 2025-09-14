@@ -45,42 +45,6 @@ export class HooksUtil {
       LogUtil.log("getActorContextOptions hook", [html, contextOptions]);
       
       if (!game.user.isGM) return;
-      
-      // Add to favor
-      // contextOptions.push({
-      //   name: game.i18n.localize("FLASH_ROLLS.contextMenu.addToFavorites"),
-      //   icon: '<i class="fas fa-bolt"></i>',
-      //   callback: li => {
-      //     const actorId = li.dataset.entryId;
-      //     if (actorId) {
-      //       ActorStatusUtil.toggleFavorite(actorId, true);
-      //     }
-      //     return actorId;
-      //   },
-      //   condition: li => {
-      //     const actorId = li?.dataset?.entryId;
-      //     const isFavorite = ActorStatusUtil.isFavorite(actorId);
-      //     // const isBlocked = ActorStatusUtil.isBlocked(actorId);
-      //     return !isFavorite;
-      //   }
-      // });
-
-      // contextOptions.push({
-      //   name: game.i18n.localize("FLASH_ROLLS.contextMenu.removeFromFavorites"),
-      //   icon: '<i class="fas fa-bolt-slash"></i>',
-      //   callback: li => {
-      //     const actorId = li.dataset.entryId;
-      //     if (actorId) {
-      //       ActorStatusUtil.toggleFavorite(actorId, false);
-      //     }
-      //     return actorId;
-      //   },
-      //   condition: li => {
-      //     const actorId = li?.dataset?.entryId;
-      //     const isFavorite = ActorStatusUtil.isFavorite(actorId);
-      //     return isFavorite;
-      //   }
-      // });
 
       contextOptions.push({
         name: game.i18n.localize("FLASH_ROLLS.contextMenu.unblockFromMenu"),
@@ -517,6 +481,43 @@ export class HooksUtil {
    */
   static _onRenderChatMessageHTML(message, html, context) {
     ChatMessageUtils.interceptRollMessage(message, html, context);
+    
+    // Check if we should hide challenge visibility for Flash Rolls messages
+    // This handles the case where the player is the message author but shouldn't see DCs
+    if (!game.user.isGM && message.author === game.user) {
+      // Check if this is a Flash Rolls request by looking for our flags
+      const hasFlashRollsFlag = message.flags?.[MODULE_ID]?.isFlashRollRequest || 
+                               message.flags?.[MODULE_ID]?.groupRollId ||
+                               message.getFlag('dnd5e', 'roll')?._requestedBy;
+      
+      if (hasFlashRollsFlag) {
+        const challengeVisibility = game.settings.get("dnd5e", "challengeVisibility");
+        
+        // Only hide if challenge visibility is set to "hide" 
+        if (challengeVisibility === "hide") {
+          // Remove the data-display-challenge attribute that D&D 5e added
+          const chatCard = html.find("[data-display-challenge]");
+          chatCard.each((i, el) => {
+            delete el.dataset.displayChallenge;
+          });
+          
+          // Remove success/failure/critical/fumble classes from dice totals
+          const diceTotals = html.find(".dice-total");
+          diceTotals.removeClass("success failure critical fumble");
+          
+          // Remove the success/failure icons
+          diceTotals.find(".icons").remove();
+          
+          // Optionally hide DC values in the message content
+          html.find(".save-dc, .dc, .target-dc").each((i, el) => {
+            const text = el.textContent;
+            if (text && text.includes("DC")) {
+              el.textContent = text.replace(/DC\s*\d+/gi, "DC ?");
+            }
+          });
+        }
+      }
+    }
     
     // Handle group roll messages
     if (message.getFlag(MODULE_ID, 'isGroupRoll')) {

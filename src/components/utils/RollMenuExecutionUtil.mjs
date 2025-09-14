@@ -1,7 +1,10 @@
 import { ROLL_TYPES } from '../../constants/General.mjs';
+import { getSettings } from '../../constants/Settings.mjs';
 import { LogUtil } from '../LogUtil.mjs';
+import { SettingsUtil } from '../SettingsUtil.mjs';
 import { delay, NotificationManager } from '../helpers/Helpers.mjs';
 import { RollHandlers } from '../RollHandlers.mjs';
+import { RollHelpers } from '../helpers/RollHelpers.mjs';
 
 /**
  * Utility class for executing GM rolls and local roll handling
@@ -120,8 +123,23 @@ export class RollMenuExecutionUtil {
         isRollRequest: true
       };
       
+      // Determine roll mode based on actor ownership and settings
+      let finalRollMode = rollProcessConfig.rollMode || game.settings.get("core", "rollMode");
+      
+      // Check if we should use public roll mode for player-owned actors
+      const SETTINGS = getSettings();
+      const isPublicRollsOn = SettingsUtil.get(SETTINGS.publicPlayerRolls.tag) === true;
+      const groupRollsMsgEnabled = SettingsUtil.get(SETTINGS.groupRollsMsgEnabled.tag) === true;
+      
+      // Only adjust roll mode for individual messages (not group rolls)
+      if ((!groupRollsMsgEnabled || !rollProcessConfig.groupRollId) && !rollProcessConfig.rollMode) {
+        if (isPublicRollsOn && actor && RollHelpers.isPlayerOwned(actor)) {
+          finalRollMode = CONST.DICE_ROLL_MODES.PUBLIC;
+        }
+      }
+      
       const messageConfig = {
-        rollMode: rollProcessConfig.rollMode || game.settings.get("core", "rollMode"),
+        rollMode: finalRollMode,
         create: rollProcessConfig.chatMessage !== false,
         isRollRequest: true  // Mark this as a roll request to prevent re-interception
       };

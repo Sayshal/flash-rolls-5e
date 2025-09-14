@@ -34,18 +34,17 @@ export class RollInterceptor {
    */
   static registerHooks() {
     LogUtil.log('RollInterceptor.registerHooks');
-    this._registerHook(HOOKS_DND5E.PRE_ROLL_ABILITY_CHECK, this._handlePreRoll.bind(this, ROLL_TYPES.ABILITY));
-    this._registerHook(HOOKS_DND5E.PRE_ROLL_SAVING_THROW, this._handlePreRoll.bind(this, ROLL_TYPES.SAVE));
-    this._registerHook(HOOKS_DND5E.PRE_ROLL_SKILL_V2, this._handlePreRoll.bind(this, ROLL_TYPES.SKILL));
-    this._registerHook(HOOKS_DND5E.PRE_ROLL_TOOL_V2, this._handlePreRoll.bind(this, ROLL_TYPES.TOOL));
-    this._registerHook(HOOKS_DND5E.PRE_ROLL_ATTACK_V2, this._handlePreRoll.bind(this, ROLL_TYPES.ATTACK));
-    this._registerHook(HOOKS_DND5E.PRE_ROLL_DAMAGE_V2, this._handlePreRoll.bind(this, ROLL_TYPES.DAMAGE));
-    this._registerHook(HOOKS_DND5E.PRE_ROLL_DEATH_SAVE_V2, this._handlePreRoll.bind(this, ROLL_TYPES.DEATH_SAVE));
-    this._registerHook(HOOKS_DND5E.PRE_ROLL_HIT_DIE_V2, this._handlePreRoll.bind(this, ROLL_TYPES.HIT_DIE));
+    this._registerHook(HOOKS_DND5E.PRE_ROLL_ABILITY_CHECK, this._onPreRollIntercept.bind(this, ROLL_TYPES.ABILITY));
+    this._registerHook(HOOKS_DND5E.PRE_ROLL_SAVING_THROW, this._onPreRollIntercept.bind(this, ROLL_TYPES.SAVE));
+    this._registerHook(HOOKS_DND5E.PRE_ROLL_SKILL_V2, this._onPreRollIntercept.bind(this, ROLL_TYPES.SKILL));
+    this._registerHook(HOOKS_DND5E.PRE_ROLL_TOOL_V2, this._onPreRollIntercept.bind(this, ROLL_TYPES.TOOL));
+    this._registerHook(HOOKS_DND5E.PRE_ROLL_ATTACK_V2, this._onPreRollIntercept.bind(this, ROLL_TYPES.ATTACK));
+    this._registerHook(HOOKS_DND5E.PRE_ROLL_DAMAGE_V2, this._onPreRollIntercept.bind(this, ROLL_TYPES.DAMAGE));
+    this._registerHook(HOOKS_DND5E.PRE_ROLL_DEATH_SAVE_V2, this._onPreRollIntercept.bind(this, ROLL_TYPES.DEATH_SAVE));
+    this._registerHook(HOOKS_DND5E.PRE_ROLL_HIT_DIE_V2, this._onPreRollIntercept.bind(this, ROLL_TYPES.HIT_DIE));
 
-    this._registerHook(HOOKS_DND5E.PRE_ROLL_INITIATIVE, this._handlePreRollInitiative.bind(this, ROLL_TYPES.INITIATIVE));
-    this._registerHook(HOOKS_DND5E.PRE_ROLL_INITIATIVE_DIALOG, this._handlePreRollInitiative.bind(this, ROLL_TYPES.INITIATIVE));
-    this._registerHook(HOOKS_DND5E.ROLL_INITIATIVE, this._handleRollInitiative.bind(this, ROLL_TYPES.INITIATIVE));
+    this._registerHook(HOOKS_DND5E.PRE_ROLL_INITIATIVE, this._onPreRollInterceptInitiative.bind(this, ROLL_TYPES.INITIATIVE));
+    this._registerHook(HOOKS_DND5E.PRE_ROLL_INITIATIVE_DIALOG, this._onPreRollInterceptInitiative.bind(this, ROLL_TYPES.INITIATIVE));
   }
   
   /**
@@ -77,8 +76,8 @@ export class RollInterceptor {
    * @param {D20Roll} roll - Roll configuration object
    * @returns {boolean|void} - Return false to prevent the roll
    */
-  static _handlePreRollInitiative(rollType, actor, roll) {
-    // LogUtil.log('_handlePreRollInitiative', [rollType, actor, roll]);
+  static _onPreRollInterceptInitiative(rollType, actor, roll) {
+    // LogUtil.log('_onPreRollInterceptInitiative', [rollType, actor, roll]);
     return;
   }
 
@@ -90,21 +89,21 @@ export class RollInterceptor {
    * @param {Object} message - Message options
    * @returns {boolean|void} - Return false to prevent the roll
    */
-  static _handlePreRoll(rollType, config, dialog, message) {
-    LogUtil.log('_handlePreRoll #0', [rollType, config, dialog, message]);
+  static _onPreRollIntercept(rollType, config, dialog, message) {
+    LogUtil.log('_onPreRollIntercept #0', [rollType, config, dialog, message]);
     const SETTINGS = getSettings();
     const requestsEnabled = SettingsUtil.get(SETTINGS.rollRequestsEnabled.tag);
     const rollInterceptionEnabled = SettingsUtil.get(SETTINGS.rollInterceptionEnabled.tag);
     const skipRollDialog = SettingsUtil.get(SETTINGS.skipRollDialog.tag);
     
-    LogUtil.log('_handlePreRoll #1', [requestsEnabled, rollInterceptionEnabled]);
-    if (!requestsEnabled || !rollInterceptionEnabled) {
-      dialog.configure = !skipRollDialog;
+    LogUtil.log('_onPreRollIntercept #1', [requestsEnabled, rollInterceptionEnabled, config.isRollRequest]);
+    if (!requestsEnabled || !rollInterceptionEnabled || config.isRollRequest === false) {
+      dialog.configure = config.isRollRequest!==undefined ? false :!skipRollDialog;
       return; 
     }
 
     // Only intercept on GM side
-    if (!game.user.isGM || config.isRollRequest === false ) return;
+    if (!game.user.isGM ) return; // || config.isRollRequest === false
     const isMidiRequest = GeneralUtil.isModuleOn(MODULE_ID, 'midi-qol');
 
     const hookNames = config?.hookNames || dialog?.hookNames || message?.hookNames || [];
@@ -113,39 +112,29 @@ export class RollInterceptor {
     if(rollType === ROLL_TYPES.ATTACK || rollType === ROLL_TYPES.DAMAGE){
       const moduleFlags = config.subject?.item?.getFlag(MODULE_ID, 'tempAttackConfig') || config.subject?.item?.getFlag(MODULE_ID, 'tempDamageConfig');
       dialog.configure = false;
-      LogUtil.log('_handlePreRoll - attack / damage - flag', [moduleFlags]);
+      LogUtil.log('_onPreRollIntercept - attack / damage - flag', [moduleFlags]);
       if(moduleFlags){
-        LogUtil.log('_handlePreRoll - found module flags, skipping interception', [moduleFlags]);
+        LogUtil.log('_onPreRollIntercept - found module flags, skipping interception', [moduleFlags]);
         return;
       }
     }
     
-    // if(rollType === ROLL_TYPES.DAMAGE){
-    //   // Check if this damage roll is from a local execution
-    //   const moduleFlags = config.subject?.item?.getFlag(MODULE_ID, 'tempDamageConfig');
-    //   config.scaling = true;
-    //   LogUtil.log('RollInterceptor._handlePreRoll - is Damage roll', [config, config.subject?.item, moduleFlags]);
-    //   if(moduleFlags){
-    //     LogUtil.log('RollInterceptor._handlePreRoll - found module flags, skipping interception', [moduleFlags]);
-    //     return;
-    //   }
-    // }
     // Override rollType if this is actually an initiative roll
     if (isInitiativeRoll && rollType === ROLL_TYPES.ABILITY) {
-      LogUtil.log('RollInterceptor._handlePreRoll - Overriding ability to initiative', [hookNames]);
+      LogUtil.log('RollInterceptor._onPreRollIntercept - Overriding ability to initiative', [hookNames]);
       rollType = ROLL_TYPES.INITIATIVE;
     }
     
     if ( config?.isRollRequest || config.sendRequest===false || 
          dialog?.isRollRequest || message?.isRollRequest) {
-      LogUtil.log('_handlePreRoll - skipping interception (roll request)', [config, dialog, message]);
+      LogUtil.log('_onPreRollIntercept - skipping interception (roll request)', [config, dialog, message]);
       return;
     }
 
     let actor;
     if (rollType === ROLL_TYPES.INITIATIVE && config instanceof Actor) {
       actor = config;
-      LogUtil.log('_handlePreRoll - Initiative', [config, dialog, message]);
+      LogUtil.log('_onPreRollIntercept - Initiative', [config, dialog, message]);
       if (dialog?.isRollRequest === false || message?.isRollRequest === false) {
         return;
       }
@@ -163,11 +152,12 @@ export class RollInterceptor {
     }
 
     const owner = GeneralUtil.getActorOwner(actor);   
-    LogUtil.log('_handlePreRoll - ownership', [owner]);
+    LogUtil.log('_onPreRollIntercept - ownership', [owner]);
     
     if (!owner || !owner.active || owner.id === game.user.id) {
-      LogUtil.log('_handlePreRoll - skipping interception (ownership)', [owner?.name, owner?.active]);
-      return;
+      LogUtil.log('_onPreRollIntercept - skipping interception (ownership)', [owner?.name, owner?.active]);
+      config.isRollRequest = false;
+      // return;
     }else{
       config.isRollRequest = true;
     }
@@ -189,28 +179,22 @@ export class RollInterceptor {
       }
     }
 
-    if (config.sendRequest===false || config.skipRollDialog===true) { //|| config.fastForward===true || config.skipRollDialog===true || 
-      LogUtil.log('_handlePreRoll - skipping interception', [dialog.configure, config.sendRequest]);
+    if (config.sendRequest===false || config.skipRollDialog===true) { 
+      LogUtil.log('_onPreRollIntercept - skipping interception', [dialog.configure, config.sendRequest]);
       return;
     }
     
     if(isMidiActive && game.user.isGM){
-      LogUtil.log('_handlePreRoll - isMidiActive', [isMidiActive]);
+      LogUtil.log('_onPreRollIntercept - isMidiActive', [isMidiActive]);
       this._showGMConfigDialog(actor, owner, rollType, config, dialog, message); 
       return false;
     }
     
-    LogUtil.log('_handlePreRoll - intercepting roll #1', [config, message]);
+    LogUtil.log('_onPreRollIntercept - intercepting roll #1', [config, message]);
     this._showGMConfigDialog(actor, owner, rollType, config, dialog, message); 
     
     return false;
   }
-
-  static _handleRollInitiative(a,b,c) {
-    // LogUtil.log('_handleRollInitiative', [a,b,c]);
-    return;
-  }
-  
   /**
    * Handle initiative-specific pre-roll checks
    * @param {Actor} actor
@@ -357,7 +341,7 @@ export class RollInterceptor {
     
     const dialogOptions = {
       skipRollDialog: false,
-      sendRequest: rollRequestsEnabled
+      sendRequest: rollRequestsEnabled && config.isRollRequest
     };
 
     if (normalizedRollType === ROLL_TYPES.ATTACK || normalizedRollType === ROLL_TYPES.DAMAGE) {
@@ -634,6 +618,14 @@ export class RollInterceptor {
     };
 
     LogUtil.log('_sendRollRequest - requestData', [owner, requestData]);
+    
+    // Check if there's a valid active owner to send the request to
+    if (!owner || !owner.active || owner.id === game.user.id) {
+      LogUtil.log('_sendRollRequest - No valid active owner, executing locally', [owner?.name, owner?.active]);
+      // Execute roll locally since there's no player to send to
+      await this._executeInterceptedRoll(actor, rollType, config, config);
+      return;
+    }
     
     // Use unified offline player handling
     const wasOffline = await OfflinePlayerUtil.handleOfflinePlayer(owner, actor, rollType, config, {

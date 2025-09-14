@@ -453,6 +453,13 @@ export class RollMenuOrchestrationUtil {
     delete cleanConfig.item;
     delete cleanConfig.activity;
     
+    const isPublicRollsOn = SettingsUtil.get(SETTINGS.publicPlayerRolls.tag) === true;
+    const groupRollsMsgEnabled = SettingsUtil.get(SETTINGS.groupRollsMsgEnabled.tag) === true;
+    
+    if (isPublicRollsOn) {
+      cleanConfig.rollMode = CONST.DICE_ROLL_MODES.PUBLIC;
+    }
+    
     const requestData = {
       type: "rollRequest",
       groupRollId: groupRollId || foundry.utils.randomID(),

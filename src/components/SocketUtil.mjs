@@ -179,7 +179,10 @@ export class SocketUtil {
         let roll = r;
         if(typeof r === 'string'){
           roll = Roll.fromJSON(r);
-        }else {
+        } else if (r instanceof Roll) {
+          roll = r;  // Already a Roll object
+        } else {
+          // Object that needs to be converted to Roll
           roll = Roll.fromJSON(JSON.stringify(r));
         }
         return roll;

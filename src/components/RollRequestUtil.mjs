@@ -5,6 +5,7 @@ import { LogUtil } from "./LogUtil.mjs";
 import { getSettings } from "../constants/Settings.mjs";
 import { SettingsUtil } from "./SettingsUtil.mjs";
 import { GeneralUtil } from "./helpers/GeneralUtil.mjs";
+import { RollHelpers } from "./helpers/RollHelpers.mjs";
 
 /**
  * @typedef {Object} RollRequestData
@@ -150,6 +151,7 @@ export class RollRequestUtil {
         options: {}
       };
       
+      
       const shouldSkipDialog = game.user.isGM ? requestData.skipRollDialog : false;
       const dialogConfig = {
         configure: !shouldSkipDialog
@@ -161,7 +163,12 @@ export class RollRequestUtil {
       
       const messageConfig = {
         rollMode: finalRollMode,
-        create: requestData.rollProcessConfig.chatMessage !== false
+        create: requestData.rollProcessConfig.chatMessage !== false,
+        flags: {
+          [MODULE_ID]: {
+            isFlashRollRequest: true
+          }
+        }
       };
       
       const handlerRequestData = {
