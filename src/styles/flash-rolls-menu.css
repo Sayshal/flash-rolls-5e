@@ -9,9 +9,9 @@
   
   /* Horizontal Layout Dimensions */
   --fr5e-height-compact: 8rem;
-  --fr5e-height-regular: 14.5rem;
+  --fr5e-height-regular: 13.5rem;
   --fr5e-actors-height-compact: 5rem;
-  --fr5e-actors-height-regular: 11rem;
+  --fr5e-actors-height-regular: 10.5rem;
   --fr5e-actions-height: 2rem;
   --fr5e-max-width-horizontal: 500px;
   
@@ -108,7 +108,14 @@
 #flash-rolls-menu[data-layout="horizontal"].compact > div[data-application-part=main] {
   height: var(--fr5e-height-compact);
 }
-
+#flash-rolls-menu[data-layout="horizontal"] .main-content {
+  border-radius: 4px;
+}
+#flash-rolls-menu[data-layout="vertical"] .main-content {
+  border-bottom-right-radius: 4px;
+  border-top-left-radius: 4px;
+  border-radius: 4px;
+}
 #flash-rolls-menu .main-content,
 #flash-rolls-menu .request-types-accordion{
   position: relative;
@@ -755,7 +762,7 @@ body > .actor.drag-wrapper {
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      font-size: var(--font-size-13);
+      font-size: var(--font-size-12);
       opacity: 0.75;
     }
     .actor-stats {
@@ -776,7 +783,7 @@ body > .actor.drag-wrapper {
         width: 48%;
         flex: 1 1 48%;
         gap: 2px;
-        font-size: var(--font-size-12);
+        font-size: var(--font-size-11);
   
         .stat-abbrev{
           font-weight: bold;
@@ -808,7 +815,7 @@ body > .actor.drag-wrapper {
 #flash-rolls-menu[data-layout="horizontal"] div.main-content > ul.actors > li .actor {
   justify-content: center;
   align-items: center;
-  width: 6.5rem;
+  width: 6rem;
   display: flex;
   flex-direction: column;
   gap: 5px;
@@ -820,8 +827,8 @@ body > .actor.drag-wrapper {
   }
 
   > .actor-img {
-    height: 5.5rem;
-    max-height: 5.5rem;
+    height: 5rem;
+    max-height: 5rem;
   }
   > .actor-stat-bar{
     flex: 0 0 4px;
@@ -879,6 +886,7 @@ body > .actor.drag-wrapper {
     height: 1.5rem;
     min-height: 0;
     opacity: 0.5;
+    transition: background 0.2s ease-out, opacity 0.2s ease-out, border 0.2s ease-out;
 
     &:hover{
       background: rgba(0, 0, 0, 0.2);
@@ -1416,6 +1424,39 @@ body.crlngn-tabs #flash-rolls-menu.docked-right {
   padding-right: var(--flash-rolls-menu-offset, 16px) !important;
 }
 
+
+/* Docked Bottom Styles */
+#flash-rolls-menu.docked-bottom {
+  position: relative !important;
+  transform: translateY(-0.5rem) !important;
+  top: auto !important;
+  left: 0 !important;
+  bottom: auto !important;
+  z-index: 0;
+  padding: 0 !important;
+  opacity: 1 !important;
+  transition: opacity 0.2s ease-in-out !important;
+  flex-direction: column;
+
+  &:after {
+    width: 100%;
+    height: 0.5rem;
+    background: transparent;
+    bottom: -0.5rem !important;
+    content: "";
+    pointer-events: all;
+  }
+
+  > * {
+    pointer-events: all;
+  }
+
+}
+
+body.flash5e-sidebar-expanded #flash-rolls-menu.docked-bottom {
+  /*align-self: flex-start;*/
+}
+
 /* Actor Drag Wrapper */
 .actor-drag-wrapper {
   align-items: flex-start;
@@ -1641,7 +1682,7 @@ body.crlngn-tabs #flash-rolls-menu.docked-right {
   pointer-events: none;
   margin: 0 1rem;
   opacity: 0;
-  transition: opacity 0.2s ease 0.5s;
+  transition: opacity 0.2s ease 0s;
 
   display: flex;
   flex-direction: column;
@@ -1650,7 +1691,7 @@ body.crlngn-tabs #flash-rolls-menu.docked-right {
 
   &.visible {
     opacity: 1;
-    transition-delay: 0s;
+    transition-delay: 0.5s;
   }
 
   .actor-name {
@@ -1662,7 +1703,7 @@ body.crlngn-tabs #flash-rolls-menu.docked-right {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    font-size: var(--font-size-13);
+    font-size: var(--font-size-12);
     opacity: 0.75;
   }
   .actor-stats {
@@ -1671,7 +1712,7 @@ body.crlngn-tabs #flash-rolls-menu.docked-right {
     display: flex;
     flex-direction: row;
     list-style-type: none;
-    font-size: var(--font-size-12);
+    font-size: var(--font-size-11);
     line-height: 1em;
     gap: 2px;
     align-items: center;

@@ -21,36 +21,22 @@ export const getSettings = () => {
       propType: Object,
       fields: [
         'showMenuOnLoad',
-        'rollInterceptionEnabled',
-        'useGMTargetTokens',
-        'templateAutoTarget',
-        'removeTemplate',
-        'consumptionConfigMode',
-        'placeTemplateForPlayer',
-        'showOfflineNotifications',
-        'initiateCombatOnRequest',
+        'skipRollDialog',
+        'skipRollDialogOption',
         'showOnlyPCsWithToken',
         'compactMode',
         'menuLayout',
         'showOptionsListOnHover',
-        'publicPlayerRolls',
         'addMacrosToFolder'
       ],
       default: {
         showMenuOnLoad: false,
-        rollInterceptionEnabled: true,
-        useGMTargetTokens: true,
-        templateAutoTarget: 1,
-        removeTemplate: true,
-        consumptionConfigMode: 2,
-        placeTemplateForPlayer: false,
-        showOfflineNotifications: true,
-        initiateCombatOnRequest: true,
+        skipRollDialog: false,
+        skipRollDialogOption: 1,
         showOnlyPCsWithToken: true,
         compactMode: true,
         menuLayout: "vertical",
         showOptionsListOnHover: true,
-        publicPlayerRolls: true,
         addMacrosToFolder: true
       },
       scope: SETTING_SCOPE.world,
@@ -75,6 +61,39 @@ export const getSettings = () => {
         groupRollResultMode: 1,
         showGroupDCToPlayers: false,
         groupRollNPCHidden: true
+      },
+      scope: SETTING_SCOPE.world,
+      config: false, 
+      requiresReload: false 
+    },
+
+    rollRequestsSettings: {
+      tag: "flash5e-roll-request-settings", 
+      label: game.i18n.localize("FLASH_ROLLS.settings.moduleSettingsMenu.label"),
+      title: game.i18n.localize("FLASH_ROLLS.settings.moduleSettingsMenu.title"),
+      hint: game.i18n.localize("FLASH_ROLLS.settings.moduleSettingsMenu.hint"),
+      propType: Object,
+      fields: [
+        'rollInterceptionEnabled',
+        'useGMTargetTokens',
+        'templateAutoTarget',
+        'removeTemplate',
+        'consumptionConfigMode',
+        'placeTemplateForPlayer',
+        'showOfflineNotifications',
+        'initiateCombatOnRequest',
+        'publicPlayerRolls'
+      ],
+      default: {
+        rollInterceptionEnabled: true,
+        useGMTargetTokens: true,
+        templateAutoTarget: 1,
+        removeTemplate: true,
+        consumptionConfigMode: 2,
+        placeTemplateForPlayer: false,
+        showOfflineNotifications: true,
+        initiateCombatOnRequest: true,
+        publicPlayerRolls: true
       },
       scope: SETTING_SCOPE.world,
       config: false, 
@@ -178,7 +197,23 @@ export const getSettings = () => {
       inputType: SETTING_INPUT.checkbox,
       default: false,
       scope: SETTING_SCOPE.world,
-      config: true
+      config: false
+    },
+
+    skipRollDialogOption: {
+      tag: "skip-roll-dialog-options",
+      label: game.i18n.localize("FLASH_ROLLS.settings.skipRollDialogOption.label"),
+      hint: game.i18n.localize("FLASH_ROLLS.settings.skipRollDialogOption.hint"),
+      propType: Number, 
+      inputType: SETTING_INPUT.select,
+      choices: {
+        1: game.i18n.localize("FLASH_ROLLS.settings.skipRollDialogOption.choices.1"),
+        2: game.i18n.localize("FLASH_ROLLS.settings.skipRollDialogOption.choices.2"),
+        3: game.i18n.localize("FLASH_ROLLS.settings.skipRollDialogOption.choices.3")
+      },
+      default: 1,
+      scope: SETTING_SCOPE.world,
+      config: false
     },
     useGMTargetTokens: {
       tag: "use-gm-target-tokens",

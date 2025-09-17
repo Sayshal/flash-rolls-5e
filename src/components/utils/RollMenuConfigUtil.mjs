@@ -4,6 +4,7 @@ import { SettingsUtil } from '../SettingsUtil.mjs';
 import { LogUtil } from '../LogUtil.mjs';
 import { GMRollConfigDialog, GMSkillToolConfigDialog, GMHitDieConfigDialog } from '../dialogs/gm-dialogs/index.mjs';
 import { CustomRollDialog } from '../dialogs/CustomRollDialog.mjs';
+import { RollHelpers } from '../helpers/RollHelpers.mjs';
 
 /**
  * Utility class for roll configuration operations in the Roll Requests Menu
@@ -21,16 +22,22 @@ export class RollMenuConfigUtil {
   static async getRollConfiguration(actors, rollMethodName, rollKey, skipRollDialog, pcActors, configOverrides = {}) {
     const SETTINGS = getSettings();
     const rollRequestsEnabled = SettingsUtil.get(SETTINGS.rollRequestsEnabled.tag);
-    
+    const sendAsRequest = configOverrides.hasOwnProperty('sendAsRequest') ? configOverrides.sendAsRequest : undefined;
+    const npcActors = actors.filter(actor => pcActors.includes(actor.id));
+    const confirmedSkipDialog = RollHelpers.shouldSkipRollDialog(skipRollDialog, {isPC: pcActors.length > 0, isNPC: npcActors.length > 0});
+
     LogUtil.log('RollMenuConfigUtil.getRollConfiguration', [
-      'configOverrides.sendAsRequest:', configOverrides.sendAsRequest,
-      'hasOwnProperty sendAsRequest:', configOverrides.hasOwnProperty('sendAsRequest'),
+      'sendAsRequest:', sendAsRequest,
       'rollRequestsEnabled:', rollRequestsEnabled,
-      'pcActors.length:', pcActors.length
+      'skipRollDialog:', skipRollDialog,
+      'confirmedSkipDialog:', confirmedSkipDialog,
+      'pcActors.length:', pcActors,
+      'npcActors.length:', npcActors,
+      'actors:', actors
     ]);
     
     // Show GM configuration dialog (unless skip dialogs is enabled or it's a custom roll)
-    if (!skipRollDialog && rollMethodName !== ROLL_TYPES.CUSTOM) {
+    if (!confirmedSkipDialog && rollMethodName !== ROLL_TYPES.CUSTOM) {
       // Use appropriate dialog based on roll type
       let DialogClass;
       if ([ROLL_TYPES.SKILL, ROLL_TYPES.TOOL].includes(rollMethodName)) {
@@ -41,8 +48,8 @@ export class RollMenuConfigUtil {
         DialogClass = GMRollConfigDialog;
       }
       const config = await DialogClass.initConfiguration(actors, rollMethodName, rollKey, { 
-        skipRollDialog,
-        sendRequest: rollRequestsEnabled || false 
+        confirmedSkipDialog,
+        sendRequest: sendAsRequest===true || (sendAsRequest===undefined && rollRequestsEnabled) || false 
       });
       LogUtil.log('getRollConfiguration', [config]);
       

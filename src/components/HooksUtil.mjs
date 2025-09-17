@@ -1126,7 +1126,6 @@ export class HooksUtil {
    */
   static _onPostUseActivity(activity, config, results) {
     const SETTINGS = getSettings();
-    const skipRollDialog = SettingsUtil.get(SETTINGS.skipRollDialog.tag);
     const requestsEnabled = SettingsUtil.get(SETTINGS.rollRequestsEnabled.tag);
     const rollInterceptionEnabled = SettingsUtil.get(SETTINGS.rollInterceptionEnabled.tag);
     const isGM = game.user.isGM;
@@ -1148,7 +1147,9 @@ export class HooksUtil {
     }
     if(!requestsEnabled || !rollInterceptionEnabled) return;
     const actorOwner = GeneralUtil.getActorOwner(activity.actor);
-    const isOwnerActive = actorOwner && actorOwner.active && !actorOwner.isGM;
+    const isOwnerActive = actorOwner && actorOwner.active && actorOwner.id !== game.user.id;
+    const skipRollDialog = RollHelpers.shouldSkipRollDialog(isOwnerActive, {isPC: isOwnerActive, isNPC: !isOwnerActive} );
+    const isLocalRoll = game.users.isGM ? !isOwnerActive || !config.isRollRequest : !config.isRollRequest;
     results.configure = game.user.isGM && config.skipRollDialog!==undefined ? !config.skipRollDialog : !game.user.isGM ||(isOwnerActive && !skipRollDialog)
 
     if (config.skipRollDialog===false && (!actorOwner?.active || actorOwner.isGM)) {

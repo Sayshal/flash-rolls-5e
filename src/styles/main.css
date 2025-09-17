@@ -83,7 +83,7 @@ body.flash5e {
     height: 2.2em;
     display: flex;
     align-self: flex-end;
-    margin: 0 0 6px 6px;
+    margin: 0 0 6px;
     &:hover{
       background: var(--color-warm-2);
     }

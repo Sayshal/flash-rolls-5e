@@ -732,6 +732,46 @@ export const RollHelpers = {
         // "hide" or any other value
         return false;
     }
+  },
+
+  /**
+   * Determine if roll dialog should be skipped based on settings and context
+   * @param {boolean} [sendRequest] - Whether this is a roll request (for interceptions)
+   * @returns {boolean} Whether to skip the roll dialog
+   */
+  shouldSkipRollDialog(sendRequest = null, {isPC = false, isNPC = false}) {
+    const SETTINGS = getSettings();
+    const skipRollDialog = SettingsUtil.get(SETTINGS.skipRollDialog.tag);
+    
+    // 1. If skipRollDialog setting is false, always return false
+    if (!skipRollDialog) {
+      return false;
+    }
+    
+    const skipRollDialogOption = SettingsUtil.get(SETTINGS.skipRollDialogOption.tag);
+    const rollRequestsEnabled = SettingsUtil.get(SETTINGS.rollRequestsEnabled.tag);
+    
+    LogUtil.log('RollHelpers.shouldSkipRollDialog', [
+      'skipRollDialogOption:', skipRollDialogOption,
+      'rollRequestsEnabled:', rollRequestsEnabled,
+      'sendRequest:', sendRequest,
+      'isPC:', isPC,
+      'isNPC:', isNPC,
+      'test:',
+      (sendRequest===true || (sendRequest !== false && rollRequestsEnabled === true))
+    ]);
+    
+    switch (skipRollDialogOption) {
+      case 1: // all rolls
+        return true;
+      case 2: // Only request rolls
+        LogUtil.log('RollHelpers.shouldSkipRollDialog!!!', [(isPC===true && sendRequest===true), (isPC===true && sendRequest !== false && rollRequestsEnabled === true)]);
+        return (isPC===true && sendRequest===true) || (isPC===true && sendRequest !== false && rollRequestsEnabled === true);
+      case 3: // Only non-request rolls
+        return isNPC===true;
+      default:
+        return false;
+    }
   }
 };
 

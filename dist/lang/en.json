@@ -91,8 +91,17 @@
         "hint": "When GM sends a roll request to player, the roll mode for that specific request will default to 'public'. It can still be changed on the roll dialog. Disable this to use the GM's current roll mode as default."
       },
       "skipRollDialog": {
-        "label": "Skip Roll Dialogs on Requests (GM)",
-        "hint": "Enable to skip the Roll Configuration windows when you request rolls from a player, or when rolling for groups of multiple NPCs. Will use default configurations."
+        "label": "Skip Roll Dialogs (GM)",
+        "hint": "Enable to skip the Roll Configuration windows according to the option selected below. System will use default configurations for the roll when skipped."
+      },
+      "skipRollDialogOption": {
+        "label": "Skip Roll Dialog Options",
+        "hint": "When Skip Roll Dialogs, which dialogs do you want to skip? This does not affect dialogs on player side.",
+        "choices": {
+          "1": "All roll config dialogs",
+          "2": "Request dialogs (PCs)",
+          "3": "Local roll dialogs (NPCs)"
+        }
       },
       "rollInterceptionEnabled": {
         "label": "Send Roll Requests from Player Sheets",
@@ -127,7 +136,7 @@
         "tabs": {
           "groupRolls": "Group Rolls",
           "generalSettings": "General Settings",
-          "rollInterception": "Roll Interception"
+          "rollRequests": "Roll Requests"
         }
       },
       "initiateCombatOnRequest": {

@@ -11,6 +11,24 @@
   </div>
 
   <div class="form-group">
+    <label for="showOfflineNotifications">{{fields.showOfflineNotifications.label}}</label>
+    <input type="checkbox" name="showOfflineNotifications" {{#if showOfflineNotifications}}checked{{/if}} />
+    <p class="hint">{{fields.showOfflineNotifications.hint}}</p> 
+  </div>
+
+  <div class="form-group">
+    <label for="initiateCombatOnRequest">{{fields.initiateCombatOnRequest.label}}</label>
+    <input type="checkbox" name="initiateCombatOnRequest" {{#if initiateCombatOnRequest}}checked{{/if}} />
+    <p class="hint">{{fields.initiateCombatOnRequest.hint}}</p> 
+  </div>
+  
+  <div class="form-group">
+    <label for="publicPlayerRolls">{{fields.publicPlayerRolls.label}}</label>
+    <input type="checkbox" name="publicPlayerRolls" {{#if publicPlayerRolls}}checked{{/if}} />
+    <p class="hint">{{{fields.publicPlayerRolls.hint}}}</p> 
+  </div>
+
+  <div class="form-group">
     <label for="useGMTargetTokens">{{fields.useGMTargetTokens.label}}</label>
     <input type="checkbox" name="useGMTargetTokens" {{#if useGMTargetTokens}}checked{{/if}} />
     <p class="hint">{{fields.useGMTargetTokens.hint}}</p> 
