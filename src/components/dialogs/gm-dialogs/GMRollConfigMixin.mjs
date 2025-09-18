@@ -22,7 +22,7 @@ export function GMRollConfigMixin(Base) {
       super(config, message, options);
       
       this.actors = options.actors || [];
-      this.sendRequest = options.sendRequest ?? options.sendRequest ?? true;
+      this.sendRequest = options.sendRequest ?? options.isRollRequest ?? false;
       this.showDC = options.showDC || false;
       this.dcValue = options.dcValue || null;
       
@@ -192,9 +192,9 @@ export function GMRollConfigMixin(Base) {
       
       if (this.config.rolls?.[0]?.data?.situational || this.config.situational) {
         LogUtil.log(`${this.constructor.name}._onRender`, ['Triggering rebuild for initial situational bonus']);
-        setTimeout(() => {
+        // setTimeout(() => {
           this.rebuild();
-        }, 100);
+        // }, 10);
       }
     }
   };

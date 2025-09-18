@@ -151,6 +151,9 @@ export class SettingsUtil {
       case SETTINGS.compactMode.tag:
         SettingsUtil.applyCompactMode(newValue);
         break;
+      case SETTINGS.menuLayout.tag:
+        SettingsUtil.applyMenuLayout(newValue);
+        break;
       default:
         break;
     }
@@ -174,6 +177,15 @@ export class SettingsUtil {
     const isCompactMode = newValue || SettingsUtil.get(SETTINGS.compactMode.tag);
 
     LogUtil.log('applyCompactMode', [isCompactMode]);
+    
+    RollRequestsMenu.refreshIfOpen();
+  }
+
+  static applyMenuLayout(newValue){
+    const SETTINGS = getSettings();
+    const menuLayout = newValue || SettingsUtil.get(SETTINGS.menuLayout.tag);
+
+    LogUtil.log('applyMenuLayout', [menuLayout]);
     
     RollRequestsMenu.refreshIfOpen();
   }

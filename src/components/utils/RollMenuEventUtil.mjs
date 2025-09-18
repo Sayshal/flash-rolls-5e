@@ -22,6 +22,16 @@ export class RollMenuEventUtil {
    */
   static attachListeners(menu, html) {
     LogUtil.log('RollMenuEventUtil.attachListeners');
+    
+    // Check if there are no actors and clean up tooltips
+    const actors = html.querySelectorAll('.actor');
+    if (actors.length === 0) {
+      this.cleanupActorTooltips();
+      html.classList.add('no-actors');
+    } else {
+      html.classList.remove('no-actors');
+    }
+    
     this.attachToggleHandlers(menu, html);
     this.attachDragHandlers(menu, html);
     this.attachTabHandlers(menu, html);
@@ -45,6 +55,7 @@ export class RollMenuEventUtil {
     html.querySelector('#flash5e-actors-all')?.addEventListener('change', menu._onToggleSelectAll.bind(menu));
     html.querySelector('#flash5e-actors-lock')?.addEventListener('click', menu._onToggleLock.bind(menu));
     html.querySelector('.options-toggle-btn')?.addEventListener('click', menu._onToggleOptions.bind(menu));
+    html.querySelector('#flash5e-open-settings')?.addEventListener('click', menu._onOpenSettings.bind(menu));
   }
   
   /**
@@ -176,9 +187,20 @@ export class RollMenuEventUtil {
   }
   
   /**
+   * Clean up any existing actor data tooltips
+   */
+  static cleanupActorTooltips() {
+    const existingTooltips = document.querySelectorAll('.actor-data-tooltip');
+    existingTooltips.forEach(tooltip => tooltip.remove());
+  }
+
+  /**
    * Attach tooltip handlers for compact mode
    */
   static attachCompactTooltipHandlers(menu, html) {
+    // Always clean up existing tooltips first
+    this.cleanupActorTooltips();
+    
     if (!html.classList.contains('compact')) return;
     
     const actors = html.querySelectorAll('#flash-rolls-menu.compact .actor');

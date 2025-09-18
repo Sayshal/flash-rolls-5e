@@ -86,11 +86,28 @@ export class ActorDirectoryIconUtil {
     
     if (isBlocked) {
       icon.className = 'fas fa-bolt-slash';
-      icon.title = 'Blocked from Flash Rolls menu';
+      icon.dataset.tooltip = game.i18n.localize("FLASH_ROLLS.contextMenu.unblockFromMenu");
+      icon.dataset.tooltipDirection = 'LEFT';
+      // Add click handler to unblock
+      icon.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        ActorStatusUtil.toggleBlocked(actorId, false);
+      });
     } else if (isFavorite) {
       icon.className = 'fas fa-bolt';
-      icon.title = 'Added to Flash Rolls menu';
+      icon.dataset.tooltip = game.i18n.localize("FLASH_ROLLS.contextMenu.blockFromMenu");
+      icon.dataset.tooltipDirection = 'LEFT';
+      // Add click handler to remove from favorites (same as unblock action)
+      icon.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        ActorStatusUtil.toggleFavorite(actorId, false);
+      });
     }
+    
+    // Add cursor pointer style to indicate clickability
+    icon.style.cursor = 'pointer';
     actorElement.appendChild(icon);
   }
 

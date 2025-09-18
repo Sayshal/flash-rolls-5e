@@ -332,6 +332,17 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
   async _onToggleOptions(event) {
     return RollMenuStateUtil.handleToggleOptions(event, this);
   }
+
+  /**
+   * Handle open settings button click
+   */
+  async _onOpenSettings(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    const { ModuleSettingsMenu } = await import('./dialogs/ModuleSettingsMenu.mjs');
+    new ModuleSettingsMenu().render(true);
+  }
   
   /**
    * Check if the current user can drop actors into the menu

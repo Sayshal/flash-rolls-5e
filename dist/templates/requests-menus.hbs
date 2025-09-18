@@ -117,29 +117,33 @@
         </label>
       </li>
 
+      <li>
+        <button id="flash5e-open-settings" data-tooltip="{{localize 'FLASH_ROLLS.ui.inputs.openSettings'}}" data-tooltip-direction="{{#if (eq menuLayout 'horizontal')}}UP{{else}}RIGHT{{/if}}" data-tooltip-delay="500"><i class="icon-label fas fa-cog"></i></button>
+      </li>
+
       <hr />
       {{!-- Actor actions --}}
 
-      <li>
+      <li class="bulk-action">
         <label for="flash5e-actors-all" class="flash5e-switch-compact">
           <input type="checkbox" name="flash5e-actors-all" id="flash5e-actors-all" {{#if selectAllOn}}checked{{/if}}>
           <span class="icon-label fas fa-object-group" data-tooltip="{{localize 'FLASH_ROLLS.ui.inputs.selectAll'}}" data-tooltip-direction="{{#if (eq menuLayout 'horizontal')}}UP{{else}}RIGHT{{/if}}"></span>
         </label>
       </li>
 
-      <li>
+      <li class="bulk-action">
         <button id="flash5e-targets" data-tooltip="{{localize 'FLASH_ROLLS.ui.inputs.toggleTargets'}}" data-tooltip-direction="{{#if (eq menuLayout 'horizontal')}}UP{{else}}RIGHT{{/if}}" data-tooltip-delay="500"><i class="icon-label fas fa-crosshairs"></i></button>
       </li>
-      <li>
+      <li class="bulk-action">
         <button id="flash5e-heal-selected" data-tooltip="{{localize 'FLASH_ROLLS.ui.inputs.healAll'}}" data-tooltip-direction="{{#if (eq menuLayout 'horizontal')}}UP{{else}}RIGHT{{/if}}" data-tooltip-delay="500"><i class="icon-label fas fa-heart-pulse"></i></button>
       </li>
-      <li>
+      <li class="bulk-action">
         <button id="flash5e-kill-selected" data-tooltip="{{localize 'FLASH_ROLLS.ui.inputs.killAll'}}" data-tooltip-direction="{{#if (eq menuLayout 'horizontal')}}UP{{else}}RIGHT{{/if}}" data-tooltip-delay="500"><i class="icon-label fas fa-skull"></i></button>
       </li>
-      <li>
+      <li class="bulk-action">
         <button id="flash5e-remove-effects" data-tooltip="{{localize 'FLASH_ROLLS.ui.inputs.removeStatus'}}" data-tooltip-direction="{{#if (eq menuLayout 'horizontal')}}UP{{else}}RIGHT{{/if}}" data-tooltip-delay="500"><i class="icon-label fas fa-sparkles"></i></button>
       </li>
-      <li>
+      <li class="bulk-action">
         <button id="flash5e-sheets" data-tooltip="{{localize 'FLASH_ROLLS.ui.inputs.openSheets'}}" data-tooltip-direction="{{#if (eq menuLayout 'horizontal')}}UP{{else}}RIGHT{{/if}}" data-tooltip-delay="500"><i class="icon-label fas fa-square-user"></i></button>
       </li>
     </ul>

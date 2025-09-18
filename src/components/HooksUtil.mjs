@@ -250,6 +250,7 @@ export class HooksUtil {
     this._registerHook(HOOKS_CORE.UPDATE_SETTING, this._onSettingUpdate.bind(this));
     this._registerHook(HOOKS_CORE.UPDATE_SCENE, this._onSceneUpdate.bind(this));
     this._registerHook(HOOKS_CORE.UPDATE_ACTOR, this._onActorUpdate.bind(this));
+    this._registerHook(HOOKS_CORE.RENDER_CHAT_INPUT, this._onRenderChatInput.bind(this));
 
     game.users.forEach(user => {
       this._onUserConnected(user);
@@ -275,6 +276,24 @@ export class HooksUtil {
   static _onSidebarUpdate(tab) {
     LogUtil.log("_onSidebarUpdate", [tab]);
     updateSidebarClass(isSidebarExpanded());
+  }
+  
+  /**
+   * Handle chat input rendering to sync hotbar offset class with menu
+   */
+  static _onRenderChatInput() {
+    LogUtil.log("_onRenderChatInput - syncing offset class");
+    // Find the menu element directly since we can't access the private instance
+    const menuElement = document.querySelector('#flash-rolls-menu');
+    if (menuElement && menuElement.classList.contains('docked-bottom')) {
+      // Use setTimeout to ensure hotbar class changes have been applied
+      setTimeout(async () => {
+        const { RollMenuDragUtil } = await import('./utils/RollMenuDragUtil.mjs');
+        // Create a minimal menu-like object with the element
+        const menuProxy = { element: menuElement };
+        RollMenuDragUtil.syncOffsetClass(menuProxy);
+      }, 50);
+    }
   }
   
   /**
@@ -725,7 +744,9 @@ export class HooksUtil {
     const SETTINGS = getSettings();
     const MODULE = { ID: 'flash-rolls-5e' };
     
-    if (setting.key === `${MODULE.ID}.${SETTINGS.showOnlyPCsWithToken.tag}`) {
+    if (setting.key === `${MODULE.ID}.${SETTINGS.showOnlyPCsWithToken.tag}` ||
+        setting.key === `${MODULE.ID}.${SETTINGS.compactMode.tag}` ||
+        setting.key === `${MODULE.ID}.${SETTINGS.menuLayout.tag}`) {
       
       LogUtil.log('HooksUtil._onSettingUpdate - Re-rendering roll requests menu due to setting change', [setting.key]);
       RollRequestsMenu.refreshIfOpen();
@@ -1106,14 +1127,17 @@ export class HooksUtil {
       // return false;
       LogUtil.log("_onPreUseActivity - activity", [activity]);
     }
-
+    LogUtil.log("_onPreUseActivity - block msg", [config, dialog, message]);
     if(!game.user.isGM) return;
     
     if (actorOwner && actorOwner.active && !actorOwner.isGM) {
+     
       if (dialog.configure===true) {
         LogUtil.log("Preventing usage message for player-owned actor", [actor.name]);
         message.create = false;
       }
+    }else if(config.isRollRequest !== undefined){
+      message.create = false;
     }
   }
 

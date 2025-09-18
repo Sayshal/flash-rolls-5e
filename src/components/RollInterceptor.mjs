@@ -154,13 +154,14 @@ export class RollInterceptor {
       return;
     }
     
-    if (!owner || !owner.active || owner.id === game.user.id) {
-      LogUtil.log('_onPreRollIntercept - skipping interception (ownership)', [owner?.name, owner?.active]);
-      config.isRollRequest = false;
-      // return;
-    }else{
-      config.isRollRequest = true;
-    }
+    // if (!owner || !owner?.active || owner?.isGM) {
+    //   LogUtil.log('_onPreRollIntercept - not a request (ownership)', [owner, owner?.active]);
+    //   config.isRollRequest = false;
+    //   config.sendRequest = false;
+    //   // return;
+    // }else{
+    //   config.isRollRequest = true;
+    // }
 
     if (rollType === ROLL_TYPES.ATTACK) {
       message = {
@@ -329,6 +330,7 @@ export class RollInterceptor {
         sendRequest: true,
         advantage: false,
         disadvantage: false,
+        skipRollDialog: false,
         situational: "",
         rollMode: game.settings.get("core", "rollMode")
       };
@@ -345,8 +347,10 @@ export class RollInterceptor {
     };
 
     if (normalizedRollType === ROLL_TYPES.ATTACK || normalizedRollType === ROLL_TYPES.DAMAGE) {
+      console.log('DialogClass.initConfiguration', [actor, normalizedRollType, rollKey, dialogOptions, config, dialog]);
       return await DialogClass.initConfiguration([actor], normalizedRollType, rollKey, dialogOptions, config, dialog);
     } else {
+      console.log('DialogClass.initConfiguration', [actor, normalizedRollType, rollKey, dialogOptions]);
       return await DialogClass.initConfiguration([actor], normalizedRollType, rollKey, dialogOptions);
     }
   }
@@ -375,16 +379,18 @@ export class RollInterceptor {
       
       const DialogClass = this._getDialogClass(rollType);
       const { rollKey, rollConfig } = this._extractRollConfiguration(rollType, config, dialog, actor);
-      
-      LogUtil.log('_showGMConfigDialog - rollConfig', [rollConfig, rollKey]);
+      const isOwnerActive = owner && owner?.active && !owner?.isGM;
       
       let result;
+      const shouldSkipDialog = RollHelpers.shouldSkipRollDialog(isOwnerActive ? rollRequestsEnabled : false, {isPC: isOwnerActive, isNPC: !isOwnerActive});
+      LogUtil.log('_showGMConfigDialog - rollConfig', [rollConfig, rollKey, shouldSkipDialog, isOwnerActive, owner]);
       // Check if dialog should be skipped - pass rollRequestsEnabled as the sendRequest context
-      if (RollHelpers.shouldSkipRollDialog(rollRequestsEnabled, {isPC: owner?.isGM===false, isNPC: !owner || owner.isGM})) {
+      if (shouldSkipDialog) {
         result = {
-          sendRequest: rollRequestsEnabled,
+          sendRequest: isOwnerActive ? rollRequestsEnabled : false,
           advantage: false,
           disadvantage: false,
+          skipRollDialog: true,
           situational: "",
           rollMode: game.settings.get("core", "rollMode")
         };
@@ -394,10 +400,11 @@ export class RollInterceptor {
           actor, 
           rollType, 
           rollKey, 
-          rollRequestsEnabled, 
+          shouldSkipDialog, 
           config, 
           dialog
         );
+        LogUtil.log('_showGMConfigDialog - _getDialogResult', [result]);
       }
       
       if (!result) {

@@ -43,8 +43,8 @@
       "addToFavorites": "Add to Flash Rolls Menu",
       "removeFromFavorites": "Remove from Flash Rolls Menu",
       "toggleFavorite": "Toggle on Flash Menu",
-      "blockFromMenu": "Block from Flash Rolls Menu",
-      "unblockFromMenu": "Unblock from Flash Rolls Menu",
+      "blockFromMenu": "Remove from Favorites",
+      "unblockFromMenu": "Unblock from Menu",
       "showNPCsToPlayers": "Show NPCs to Players",
       "hideNPCsFromPlayers": "Hide NPCs from Players"
     },
@@ -99,8 +99,8 @@
         "hint": "When Skip Roll Dialogs, which dialogs do you want to skip? This does not affect dialogs on player side.",
         "choices": {
           "1": "All roll config dialogs",
-          "2": "Request dialogs (PCs)",
-          "3": "Local roll dialogs (NPCs)"
+          "2": "Roll request config dialogs",
+          "3": "Local roll config dialogs"
         }
       },
       "rollInterceptionEnabled": {
@@ -248,7 +248,8 @@
         "killAll": "Kill Selected",
         "removeStatus": "Remove Status",
         "openSheets": "Open Sheets",
-        "showOptionsListOnHover": "Toggle List"
+        "showOptionsListOnHover": "Toggle List",
+        "openSettings": "Open Settings"
       },
       "forms": {
         "pixelsRollTitle": "Pixels Dice - Roll Resolver",

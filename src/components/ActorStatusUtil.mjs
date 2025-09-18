@@ -88,22 +88,11 @@ export class ActorStatusUtil {
       return;
     }
 
-    LogUtil.log('ActorStatusUtil.setBlocked', [actorDoc.name, isBlocked]);
-
     if (isBlocked) {
-      // If blocking, remove favorite status
       await actorDoc.setFlag(MODULE_ID, this.FLAGS.BLOCKED, true);
       await actorDoc.unsetFlag(MODULE_ID, this.FLAGS.FAVORITE);
-      
-      // ui.notifications.info(game.i18n.format("FLASH_ROLLS.notifications.actorBlocked", {
-      //   actor: actorDoc.name
-      // }) || `${actorDoc.name} blocked from Flash Rolls menu`);
     } else {
       await actorDoc.unsetFlag(MODULE_ID, this.FLAGS.BLOCKED);
-      
-      // ui.notifications.info(game.i18n.format("FLASH_ROLLS.notifications.actorUnblocked", {
-      //   actor: actorDoc.name
-      // }) || `${actorDoc.name} unblocked from Flash Rolls menu`);
     }
 
     this._refreshMenu();

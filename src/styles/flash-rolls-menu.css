@@ -22,8 +22,7 @@
 
 /* ===== Base Menu Container ===== */
 #flash-rolls-menu {
-  box-sizing: border-box;
-  border-radius: 0;
+  border-radius: 4px;;
   color: inherit;
   display: block;
   font-size: 0.75rem;
@@ -35,7 +34,6 @@
   z-index: 0;
   pointer-events: auto;
   height: auto;
-  border-top-left-radius: 4px;
   background: transparent;
   transition: right 0.25s ease-in-out;
 
@@ -487,11 +485,12 @@
   
   > ul {
     list-style: none;
-    margin: 0;
+    margin: auto;
     padding: 0;
     display: flex;
     flex-direction: column;
     gap: 0.1rem;
+    max-width: max-content;
   }
 }
 
@@ -509,7 +508,9 @@
     flex-direction: row;
     gap: 0.25rem;
     width: max-content;
-    min-width: 100%;
+    min-width: max-content;
+    max-width: max-content;
+    margin: auto;
   }
 }
 
@@ -541,6 +542,10 @@
 }
 #flash-rolls-menu.compact .main-content ul.action-icons{
   width: var(--fr5e-actions-width);
+}
+
+#flash-rolls-menu.no-actors .main-content ul.action-icons .bulk-action{
+  display: none;
 }
 
 /* Horizontal Compact Mode Actor Lists */
@@ -590,7 +595,7 @@
 
 #flash-rolls-menu.compact div.main-content > ul.actors > li.actor-list > ul {
   list-style: none;
-  margin: 0;
+  margin: auto;
   padding: 0;
   overflow: auto !important;
 }
@@ -1386,28 +1391,34 @@ body > .actor.drag-wrapper {
 
 /* Near Snap Indicator */
 #flash-rolls-menu.near-snap {
-  border-right: 3px solid var(--color-warm-2);
-  animation: border-animate 0.5s infinite linear;
-  
-  .drag-handle {
-    opacity: 0.8;
-  }
+  animation: outline-animate 0.75s infinite linear;
+  outline: 5px solid var(--color-warm-2);
 }
+/*
+#flash-rolls-menu.near-snap.near-snap-right {
+  outline: 5px solid var(--color-warm-2);
+}
+#flash-rolls-menu.near-snap.near-snap-bottom {
+  outline: 5px solid var(--color-warm-2);
+}
+#flash-rolls-menu.near-snap.near-snap-both {
+  outline: 5px solid var(--color-warm-2);
+}*/
 
-@keyframes border-animate {
+@keyframes outline-animate {
   0% {  
-    border-color: transparent;
+    outline-color: transparent;
   }
   50% {  
-    border-color: var(--color-warm-1);
+    outline-color: var(--color-warm-2);
   }
   100% {  
-    border-color: transparent;
+    outline-color: transparent;
   }
 } 
 
 /* Snapping Animation */
-#flash-rolls-menu.snapping {
+#flash-rolls-menu.snapping-default {
   transition: top 0.3s ease-in-out, left 0.3s ease-in-out, right 0.3s ease-in-out, bottom 0.3s ease-in-out !important;
 }
 
@@ -1434,9 +1445,13 @@ body.crlngn-tabs #flash-rolls-menu.docked-right {
   bottom: auto !important;
   z-index: 0;
   padding: 0 !important;
-  opacity: 1 !important;
   transition: opacity 0.2s ease-in-out !important;
   flex-direction: column;
+  --offset: 0px;
+
+  &.offset {
+    transform: translate(var(--offset, 0px), -10px) !important;
+  }
 
   &:after {
     width: 100%;

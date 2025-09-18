@@ -44,31 +44,34 @@ export class RollMenuDragUtil {
     if(!menu.element){return}
     menu.element.classList.add('dragging');
     
-    const menuRect = menu.element.getBoundingClientRect();
     const startX = event.clientX;
     const startY = event.clientY;
-    let initialLeft = menuRect.left;
-    let initialTop = menuRect.top;
     
-    // If dragging from bottom dock, account for the transform offset
+    // Check if we're dragging from bottom dock before making any changes
     const isDockedBottom = menu.element.classList.contains('docked-bottom');
-    if (isDockedBottom) {
-      // The CSS has transform: translate(0%, -0.5rem) which is -8px
-      // We need to add this back to get the actual position
-      const remInPixels = parseFloat(getComputedStyle(document.documentElement).fontSize);
-      initialTop = menuRect.top + (0.5 * remInPixels);
-    }
+    const isDraggedFromBottomDock = menu.element.parentElement?.id === 'ui-bottom';
     
     // Remove docked classes when starting drag
-    menu.element.classList.remove('docked-right', 'docked-bottom');
+    menu.element.classList.remove('docked-right', 'docked-bottom', 'faded-ui');
     
-    // Restore original layout if dragging from bottom dock
-    if (menu.element.parentElement?.id === 'ui-bottom') {
-      const SETTINGS = getSettings();
-      const originalLayout = SettingsUtil.get(SETTINGS.menuLayout.tag);
-      if (originalLayout) {
-        menu.element.setAttribute('data-layout', originalLayout);
+    // Force layout recalculation by accessing offsetHeight
+    menu.element.offsetHeight;
+    
+    const menuRect = menu.element.getBoundingClientRect();
+    let initialLeft = menuRect.left;
+    let initialTop = startY;//menuRect.top;
+    
+    // If dragging from bottom dock, adjust position to keep cursor over drag handle
+    if (isDraggedFromBottomDock) {
+      const dragHandle = menu.element.querySelector(this.DRAG_HANDLE_SELECTOR);
+      if (dragHandle) {
+        const handleRect = dragHandle.getBoundingClientRect();
+        const handleCenterOffset = (handleRect.left - menuRect.left) + (handleRect.width / 2);
+        initialLeft = startX - handleCenterOffset;
+      } else {
+        initialLeft = startX - (menuRect.width / 2);
       }
+      initialTop = startY; //menuRect.top;
     }
     
     const parent = menu.element.parentElement;
@@ -146,10 +149,24 @@ export class RollMenuDragUtil {
     const computed = window.getComputedStyle(menu.element);
 
     const snapInfo = this.calculateSnapDistance(menu);
-    if (snapInfo.type !== 'none') {
-      menu.element.classList.add('near-snap');
-    } else {
-      menu.element.classList.remove('near-snap');
+    
+    // Only update classes if the snap type has changed
+    const currentSnapType = menu.element.classList.contains('near-snap-both') ? 'both-edges' :
+                           menu.element.classList.contains('near-snap-right') ? 'right-edge' :
+                           menu.element.classList.contains('near-snap-bottom') ? 'bottom-edge' : 'none';
+    
+    if (currentSnapType !== snapInfo.type) {
+      // Remove all near-snap classes first
+      menu.element.classList.remove('near-snap', 'near-snap-right', 'near-snap-bottom', 'near-snap-both');
+      
+      // Add specific near-snap class based on snap type
+      if (snapInfo.type === 'both-edges') {
+        menu.element.classList.add('near-snap', 'near-snap-both');
+      } else if (snapInfo.type === 'right-edge') {
+        menu.element.classList.add('near-snap', 'near-snap-right');
+      } else if (snapInfo.type === 'bottom-edge') {
+        menu.element.classList.add('near-snap', 'near-snap-bottom');
+      }
     }
   }
   
@@ -169,7 +186,7 @@ export class RollMenuDragUtil {
     
     menu.isDragging = false;
     menu.element.classList.remove('dragging');
-    menu.element.classList.remove('near-snap');
+    menu.element.classList.remove('near-snap', 'near-snap-right', 'near-snap-bottom', 'near-snap-both');
     
     menu.element.style.zIndex = '';
     
@@ -279,7 +296,7 @@ export class RollMenuDragUtil {
       dockedRight: true
     };
     
-    menu.element.classList.remove('custom-position', 'left-edge', 'top-edge', 'docked-bottom');
+    menu.element.classList.remove('custom-position', 'left-edge', 'top-edge', 'docked-bottom', 'faded-ui', 'offset');
     menu.element.classList.add('docked-right', 'snapping');
     
     // Handle top-edge for horizontal layout in docked position
@@ -321,10 +338,7 @@ export class RollMenuDragUtil {
       dockedBottom: true
     };
     
-    // Force horizontal layout when docked to bottom
-    menu.element.setAttribute('data-layout', 'horizontal');
-    
-    menu.element.classList.remove('custom-position', 'left-edge', 'top-edge', 'docked-right');
+    menu.element.classList.remove('custom-position', 'left-edge', 'top-edge', 'docked-right', 'offset');
     menu.element.classList.add('docked-bottom', 'snapping');
     
     // Move to #ui-bottom container
@@ -332,6 +346,15 @@ export class RollMenuDragUtil {
     if (uiBottom && !uiBottom.contains(menu.element)) {
       uiBottom.prepend(menu.element);
     }
+    
+    // Check if hotbar has faded-ui class and apply to menu
+    const hotbar = document.querySelector('#ui-bottom #hotbar');
+    if (hotbar && hotbar.classList.contains('faded-ui')) {
+      menu.element.classList.add('faded-ui');
+    }
+    
+    // Check if hotbar has offset class and apply to menu
+    this.syncOffsetClass(menu);
     
     adjustMenuOffset();
     
@@ -343,6 +366,25 @@ export class RollMenuDragUtil {
   }
   
   /**
+   * Synchronize offset class from hotbar to menu when docked to bottom
+   * @param {RollRequestsMenu} menu 
+   */
+  static syncOffsetClass(menu) {
+    const hotbar = document.querySelector('#hotbar');
+    if (hotbar && hotbar.classList.contains('offset')) {
+      menu.element.classList.add('offset');
+      // Also copy the --offset CSS variable if it exists
+      const offsetValue = hotbar.style.getPropertyValue('--offset');
+      if (offsetValue) {
+        menu.element.style.setProperty('--offset', offsetValue);
+      }
+    } else {
+      menu.element.classList.remove('offset');
+      menu.element.style.removeProperty('--offset');
+    }
+  }
+
+  /**
    * Snap menu back to default position
    * @param {RollRequestsMenu} menu 
    */
@@ -352,16 +394,10 @@ export class RollMenuDragUtil {
     menu.isCustomPosition = false;
     menu.customPosition = null;
     
-    // Restore original layout from settings
-    const { getSettings } = await import('../../constants/Settings.mjs');
-    const { SettingsUtil } = await import('../SettingsUtil.mjs');
     const SETTINGS = getSettings();
     const originalLayout = SettingsUtil.get(SETTINGS.menuLayout.tag);
-    if (originalLayout) {
-      menu.element.setAttribute('data-layout', originalLayout);
-    }
     
-    menu.element.classList.remove('custom-position', 'left-edge', 'top-edge', 'docked-bottom', 'docked-right');
+    menu.element.classList.remove('custom-position', 'left-edge', 'top-edge', 'docked-bottom', 'docked-right', 'faded-ui', 'offset');
     menu.element.classList.add('snapping');
     
     menu.element.style.position = '';
@@ -370,7 +406,8 @@ export class RollMenuDragUtil {
     menu.element.style.top = '';
     menu.element.style.right = '';
     menu.element.style.bottom = '';
-    menu.element.style.zIndex = '';  
+    menu.element.style.zIndex = '';
+    menu.element.style.removeProperty('--offset');  
     
     adjustMenuOffset();
     
@@ -421,7 +458,7 @@ export class RollMenuDragUtil {
       menu.element.style.bottom = '';
       
       menu.element.classList.add('docked-right');
-      menu.element.classList.remove('custom-position', 'left-edge');
+      menu.element.classList.remove('custom-position', 'left-edge', 'faded-ui', 'offset');
       
       // Handle top-edge for horizontal layout in docked position
       const isHorizontalLayout = menu.element.hasAttribute('data-layout') && 
@@ -440,11 +477,17 @@ export class RollMenuDragUtil {
         uiBottom.prepend(menu.element);
       }
       
-      // Force horizontal layout when docked to bottom
-      menu.element.setAttribute('data-layout', 'horizontal');
-      
       menu.element.classList.add('docked-bottom');
-      menu.element.classList.remove('custom-position', 'left-edge', 'top-edge', 'docked-right');
+      menu.element.classList.remove('custom-position', 'left-edge', 'top-edge', 'docked-right', 'faded-ui', 'offset');
+      
+      // Check if hotbar has faded-ui class and apply to menu
+      const hotbar = document.querySelector('#ui-bottom #hotbar');
+      if (hotbar && hotbar.classList.contains('faded-ui')) {
+        menu.element.classList.add('faded-ui');
+      }
+      
+      // Check if hotbar has offset class and apply to menu
+      this.syncOffsetClass(menu);
       
       adjustMenuOffset();
     } else {
@@ -461,7 +504,7 @@ export class RollMenuDragUtil {
       GeneralUtil.addCSSVars('--flash-rolls-menu-offset', isCrlngnUIOn ? '0px' : '16px');
       
       menu.element.classList.add('custom-position');
-      menu.element.classList.remove('docked-right');
+      menu.element.classList.remove('docked-right', 'faded-ui', 'offset');
       
       const remInPixels = parseFloat(getComputedStyle(document.documentElement).fontSize) * 15;
       if (position.x < remInPixels) {
