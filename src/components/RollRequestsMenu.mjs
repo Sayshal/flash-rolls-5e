@@ -25,6 +25,8 @@ import { RollMenuActorProcessor } from './utils/RollMenuActorProcessor.mjs';
 import { RollMenuExecutionUtil } from './utils/RollMenuExecutionUtil.mjs';
 import { RollMenuStateUtil } from './utils/RollMenuStateUtil.mjs';
 import { RollMenuStatusUtil } from './utils/RollMenuStatusUtil.mjs';
+import { ModuleSettingsMenu } from './dialogs/ModuleSettingsMenu.mjs';
+    
 
 /**
  * Roll Requests Menu Application
@@ -340,7 +342,6 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
     event.preventDefault();
     event.stopPropagation();
     
-    const { ModuleSettingsMenu } = await import('./dialogs/ModuleSettingsMenu.mjs');
     new ModuleSettingsMenu().render(true);
   }
   
