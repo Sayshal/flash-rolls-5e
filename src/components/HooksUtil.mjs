@@ -709,14 +709,17 @@ export class HooksUtil {
       return;
     }
 
-    LogUtil.log("_selectTargetedTokens", [message, targets, canvas.tokens.placeables, game.scenes.active]);
     for ( let i=0; i < targets.length; i++ ) {
       const target = targets[i];
       const actorId = target.dataset.targetUuid.split('Actor.')[1];
-      const token = canvas.tokens.placeables.find(t => {
-        return t.document.actorId === actorId;
+      const tokens = canvas.tokens.placeables.filter(t => {
+        return t.document.actor?.id === actorId || t.document.baseActor?.id === actorId;
       });
-      token?.control({ releaseOthers: i===0 });
+      tokens.forEach((token, jQuerj) => {
+        if(token && token.control){
+          token.control({ releaseOthers: i===0 });
+        }
+      });
     }
   }
   
