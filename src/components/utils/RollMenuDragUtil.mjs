@@ -212,7 +212,8 @@ export class RollMenuDragUtil {
         x: dragData.currentLeft,
         y: dragData.currentTop,
         isCustom: true,
-        dockedRight: false
+        dockedRight: false,
+        dockedBottom: false
       };
       const isCrlngnUIOn = document.querySelector('body.crlngn-tabs') ? true : false;
       GeneralUtil.addCSSVars('--flash-rolls-menu-offset', isCrlngnUIOn ? '0px' : '16px');
@@ -381,6 +382,26 @@ export class RollMenuDragUtil {
     } else {
       menu.element.classList.remove('offset');
       menu.element.style.removeProperty('--offset');
+    }
+  }
+
+  /**
+   * Synchronize faded-ui class from hotbar to menu when docked to bottom
+   * @param {RollRequestsMenu|Object} menu - Menu instance or proxy object with element property
+   */
+  static syncFadedUIClass(menu) {
+    // Only sync if menu is docked to bottom
+    if (!menu.element.classList.contains('docked-bottom')) {
+      // If not docked to bottom, ensure faded-ui is removed
+      menu.element.classList.remove('faded-ui');
+      return;
+    }
+
+    const hotbar = document.querySelector('#ui-bottom #hotbar');
+    if (hotbar && hotbar.classList.contains('faded-ui')) {
+      menu.element.classList.add('faded-ui');
+    } else {
+      menu.element.classList.remove('faded-ui');
     }
   }
 

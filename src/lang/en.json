@@ -144,8 +144,8 @@
         "hint": "Enable to automatically initiate the a combat encounter when using the menu to request initiative rolls."
       },
       "showOnlyPCsWithToken": {
-        "label": "Show Only PCs with Tokens",
-        "hint": "When enabled, the PC tab in the roll menu will only show player characters that have tokens in the current scene. If disabled, all characters with player ownership will be shown."
+        "label": "Only Show Actors with Tokens",
+        "hint": "The PCs and Groups tabs on the menu will only show actors with tokens in the current scene, unless you explicitly drag an actor from directory into the menu. If disabled, all characters with player ownership will be shown."
       },
       "favoriteActorsList": {
         "label": "Favorite Actors List",
@@ -298,10 +298,13 @@
       "menus": {
         "npcs": "NPCs",
         "pcs": "PCs",
+        "groups": "Groups",
         "rollRequestsTitle": "Roll Requests",
         "dragHandleTooltip": "Drag menu",
         "noActors": "No actors",
-        "noActorsDropHint": "No actors in this list. Drag some here from the Actor Directory, or simply add tokens to the active scene."
+        "noActorsDropHint": "No actors in this list. Drag some here from the Actor Directory, or simply add tokens to the active scene.",
+        "noGroups": "No groups",
+        "noGroupsDropHint": "No groups in this list. Drag encounter or group actors here from the Actor Directory."
       }
     },
     "common": {

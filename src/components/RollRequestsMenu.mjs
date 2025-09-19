@@ -63,6 +63,7 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
     this.isLocked = false; 
     this.optionsExpanded = game.user.getFlag(MODULE.ID, 'menuOptionsExpanded') ?? false;
     this.accordionStates = game.user.getFlag(MODULE.ID, 'menuAccordionStates') ?? {};
+    this.groupExpansionStates = game.user.getFlag(MODULE.ID, 'groupExpansionStates') ?? {};
     this.isSearchFocused = game.user.getFlag('flash-rolls-5e', 'searchFocused') ?? false;
     
     this.isDragging = false;
@@ -263,7 +264,8 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
       });
     
     const shouldUpdate = (currentTab === 'pc' && isPlayerOwned) || 
-                         (currentTab === 'npc' && !isPlayerOwned && hasTokenInScene(actor));
+                         (currentTab === 'npc' && !isPlayerOwned && hasTokenInScene(actor)) ||
+                         (currentTab === 'group');
     
     if (shouldUpdate) {
       if (this._itemUpdateTimeout) {
@@ -468,7 +470,13 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
     const uniqueId = wrapperElement.dataset.id;
     const actorId = wrapperElement.dataset.actorId;
     const tokenId = wrapperElement.dataset.tokenId;
-    this._toggleActorSelection(uniqueId, actorId, tokenId);
+    
+    // Check if this is a group actor
+    if (wrapperElement.classList.contains('actor-group')) {
+      this._toggleGroupSelection(actorId);
+    } else {
+      this._toggleActorSelection(uniqueId, actorId, tokenId);
+    }
   }
   
   /**
@@ -477,12 +485,117 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
   _toggleActorSelection(uniqueId, actorId, tokenId) {
     return RollMenuStateUtil.toggleActorSelection(uniqueId, actorId, tokenId, this);
   }
+
+  /**
+   * Toggle group selection - selects/deselects all members of the group
+   */
+  async _toggleGroupSelection(groupActorId) {
+    const groupActor = game.actors.get(groupActorId);
+    if (!groupActor || (groupActor.type !== 'group' && groupActor.type !== 'encounter')) {
+      return;
+    }
+
+    // Get all members of the group with same token logic as processing
+    const members = [];
+    const currentScene = game.scenes.active;
+    
+    if (groupActor.type === 'group') {
+      for (const member of groupActor.system.members || []) {
+        if (member.actor) {
+          // Check for tokens of this member in the scene
+          const memberTokens = currentScene?.tokens.filter(token => token.actorId === member.actor.id) || [];
+          
+          if (memberTokens.length > 0) {
+            // Add entries for each token
+            memberTokens.forEach(tokenDoc => {
+              members.push({ actor: member.actor, uniqueId: tokenDoc.id });
+            });
+          } else {
+            // No tokens, use actor id
+            members.push({ actor: member.actor, uniqueId: member.actor.id });
+          }
+        }
+      }
+    } else if (groupActor.type === 'encounter') {
+      for (const member of groupActor.system.members || []) {
+        try {
+          const memberActor = await fromUuid(member.uuid);
+          if (memberActor) {
+            // Check for tokens of this member in the scene
+            const memberTokens = currentScene?.tokens.filter(token => token.actorId === memberActor.id) || [];
+            
+            if (memberTokens.length > 0) {
+              // Add entries for each token
+              memberTokens.forEach(tokenDoc => {
+                members.push({ actor: memberActor, uniqueId: tokenDoc.id });
+              });
+            } else {
+              // No tokens, use actor id
+              members.push({ actor: memberActor, uniqueId: memberActor.id });
+            }
+          }
+        } catch (error) {
+          console.warn(`Failed to resolve member UUID: ${member.uuid}`, error);
+        }
+      }
+    }
+
+    if (members.length === 0) return;
+
+    // Check if all members are currently selected
+    const allMembersSelected = members.every(member => 
+      this.selectedActors.has(member.uniqueId)
+    );
+
+    // Toggle selection for all members
+    for (const member of members) {
+      if (allMembersSelected) {
+        // Deselect all members
+        if (this.selectedActors.has(member.uniqueId)) {
+          this._toggleActorSelection(member.uniqueId, member.actor.id, null);
+        }
+      } else {
+        // Select all members
+        if (!this.selectedActors.has(member.uniqueId)) {
+          this._toggleActorSelection(member.uniqueId, member.actor.id, null);
+        }
+      }
+    }
+
+    // Update the group's visual selection state
+    this._updateGroupSelectionUI(groupActorId, members);
+  }
   
   /**
    * Update the visual state of an actor element without re-rendering
    */
   _updateActorSelectionUI(actorId) {
     return RollMenuStateUtil.updateActorSelectionUI(actorId, this);
+  }
+
+  /**
+   * Update the visual selection state of a group element
+   */
+  _updateGroupSelectionUI(groupActorId, members) {
+    // Find all group elements for this actor (there might be multiple if group has tokens)
+    const groupElements = this.element.querySelectorAll(`[data-actor-id="${groupActorId}"].actor-group`);
+    
+    // Check if any members are selected
+    const anyMembersSelected = members.length > 0 && members.some(member => 
+      this.selectedActors.has(member.uniqueId)
+    );
+    
+    groupElements.forEach(groupElement => {
+      // Update data-group-selected attribute
+      groupElement.setAttribute('data-group-selected', anyMembersSelected.toString());
+      
+      // Update selected class
+      if (anyMembersSelected) {
+        groupElement.classList.add('selected');
+      } else {
+        groupElement.classList.remove('selected');
+      }
+    });
   }
 
   /**

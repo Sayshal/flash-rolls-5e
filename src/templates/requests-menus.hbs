@@ -1,4 +1,4 @@
-<div>
+<div data-tab="{{selectedTab}}">
   {{!-- {{#if isCompact}}
     <div class="floating-info">
       Test
@@ -13,52 +13,137 @@
     <ul class="actors">
       <li class="actor-list">
         <ul>
-          
-        {{#unless actors}}
-          <li class="actor-list-empty">
-            {{#if ../isGM}}
-              {{localize "FLASH_ROLLS.ui.menus.noActorsDropHint"}}
-            {{else}}
-              {{localize "FLASH_ROLLS.ui.menus.noActors"}}
-            {{/if}}
-          </li>
-        {{/unless}}
-        {{#each actors as |actor|}}
+        {{#if (eq selectedTab "group")}}
+          {{#unless groups}}
+            <li class="actor-list-empty">
+              {{#if ../isGM}}
+                {{localize "FLASH_ROLLS.ui.menus.noGroupsDropHint"}}
+              {{else}}
+                {{localize "FLASH_ROLLS.ui.menus.noGroups"}}
+              {{/if}}
+            </li>
+          {{/unless}}
+          {{#each groups as |group|}}
           <li>
-            <div class="actor drag-wrapper{{#if actor.selected}} selected{{/if}}" draggable="true"
-                data-id="{{actor.uniqueId}}" data-actor-id="{{actor.id}}" 
-                {{#if actor.tokenId}}data-token-id="{{actor.tokenId}}"{{/if}}
-                data-selected="{{actor.selected}}">
-              <div class="actor-data">
-                {{#if ../showNames}}<span class="actor-name">
-                  {{ actor.name }}
+            <div class="actor actor-group drag-wrapper{{#if group.isExpanded}} expanded non-selectable{{/if}}{{#if group.selected}} selected{{/if}}" draggable="true"
+                data-id="{{group.uniqueId}}" data-actor-id="{{group.id}}" 
+                data-group-selected="{{group.selected}}"{{#if group.isExpanded}} data-non-selectable="true"{{/if}}
+                data-tooltip="{{group.name}}" data-tooltip-direction="UP">
+              {{#unless group.isExpanded}}
+              <div class="actor-img group-{{group.memberImages.length}}">
+                {{#each group.memberImages as |img|}}
+                  {{#if (lte @index 3)}}
+                    <img src="{{img}}" alt="Member {{@index}}" />
+                  {{/if}}
+                {{/each}}
+              </div>
+              {{/unless}}
+              <ul class="group-members">
+                {{#if group.isExpanded}}
+                {{#each group.members as |member|}}
+                  <li>
+                    <div class="actor drag-wrapper{{#if member.selected}} selected{{/if}}" draggable="false"
+                        data-id="{{member.uniqueId}}" data-actor-id="{{member.id}}" 
+                        {{#if member.tokenId}}data-token-id="{{member.tokenId}}"{{/if}}
+                        data-selected="{{member.selected}}">
+                      <div class="actor-data">
+                        {{#if ../../showNames}}<span class="actor-name">
+                          {{ member.name }}
+                          </span>
+                        {{/if}}
+                        <ul class="actor-stats">
+                          {{#each member.crlngnStats as |prop|}}
+                            <li class="actor-stat">
+                              <span class="stat-abbrev">{{ prop.abbrev }}</span>
+                              <span class="stat-value">{{ prop.value }}</span>
+                            </li>
+                          {{/each}}
+                        </ul>
+                      </div>
+                      <div class="actor-img">
+                        {{#if member.isFavorite}}
+                          <i class="fas fa-bolt favorite" data-tooltip="Drag out to remove" data-tooltip-direction="UP"></i>
+                        {{/if}}
+                        <span class="icons">
+                          <i class="fas fa-square-user icon-sheet" data-tooltip="Character sheet" data-tooltip-direction="UP"></i>
+                          {{!-- <i class="fas fa-crosshairs icon-target" data-tooltip="Target character" data-tooltip-direction="UP"></i> --}}
+                        </span>
+                        <img src="{{ member.img }}" alt="{{ member.name }}" />
+                      </div>
+                      <div class="actor-stat-bar" data-stat="hp">
+                        <span class="bar" style="width: {{ member.hpPercent }}%;background-color: {{ member.hpColor }};"></span>
+                      </div>
+                    </div>
+                  </li>
+                {{/each}}
+                {{/if}}
+                {{#unless isCompact}}
+                <li>
+                  <span class="actor-name">
+                    {{ group.name }}
                   </span>
-                {{/if}}
-                <ul class="actor-stats">
-                  {{#each actor.crlngnStats as |prop|}}
-                    <li class="actor-stat">
-                      <span class="stat-abbrev">{{ prop.abbrev }}</span>
-                      <span class="stat-value">{{ prop.value }}</span>
-                    </li>
-                  {{/each}}
-                </ul>
-              </div>
-              <div class="actor-img">
-                {{#if actor.isFavorite}}
-                  <i class="fas fa-bolt favorite" data-tooltip="Drag out to remove" data-tooltip-direction="UP"></i>
-                {{/if}}
-                <span class="icons">
-                  <i class="fas fa-square-user icon-sheet" data-tooltip="Character sheet" data-tooltip-direction="UP"></i>
-                  <i class="fas fa-crosshairs icon-target" data-tooltip="Target character" data-tooltip-direction="UP"></i>
-                </span>
-                <img src="{{ actor.img }}" alt="{{ actor.name }}" />
-              </div>
-              <div class="actor-stat-bar" data-stat="hp">
-                <span class="bar" style="width: {{ actor.hpPercent }}%;background-color: {{ actor.hpColor }};"></span>
-              </div>
+                </li>
+                {{/unless}}
+                <li>
+                  <button class="group-expand-btn" data-group-id="{{group.id}}">
+                    {{#if (eq ../menuLayout 'horizontal')}}
+                      <i class="fas fa-caret-{{#if group.isExpanded}}left{{else}}right{{/if}}"></i>
+                    {{else}}
+                      <i class="fas fa-caret-{{#if group.isExpanded}}up{{else}}down{{/if}}"></i>
+                    {{/if}}
+                  </button>
+                </li>
+              </ul>
             </div>
           </li>
-        {{/each}}
+          {{/each}}
+        {{else}}
+          {{#unless actors}}
+            <li class="actor-list-empty">
+              {{#if ../isGM}}
+                {{localize "FLASH_ROLLS.ui.menus.noActorsDropHint"}}
+              {{else}}
+                {{localize "FLASH_ROLLS.ui.menus.noActors"}}
+              {{/if}}
+            </li>
+          {{/unless}}
+          {{#each actors as |actor|}}
+            <li>
+              <div class="actor drag-wrapper{{#if actor.selected}} selected{{/if}}" draggable="true"
+                  data-id="{{actor.uniqueId}}" data-actor-id="{{actor.id}}" 
+                  {{#if actor.tokenId}}data-token-id="{{actor.tokenId}}"{{/if}}
+                  data-selected="{{actor.selected}}">
+                <div class="actor-data">
+                  {{#if ../showNames}}<span class="actor-name">
+                    {{ actor.name }}
+                    </span>
+                  {{/if}}
+                  <ul class="actor-stats">
+                    {{#each actor.crlngnStats as |prop|}}
+                      <li class="actor-stat">
+                        <span class="stat-abbrev">{{ prop.abbrev }}</span>
+                        <span class="stat-value">{{ prop.value }}</span>
+                      </li>
+                    {{/each}}
+                  </ul>
+                </div>
+                <div class="actor-img">
+                  {{#if actor.isFavorite}}
+                    <i class="fas fa-bolt favorite" data-tooltip="Drag out to remove" data-tooltip-direction="UP"></i>
+                  {{/if}}
+                  <span class="icons">
+                    <i class="fas fa-square-user icon-sheet" data-tooltip="Character sheet" data-tooltip-direction="UP"></i>
+                    {{!-- <i class="fas fa-crosshairs icon-target" data-tooltip="Target character" data-tooltip-direction="UP"></i> --}}
+                  </span>
+                  <img src="{{ actor.img }}" alt="{{ actor.name }}" />
+                </div>
+                <div class="actor-stat-bar" data-stat="hp">
+                  <span class="bar" style="width: {{ actor.hpPercent }}%;background-color: {{ actor.hpColor }};"></span>
+                </div>
+              </div>
+            </li>
+          {{/each}}
+        {{/if}}
         </ul>
       </li>
 
@@ -70,7 +155,11 @@
         </button>
         <button class="actor-tab pc-tab{{#if (eq selectedTab "pc")}} active{{/if}}" data-tab="pc" 
           data-tooltip="{{localize 'FLASH_ROLLS.ui.menus.pcs'}}" data-tooltip-direction="UP">
-          <i class="fas fa-users"></i>
+          <i class="fas fa-circle-user"></i>
+        </button>
+        <button class="actor-tab group-tab{{#if (eq selectedTab "group")}} active{{/if}}" data-tab="group"
+          data-tooltip="{{localize 'FLASH_ROLLS.ui.menus.groups'}}" data-tooltip-direction="UP">
+          <i class="fa-solid fa-users-medical"></i>
         </button>
       </li>
       {{!-- {{else}} --}}

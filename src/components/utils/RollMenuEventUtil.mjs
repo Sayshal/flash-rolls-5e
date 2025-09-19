@@ -42,6 +42,7 @@ export class RollMenuEventUtil {
     this.attachAccordionHandlers(menu, html);
     this.attachSubmenuHandlers(menu, html);
     this.attachStatusEffectHandlers(menu, html);
+    this.attachGroupHandlers(menu, html);
     this.attachOutsideClickHandler(menu);
   }
   
@@ -124,7 +125,13 @@ export class RollMenuEventUtil {
    */
   static attachActorHandlers(menu, html) {
     html.querySelectorAll('.actor.drag-wrapper').forEach(wrapper => {
-      wrapper.addEventListener('click', menu._onActorClick.bind(menu));
+      wrapper.addEventListener('click', (event) => {
+        // Check if this actor is non-selectable (expanded group)
+        if (wrapper.hasAttribute('data-non-selectable')) {
+          return; // Skip selection for expanded groups
+        }
+        menu._onActorClick.call(menu, event);
+      });
       
       // Add click handler for character sheet icon
       const sheetIcon = wrapper.querySelector('.icon-sheet');
@@ -453,6 +460,31 @@ export class RollMenuEventUtil {
     }
   }
   
+  /**
+   * Attach group expansion/collapse handlers
+   */
+  static attachGroupHandlers(menu, html) {
+    const groupExpandButtons = html.querySelectorAll('.group-expand-btn');
+    groupExpandButtons.forEach(button => {
+      button.addEventListener('click', async (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        
+        const groupId = button.dataset.groupId;
+        const isExpanded = menu.groupExpansionStates[groupId] ?? false;
+        
+        // Toggle expansion state
+        menu.groupExpansionStates[groupId] = !isExpanded;
+        
+        // Save state to user flags
+        await game.user.setFlag('flash-rolls-5e', 'groupExpansionStates', menu.groupExpansionStates);
+        
+        // Re-render to update the display
+        menu.render();
+      });
+    });
+  }
+
   /**
    * Attach outside click handler with delay to prevent immediate closure
    */

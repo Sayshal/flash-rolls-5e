@@ -282,7 +282,7 @@ export class HooksUtil {
    * Handle chat input rendering to sync hotbar offset class with menu
    */
   static _onRenderChatInput() {
-    LogUtil.log("_onRenderChatInput - syncing offset class");
+    LogUtil.log("_onRenderChatInput - syncing offset and faded-ui classes");
     // Find the menu element directly since we can't access the private instance
     const menuElement = document.querySelector('#flash-rolls-menu');
     if (menuElement && menuElement.classList.contains('docked-bottom')) {
@@ -292,6 +292,7 @@ export class HooksUtil {
         // Create a minimal menu-like object with the element
         const menuProxy = { element: menuElement };
         RollMenuDragUtil.syncOffsetClass(menuProxy);
+        RollMenuDragUtil.syncFadedUIClass(menuProxy);
       }, 50);
     }
   }
