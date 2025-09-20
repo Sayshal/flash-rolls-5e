@@ -53,10 +53,11 @@ export class RollMenuStateUtil {
     menu._ignoreTokenControl = true;
     
     const context = menu._lastPreparedContext || {};
-    const currentActors = context.actors || [];
+    // In Groups tab, data is in context.groups, otherwise in context.actors
+    const currentActors = menu.currentTab === 'group' ? (context.groups || []) : (context.actors || []);
     
     currentActors.forEach(actorData => {
-      // Handle group actors by selecting/deselecting their members
+      // Handle group actors by selecting/deselecting their members (always, regardless of tab)
       if (actorData.isGroup && actorData.members) {
         actorData.members.forEach(member => {
           const memberUniqueId = member.uniqueId;
@@ -103,6 +104,9 @@ export class RollMenuStateUtil {
     
     // Update group selection visual state
     menu._updateGroupSelectionUI();
+    
+    // Update select all state before rendering
+    this.updateSelectAllState(menu);
     
     menu.render();
     this.updateRequestTypesVisibility(menu);
@@ -275,11 +279,32 @@ export class RollMenuStateUtil {
    */
   static updateSelectAllState(menu) {
     const selectAllCheckbox = menu.element.querySelector('#flash5e-actors-all');
-    const currentActors = menu.currentTab === 'pc' ? 'pc' : 'npc';
-    const checkboxes = menu.element.querySelectorAll(`.${currentActors}-actors .actor-item input[type="checkbox"]`);
-    const checkedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
+    let selectedCount = 0;
+    let totalCount = 0;
     
-    selectAllCheckbox.checked = checkedCount > 0 && checkedCount === checkboxes.length;
-    selectAllCheckbox.indeterminate = checkedCount > 0 && checkedCount < checkboxes.length;
+    if (menu.currentTab === 'group') {
+      // For groups tab, count selected group members using the same logic as template preparation
+      const context = menu._lastPreparedContext || {};
+      const currentActors = context.groups || [];
+      const allMembers = [];
+      currentActors.forEach(groupActor => {
+        if (groupActor.isGroup && groupActor.members) {
+          allMembers.push(...groupActor.members);
+        }
+      });
+      totalCount = allMembers.length;
+      selectedCount = allMembers.filter(member => 
+        menu.selectedActors.has(member.uniqueId)
+      ).length;
+    } else {
+      // For PC/NPC tabs, use the existing checkbox logic
+      const currentActors = menu.currentTab === 'pc' ? 'pc' : 'npc';
+      const checkboxes = menu.element.querySelectorAll(`.${currentActors}-actors .actor-item input[type="checkbox"]`);
+      totalCount = checkboxes.length;
+      selectedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
+    }
+    
+    selectAllCheckbox.checked = selectedCount > 0 && selectedCount === totalCount;
+    selectAllCheckbox.indeterminate = selectedCount > 0 && selectedCount < totalCount;
   }
 }

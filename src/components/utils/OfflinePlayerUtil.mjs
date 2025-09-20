@@ -41,14 +41,6 @@ export class OfflinePlayerUtil {
         sendRequest: false 
       });
 
-      setTimeout(() => {
-        if (originalConfig.subject?.item) {
-          const GeneralUtil = game.modules.get('flash-rolls-5e')?.api?.GeneralUtil;
-          if (GeneralUtil) {
-            GeneralUtil.removeTemplateForItem(originalConfig.subject.item);
-          }
-        }
-      }, 3000);
       
       return true; // Player was offline and roll was handled
     }

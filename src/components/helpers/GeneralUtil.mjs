@@ -557,17 +557,32 @@ export class GeneralUtil {
    * Removes the MeasuredTemplate 
    * @param {Item5e} item 
    */
-  static removeTemplateForItem (item) {
+  static async removeTemplateForItem (item) {
     const SETTINGS = getSettings();
     const removeTemplateSettingOn = SettingsUtil.get(SETTINGS.removeTemplate.tag);
     LogUtil.log("removeTemplateForItem", [item, removeTemplateSettingOn]);
     if(!removeTemplateSettingOn){ return; }
-    const templates = canvas.templates.objects.children.filter(mt => {
-      return mt.document.flags.dnd5e.item === item?.uuid;
-    });
+    
+    try {
+      // Get templates that match this item UUID
+      const templates = canvas.templates.objects.children.filter(mt => {
+        return mt.document.flags.dnd5e.item === item?.uuid;
+      });
 
-    if(templates.length > 0){
-      canvas.scene.deleteEmbeddedDocuments('MeasuredTemplate', templates.map(i=>i.id));
+      if(templates.length > 0){
+        // Double-check that templates still exist in the scene before deletion
+        const templateIds = templates.map(t => t.id);
+        const existingTemplates = canvas.scene.templates.filter(t => templateIds.includes(t.id));
+        
+        if (existingTemplates.length > 0) {
+          LogUtil.log("removeTemplateForItem - removing templates", [item?.uuid, existingTemplates.length]);
+          await canvas.scene.deleteEmbeddedDocuments('MeasuredTemplate', existingTemplates.map(t => t.id));
+        } else {
+          LogUtil.log("removeTemplateForItem - templates already removed", [item?.uuid]);
+        }
+      }
+    } catch (error) {
+      LogUtil.log("removeTemplateForItem - template not found or already deleted", [item?.uuid, error.message]);
     }
     
   }

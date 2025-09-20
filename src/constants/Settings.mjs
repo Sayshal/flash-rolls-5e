@@ -27,7 +27,10 @@ export const getSettings = () => {
         'compactMode',
         'menuLayout',
         'showOptionsListOnHover',
-        'addMacrosToFolder'
+        'addMacrosToFolder',
+        'templateAutoTarget',
+        'removeTemplate',
+        'templateRemovalTimeout'
       ],
       default: {
         showMenuOnLoad: false,
@@ -37,7 +40,10 @@ export const getSettings = () => {
         compactMode: true,
         menuLayout: "vertical",
         showOptionsListOnHover: true,
-        addMacrosToFolder: true
+        addMacrosToFolder: true,
+        templateAutoTarget: 1,
+        removeTemplate: true,
+        templateRemovalTimeout: 5
       },
       scope: SETTING_SCOPE.world,
       config: false, 
@@ -76,8 +82,6 @@ export const getSettings = () => {
       fields: [
         'rollInterceptionEnabled',
         'useGMTargetTokens',
-        'templateAutoTarget',
-        'removeTemplate',
         'consumptionConfigMode',
         'placeTemplateForPlayer',
         'showOfflineNotifications',
@@ -87,8 +91,6 @@ export const getSettings = () => {
       default: {
         rollInterceptionEnabled: true,
         useGMTargetTokens: true,
-        templateAutoTarget: 1,
-        removeTemplate: true,
         consumptionConfigMode: 2,
         placeTemplateForPlayer: false,
         showOfflineNotifications: true,
@@ -351,6 +353,21 @@ export const getSettings = () => {
       default: true,
       scope: SETTING_SCOPE.world,
       config: false
+    },
+
+    templateRemovalTimeout: {
+      tag: "template-removal-timeout",
+      label: game.i18n.localize("FLASH_ROLLS.settings.templateRemovalTimeout.label"),
+      hint: game.i18n.localize("FLASH_ROLLS.settings.templateRemovalTimeout.hint"),
+      propType: Number,
+      default: 5,
+      scope: SETTING_SCOPE.world,
+      config: false,
+      range: {
+        min: 0,
+        max: 30,
+        step: 1
+      }
     },
 
     debugMode: {

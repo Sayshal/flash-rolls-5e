@@ -515,14 +515,46 @@ export class RollMenuEventUtil {
    * @param {RollRequestsMenu} menu - The menu instance
    */
   static openSheetsForSelected(menu) {
-    menu.selectedActors.forEach(uniqueId => {
-      const actor = getActorData(uniqueId);
-      if (!actor) return;
-      
-      const actorId = actor.id;
-      const tokenId = game.actors.get(uniqueId) ? null : uniqueId;
-      
-      this.openActorSheetById(actorId, tokenId);
+    // If we're on the Groups tab, open group sheets instead of individual member sheets
+    if (menu.currentTab === 'group') {
+      this.openGroupSheetsForSelected(menu);
+    } else {
+      // Regular behavior for PC/NPC tabs
+      menu.selectedActors.forEach(uniqueId => {
+        const actor = getActorData(uniqueId);
+        if (!actor) return;
+        
+        const actorId = actor.id;
+        const tokenId = game.actors.get(uniqueId) ? null : uniqueId;
+        
+        this.openActorSheetById(actorId, tokenId);
+      });
+    }
+  }
+
+  /**
+   * Open group sheets for groups that contain selected members
+   * @param {RollRequestsMenu} menu - The menu instance
+   */
+  static openGroupSheetsForSelected(menu) {
+    const context = menu._lastPreparedContext || {};
+    const groupActors = context.actors || [];
+    const openedGroups = new Set();
+    
+    // Find which groups contain selected members
+    groupActors.forEach(groupData => {
+      if (groupData.isGroup && groupData.members) {
+        // Check if any members of this group are selected
+        const hasSelectedMembers = groupData.members.some(member => 
+          menu.selectedActors.has(member.uniqueId)
+        );
+        
+        if (hasSelectedMembers && !openedGroups.has(groupData.id)) {
+          // Open the group sheet
+          this.openActorSheetById(groupData.id, groupData.tokenId);
+          openedGroups.add(groupData.id);
+        }
+      }
     });
   }
 

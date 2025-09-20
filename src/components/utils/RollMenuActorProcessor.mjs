@@ -56,8 +56,23 @@ export class RollMenuActorProcessor {
     const currentActors = menu.currentTab === 'pc' ? pcActors : 
                           menu.currentTab === 'npc' ? npcActors : 
                           groupActors;
-    const selectAllOn = currentActors.length > 0 && 
-      currentActors.every(actor => menu.selectedActors.has(actor.uniqueId));
+    let selectAllOn = false;
+    if (currentActors.length > 0) {
+      if (menu.currentTab === 'group') {
+        // For groups tab, check if all visible group members are selected
+        const allMembers = [];
+        currentActors.forEach(groupActor => {
+          if (groupActor.isGroup && groupActor.members) {
+            allMembers.push(...groupActor.members);
+          }
+        });
+        selectAllOn = allMembers.length > 0 && 
+          allMembers.every(member => menu.selectedActors.has(member.uniqueId));
+      } else {
+        // For PC/NPC tabs, use the original logic
+        selectAllOn = currentActors.every(actor => menu.selectedActors.has(actor.uniqueId));
+      }
+    }
     
     const requestTypes = this.buildRequestTypes(menu);
     const rollTypes = buildRollTypes(menu.selectedRequestType, menu.selectedActors);
@@ -326,10 +341,15 @@ export class RollMenuActorProcessor {
         groupData.isExpanded = menu.groupExpansionStates?.[actor.id] ?? false;
         groupData.memberImages = members.slice(0, 4).map(m => m.img);
         
-        // Group is considered selected if any of its members are selected
-        groupData.selected = members.length > 0 && members.some(member => 
-          menu.selectedActors.has(member.uniqueId)
-        );
+        // Calculate group selection state: true (all), false (none), partial (some)
+        const selectedMembers = members.filter(member => menu.selectedActors.has(member.uniqueId));
+        if (selectedMembers.length === 0) {
+          groupData.selected = 'false';
+        } else if (selectedMembers.length === members.length) {
+          groupData.selected = 'true';
+        } else {
+          groupData.selected = 'partial';
+        }
         
         groupEntries.push(groupData);
       });
@@ -341,10 +361,15 @@ export class RollMenuActorProcessor {
       groupData.isExpanded = menu.groupExpansionStates?.[actor.id] ?? false;
       groupData.memberImages = members.slice(0, 4).map(m => m.img);
       
-      // Group is considered selected if any of its members are selected
-      groupData.selected = members.length > 0 && members.some(member => 
-        menu.selectedActors.has(member.uniqueId)
-      );
+      // Calculate group selection state: true (all), false (none), partial (some)
+      const selectedMembers = members.filter(member => menu.selectedActors.has(member.uniqueId));
+      if (selectedMembers.length === 0) {
+        groupData.selected = 'false';
+      } else if (selectedMembers.length === members.length) {
+        groupData.selected = 'true';
+      } else {
+        groupData.selected = 'partial';
+      }
       
       groupEntries.push(groupData);
     }

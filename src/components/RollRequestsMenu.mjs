@@ -238,6 +238,9 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
         this._updateActorSelectionUI(actorId);
       }
       
+      // Update group selection UI when token selection changes
+      this._updateGroupSelectionUI();
+      
       this._updateSelectAllState();
       this._updateRequestTypesVisibilityNoRender();
       
@@ -578,27 +581,56 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
   }
 
   /**
-   * Update the visual selection state of a group element
+   * Update the visual selection state of group elements
+   * @param {string} [groupActorId] - Optional: specific group actor ID to update
+   * @param {Array} [members] - Optional: group members array
    */
-  _updateGroupSelectionUI(groupActorId, members) {
+  _updateGroupSelectionUI(groupActorId = null, members = null) {
+    if (groupActorId && members) {
+      // Update specific group
+      this._updateSingleGroupSelection(groupActorId, members);
+    } else {
+      // Update all groups - get data from context
+      const context = this._lastPreparedContext || {};
+      const groups = context.groups || [];
+      
+      groups.forEach(groupData => {
+        if (groupData.isGroup && groupData.members) {
+          this._updateSingleGroupSelection(groupData.id, groupData.members);
+        }
+      });
+    }
+  }
+
+  /**
+   * Update selection state for a single group
+   * @param {string} groupActorId - Group actor ID
+   * @param {Array} members - Group members array
+   */
+  _updateSingleGroupSelection(groupActorId, members) {
     // Find all group elements for this actor (there might be multiple if group has tokens)
     const groupElements = this.element.querySelectorAll(`[data-actor-id="${groupActorId}"].actor-group`);
     
-    // Check if any members are selected
-    const anyMembersSelected = members.length > 0 && members.some(member => 
-      this.selectedActors.has(member.uniqueId)
-    );
-    
     groupElements.forEach(groupElement => {
-      // Update data-group-selected attribute
-      groupElement.setAttribute('data-group-selected', anyMembersSelected.toString());
+      // Calculate three-state selection value using the members parameter
+      const selectedMembersCount = members.filter(member => 
+        this.selectedActors.has(member.uniqueId)
+      ).length;
       
-      // Update selected class
-      if (anyMembersSelected) {
-        groupElement.classList.add('selected');
+      let selectionState;
+      if (selectedMembersCount === 0) {
+        selectionState = 'false';
+      } else if (selectedMembersCount === members.length) {
+        selectionState = 'true';
       } else {
-        groupElement.classList.remove('selected');
+        selectionState = 'partial';
       }
+      
+      // Update data-group-selected attribute with three-state value
+      groupElement.setAttribute('data-group-selected', selectionState);
+      
+      // Remove selected class since we're using data attribute for styling
+      groupElement.classList.remove('selected');
     });
   }
 

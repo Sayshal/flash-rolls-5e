@@ -25,6 +25,7 @@ export class HooksUtil {
   static midiTimeout = null;
   static throttleTimers = {};
   static activityConfigCache = new Map(); // In-memory cache for activity configs
+  static templateRemovalTimers = new Set(); // Track items that already have template removal scheduled
   
   /**
    * Initialize main module hooks
@@ -240,7 +241,7 @@ export class HooksUtil {
     this._registerHook(HOOKS_DND5E.POST_USE_ACTIVITY, this._onPostUseActivity.bind(this));
     this._registerHook(HOOKS_DND5E.PRE_ROLL_HIT_DIE_V2, this._onPreRollHitDieV2.bind(this));
     this._registerHook(HOOKS_DND5E.POST_ROLL_CONFIG, this._onPostRollConfig.bind(this));
-    // this._registerHook(HOOKS_DND5E.ROLL_DAMAGE_V2, this._onPostRollDamage.bind(this));
+    this._registerHook(HOOKS_DND5E.ROLL_DAMAGE_V2, this._onRollDamageV2.bind(this));
   }
   
   /**
@@ -611,8 +612,7 @@ export class HooksUtil {
         setTimeout(() => {
           HooksUtil.activityConfigCache.delete(item.id);
           LogUtil.log("_onRenderChatMessageHTML - cleared activity config cache", [item.id]);
-          GeneralUtil.removeTemplateForItem(item);
-        }, 3000); 
+        }, 1000); 
       }
     }
 
@@ -1080,6 +1080,34 @@ export class HooksUtil {
       }
       LogUtil.log("_onPreRollDamageV2 - Applied stored configuration to damage roll", [config, messageOptions]);
     }
+  }
+
+  /**
+   * Handle rollDamageV2 hook to schedule template removal
+   */
+  static _onRollDamageV2(rolls, config, dialog, message) {
+    const item = config.subject?.item;
+    LogUtil.log("_onRollDamageV2 - scheduled template removal", [item?.name, item?.uuid]);
+    
+    if (!item) return;
+    
+    // Check if we already scheduled removal for this item to prevent duplicates
+    if (HooksUtil.templateRemovalTimers.has(item.uuid)) {
+      LogUtil.log("_onRollDamageV2 - template removal already scheduled for item", [item.uuid]);
+      return;
+    }
+    
+    // Mark this item as having scheduled removal
+    HooksUtil.templateRemovalTimers.add(item.uuid);
+    
+    const SETTINGS = getSettings();
+    const timeoutSeconds = SettingsUtil.get(SETTINGS.templateRemovalTimeout.tag);
+    const timeoutMs = timeoutSeconds * 1000;
+    
+    setTimeout(() => {
+      GeneralUtil.removeTemplateForItem(item);
+      HooksUtil.templateRemovalTimers.delete(item.uuid);
+    }, timeoutMs);
   }
   
   /**

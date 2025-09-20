@@ -237,6 +237,67 @@ export class ModuleSettingsMenu extends HandlebarsApplicationMixin(ApplicationV2
         option.selected = true;
       }
     });
+    
+    // Set up range input synchronization
+    this.#setupRangeInputs();
+  }
+
+  /**
+   * Set up synchronization between range sliders and number inputs
+   */
+  #setupRangeInputs() {
+    const rangeGroups = ModuleSettingsMenu.#element.querySelectorAll('.form-group.range');
+    rangeGroups.forEach(group => {
+      const rangeInput = group.querySelector('input[type="range"]');
+      const valueInput = group.querySelector('input[type="number"]');
+      this.#handleRangeInputs(rangeInput, valueInput);
+    });
+  }
+
+  /**
+   * Handle synchronization between range slider and number input
+   * @param {HTMLInputElement} rangeInput - The range slider input
+   * @param {HTMLInputElement} valueInput - The number input
+   */
+  #handleRangeInputs(rangeInput, valueInput) {
+    if (rangeInput && valueInput) {
+      const min = parseInt(rangeInput.min, 10);
+      const max = parseInt(rangeInput.max, 10);
+
+      // Listener for the range slider's input event
+      rangeInput.addEventListener('input', () => {
+        valueInput.value = rangeInput.value;
+      });
+
+      // Listener for the number input's input event (while typing)
+      valueInput.addEventListener('input', () => {
+        const currentValueString = valueInput.value;
+        if (currentValueString === "" || currentValueString === "-") {
+          return;
+        }
+        const currentValue = parseInt(currentValueString, 10);
+        if (!isNaN(currentValue) && currentValue >= min && currentValue <= max) {
+          rangeInput.value = currentValue;
+        }
+      });
+
+      // Listener for the number input's change event (after typing/blur/enter)
+      valueInput.addEventListener('change', () => {
+        let value = parseInt(valueInput.value, 10);
+
+        if (isNaN(value) || value < min) {
+          value = min;
+        } else if (value > max) {
+          value = max;
+        }
+        
+        valueInput.value = value; // Update the input field to the clamped/validated value
+        rangeInput.value = value; // Sync the slider
+      });
+
+      // Set initial value for the number input from the range slider
+      valueInput.value = rangeInput.value;
+    }
   }
 
   /**
