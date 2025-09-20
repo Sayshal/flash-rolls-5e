@@ -799,7 +799,7 @@ export class HooksUtil {
   }
   
   /**
-   * Handle render chat log to attach listeners to existing group roll messages
+   * Handle render chat log to attach listeners to existing group roll messages and schedule template removal
    */
   static _onRenderChatLog(app, html) {
     const groupRollElements = html.querySelectorAll('.flash5e-group-roll');
@@ -840,6 +840,34 @@ export class HooksUtil {
           
           // Attach group roll listeners
           ChatMessageUtils._attachGroupRollListeners(element, message);
+        }
+      }
+    });
+
+    // Handle template removal for damage messages when chat log renders
+    const damageMessages = html.querySelectorAll('.chat-message');
+    damageMessages.forEach(messageElement => {
+      const messageId = messageElement.dataset.messageId;
+      const message = game.messages.get(messageId);
+      
+      if (message?.flags?.dnd5e?.roll?.type === 'damage' && message.flags?.dnd5e?.item?.uuid) {
+        const itemUuid = message.flags.dnd5e.item.uuid;
+        const item = fromUuidSync(itemUuid);
+        
+        if (item && !HooksUtil.templateRemovalTimers.has(itemUuid)) {
+          LogUtil.log("_onRenderChatLog - scheduling template removal for rendered damage message", [item.name, itemUuid]);
+          
+          // Mark this item as having scheduled removal
+          HooksUtil.templateRemovalTimers.add(itemUuid);
+          
+          const SETTINGS = getSettings();
+          const timeoutSeconds = SettingsUtil.get(SETTINGS.templateRemovalTimeout.tag);
+          const timeoutMs = timeoutSeconds * 1000;
+          
+          setTimeout(() => {
+            GeneralUtil.removeTemplateForItem(item);
+            HooksUtil.templateRemovalTimers.delete(itemUuid);
+          }, timeoutMs);
         }
       }
     });
