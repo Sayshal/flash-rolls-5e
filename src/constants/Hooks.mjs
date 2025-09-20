@@ -31,6 +31,7 @@ export const HOOKS_CORE = {
   CREATE_ITEM: "createItem",
   DELETE_ITEM: "deleteItem",
   UPDATE_SETTING: "updateSetting",
+  CLIENT_SETTING_CHANGED: "clientSettingChanged",
   GET_ACTOR_CONTEXT_OPTIONS: "getActorContextOptions",
   GET_CHAT_MESSAGE_CONTEXT_OPTIONS: "getChatMessageContextOptions", 
   RENDER_ACTOR_DIRECTORY: "renderActorDirectory"

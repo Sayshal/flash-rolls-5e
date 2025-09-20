@@ -1,13 +1,19 @@
 :root {
   --fr5e-color-hp-high: #7ab67a;
   --fr5e-color-hp-low: #b67a7a;
-
-  #flash-rolls-menu, #flash-rolls-menu.theme-dark {
+  --fr5e-text-color: var(--color-dark-1);
+  --fr5e-text-color: var(--color-light-1);
+  --fr5e-menu-background: var(--sidebar-background, rgba(20, 20, 20, 0.9));
+  --fr5e-bg-50: rgba(20, 20, 20, 0.5);
+  --fr5e-secondary-bg-50: rgba(255, 255, 255, 0.15);
+  
+  #flash-rolls-menu.theme-dark {
     --fr5e-text-color: var(--color-light-1);
     --fr5e-menu-background: var(--sidebar-background, rgba(20, 20, 20, 0.9));
     --fr5e-bg-50: rgba(20, 20, 20, 0.5);
     --fr5e-secondary-bg-50: rgba(255, 255, 255, 0.15);
   }
+  
   #flash-rolls-menu.theme-light{
     --fr5e-text-color: var(--color-dark-1);
     --fr5e-menu-background: var(--sidebar-background, rgba(232, 230, 235, 0.9));

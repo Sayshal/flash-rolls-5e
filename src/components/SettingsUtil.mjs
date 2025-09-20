@@ -77,7 +77,18 @@ export class SettingsUtil {
   static updateColorScheme(){
     // const uiConfig = SettingsUtil.get("uiConfig", "core"); 
     const foundryUiConfig = game.settings.get('core','uiConfig'); 
-    SettingsUtil.coreColorScheme = foundryUiConfig?.colorScheme?.interface || "dark";
+    let interfaceTheme = foundryUiConfig?.colorScheme?.interface;
+    
+    // If Browser Default, detect browser preference
+    if (!interfaceTheme) {
+      if (matchMedia("(prefers-color-scheme: dark)").matches) {
+        interfaceTheme = "dark";
+      } else if (matchMedia("(prefers-color-scheme: light)").matches) {
+        interfaceTheme = "light";
+      }
+    }
+    
+    SettingsUtil.coreColorScheme = interfaceTheme;
     LogUtil.log('SettingsUtil.updateColorScheme', [foundryUiConfig, SettingsUtil.coreColorScheme]);
   }
   

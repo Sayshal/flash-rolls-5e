@@ -15,6 +15,7 @@ import { ActorStatusUtil } from "./ActorStatusUtil.mjs";
 import { ActorDirectoryIconUtil } from "./utils/ActorDirectoryIconUtil.mjs";
 import { FlashRollsAPI } from "./FlashRollsAPI.mjs";
 import { RollHelpers } from "./helpers/RollHelpers.mjs";
+import { RollMenuDragUtil } from "./utils/RollMenuDragUtil.mjs";
 
 /**
  * Utility class for managing all module hooks in one place
@@ -40,6 +41,8 @@ export class HooksUtil {
       
       this._addGroupRollContextOptions(document, contextOptions);
     });
+    
+    Hooks.on(HOOKS_CORE.CLIENT_SETTING_CHANGED, this._onClientSettingChanged.bind(this));
     
     Hooks.once(HOOKS_CORE.GET_ACTOR_CONTEXT_OPTIONS, (html, contextOptions) => {
       LogUtil.log("getActorContextOptions hook", [html, contextOptions]);
@@ -171,6 +174,12 @@ export class HooksUtil {
     SettingsUtil.registerSettingsMenu();
     ActorDirectoryIconUtil.initialize();
     SidebarUtil.addSidebarControls(ui.sidebar, ui.sidebar?.element);
+    
+    // Listen for browser color scheme changes
+    if (matchMedia) {
+      matchMedia("(prefers-color-scheme: dark)").addEventListener("change", this._onBrowserColorSchemeChanged.bind(this));
+    }
+    
     if(ModuleHelpers.isModuleActive("midi-qol")){
       Hooks.once(HOOKS_MIDI_QOL.READY, this._initModule.bind(this));
     }else{
@@ -288,7 +297,6 @@ export class HooksUtil {
     if (menuElement && menuElement.classList.contains('docked-bottom')) {
       // Use setTimeout to ensure hotbar class changes have been applied
       setTimeout(async () => {
-        const { RollMenuDragUtil } = await import('./utils/RollMenuDragUtil.mjs');
         // Create a minimal menu-like object with the element
         const menuProxy = { element: menuElement };
         RollMenuDragUtil.syncOffsetClass(menuProxy);
@@ -1291,5 +1299,55 @@ export class HooksUtil {
       
       delete HooksUtil.throttleTimers[throttleKey];
     }, 50);
+  }
+
+  /**
+   * Handle client setting changes (including core.uiConfig)
+   * @param {string} key - The setting key that changed
+   * @param {*} value - The new value
+   * @param {Object} options - Additional options
+   */
+  static _onClientSettingChanged(key, value, options) {
+    LogUtil.log('HooksUtil._onClientSettingChanged', [key, value, options]);
+    
+    // Check if the UI config changed (includes color scheme)
+    if (key === "core.uiConfig") {
+      this._updateMenuColorScheme();
+    }
+  }
+
+  /**
+   * Handle browser color scheme changes
+   */
+  static _onBrowserColorSchemeChanged() {
+    LogUtil.log('HooksUtil._onBrowserColorSchemeChanged - Browser color scheme changed');
+    
+    // Only update if we're using browser default (interface theme is undefined)
+    const foundryUiConfig = game.settings.get('core','uiConfig');
+    if (!foundryUiConfig?.colorScheme?.interface) {
+      this._updateMenuColorScheme();
+    }
+  }
+
+  /**
+   * Update the menu's color scheme classes
+   */
+  static _updateMenuColorScheme() {
+    const oldColorScheme = SettingsUtil.coreColorScheme;
+    SettingsUtil.updateColorScheme();
+    const newColorScheme = SettingsUtil.coreColorScheme;
+    
+    // Update the menu if it's open and color scheme changed
+    const menuInstance = RollRequestsMenu.getInstance();
+    if (menuInstance?.rendered && menuInstance.classList) {
+      // Remove old theme class
+      if (oldColorScheme) {
+        menuInstance.classList.remove(`theme-${oldColorScheme}`);
+      }
+      // Add new theme class
+      if (newColorScheme) {
+        menuInstance.classList.add(`theme-${newColorScheme}`);
+      }
+    }
   }
 }

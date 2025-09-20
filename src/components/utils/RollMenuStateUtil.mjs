@@ -56,20 +56,43 @@ export class RollMenuStateUtil {
     const currentActors = context.actors || [];
     
     currentActors.forEach(actorData => {
-      const uniqueId = actorData.uniqueId;
-      if (selectAll) {
-        menu.selectedActors.add(uniqueId);
-        if (actorData.tokenId) {
-          updateCanvasTokenSelection(actorData.id, true, actorData.tokenId);
-        } else {
-          updateCanvasTokenSelection(actorData.id, true);
-        }
+      // Handle group actors by selecting/deselecting their members
+      if (actorData.isGroup && actorData.members) {
+        actorData.members.forEach(member => {
+          const memberUniqueId = member.uniqueId;
+          if (selectAll) {
+            menu.selectedActors.add(memberUniqueId);
+            if (member.tokenId) {
+              updateCanvasTokenSelection(member.id, true, member.tokenId);
+            } else {
+              updateCanvasTokenSelection(member.id, true);
+            }
+          } else {
+            menu.selectedActors.delete(memberUniqueId);
+            if (member.tokenId) {
+              updateCanvasTokenSelection(member.id, false, member.tokenId);
+            } else {
+              updateCanvasTokenSelection(member.id, false);
+            }
+          }
+        });
       } else {
-        menu.selectedActors.delete(uniqueId);
-        if (actorData.tokenId) {
-          updateCanvasTokenSelection(actorData.id, false, actorData.tokenId);
+        // Handle regular actors
+        const uniqueId = actorData.uniqueId;
+        if (selectAll) {
+          menu.selectedActors.add(uniqueId);
+          if (actorData.tokenId) {
+            updateCanvasTokenSelection(actorData.id, true, actorData.tokenId);
+          } else {
+            updateCanvasTokenSelection(actorData.id, true);
+          }
         } else {
-          updateCanvasTokenSelection(actorData.id, false);
+          menu.selectedActors.delete(uniqueId);
+          if (actorData.tokenId) {
+            updateCanvasTokenSelection(actorData.id, false, actorData.tokenId);
+          } else {
+            updateCanvasTokenSelection(actorData.id, false);
+          }
         }
       }
     });
@@ -77,6 +100,9 @@ export class RollMenuStateUtil {
     setTimeout(() => {
       menu._ignoreTokenControl = false;
     }, 200);
+    
+    // Update group selection visual state
+    menu._updateGroupSelectionUI();
     
     menu.render();
     this.updateRequestTypesVisibility(menu);

@@ -73,22 +73,29 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
     this._initializeFromSelectedTokens();
   }
 
-  static DEFAULT_OPTIONS = {
-    id: 'flash-rolls-menu',
-    classes: ['flash-rolls-menu', 'placeable-hud'],
-    tag: 'div',
-    window: {
-      frame: false,
-      resizable: false,
-      minimizable: false
-    },
-    position: {},
-    dragDrop: [
-      {
-        dropSelector: '.actor-list'
-      }
-    ]
-  };
+  static get DEFAULT_OPTIONS() {
+    SettingsUtil.updateColorScheme();
+    const classes = ['flash-rolls-menu', 'themed'];
+    if (SettingsUtil.coreColorScheme) {
+      classes.push(`theme-${SettingsUtil.coreColorScheme}`);
+    }
+    return {
+      id: 'flash-rolls-menu',
+      classes,
+      tag: 'div',
+      window: {
+        frame: false,
+        resizable: false,
+        minimizable: false
+      },
+      position: {},
+      dragDrop: [
+        {
+          dropSelector: '.actor-list'
+        }
+      ]
+    };
+  }
 
   static PARTS = {
     main: {
@@ -189,9 +196,6 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
     });
 
     adjustMenuOffset();
-
-    SettingsUtil.updateColorScheme();
-    this.element.classList.add('theme-' + SettingsUtil.coreColorScheme);
     
     if (this.optionsExpanded) {
       const optionsToggle = this.element.querySelector('.options-toggle');
@@ -1039,8 +1043,14 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
     }
 
     this.#instance.render();
-    SettingsUtil.updateColorScheme();
-    this.#instance.element.classList.add('theme-' + SettingsUtil.coreColorScheme);
+  }
+
+  /**
+   * Get the current menu instance
+   * @returns {RollRequestsMenu|null} The current instance or null if not created
+   */
+  static getInstance() {
+    return this.#instance;
   }
 
   /**
