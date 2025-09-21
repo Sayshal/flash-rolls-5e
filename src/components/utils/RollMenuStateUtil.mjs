@@ -131,10 +131,54 @@ export class RollMenuStateUtil {
   static handleToggleLock(event, menu) {
     event.preventDefault();
     menu.isLocked = !menu.isLocked;
-    
+
     const lockIcon = event.currentTarget;
     lockIcon.classList.remove('fa-lock-keyhole', 'fa-lock-keyhole-open');
     lockIcon.classList.add(menu.isLocked ? 'fa-lock-keyhole' : 'fa-lock-keyhole-open');
+  }
+
+  /**
+   * Handle actor filter toggle
+   * @param {Event} event - Toggle event
+   * @param {RollRequestsMenu} menu - Menu instance
+   */
+  static async handleToggleActorFilter(event, menu) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const button = event.currentTarget;
+    const existing = menu.element.querySelector('.actor-filter-tooltip');
+
+    if (existing) {
+      existing.remove();
+      return;
+    }
+
+    const tooltip = await RollMenuStateUtil.createActorFilterTooltip(menu);
+
+    // Position tooltip relative to the menu element, not the button
+    menu.element.appendChild(tooltip);
+
+    // Get positions after tooltip is in DOM
+    const buttonRect = button.getBoundingClientRect();
+    const menuRect = menu.element.getBoundingClientRect();
+    const menuLayout = menu.element.dataset.layout;
+
+    // Force layout calculation
+    const tooltipRect = tooltip.getBoundingClientRect();
+
+    // Calculate position relative to menu - center tooltip above button
+    const relativeTop = buttonRect.top - menuRect.top;
+    const buttonCenterX = buttonRect.left - menuRect.left + (buttonRect.width / 2);
+    const tooltipLeft = buttonCenterX - (tooltipRect.width / 2);
+
+    if (menuLayout === 'horizontal') {
+      tooltip.style.top = `${relativeTop - tooltipRect.height - 8}px`;
+      tooltip.style.left = `${tooltipLeft}px`;
+    } else {
+      tooltip.style.top = `${relativeTop - tooltipRect.height - 8}px`;
+      tooltip.style.left = `${tooltipLeft}px`;
+    }
   }
 
   /**
@@ -306,5 +350,117 @@ export class RollMenuStateUtil {
     
     selectAllCheckbox.checked = selectedCount > 0 && selectedCount === totalCount;
     selectAllCheckbox.indeterminate = selectedCount > 0 && selectedCount < totalCount;
+  }
+
+  /**
+   * Create actor filter tooltip with filter options
+   * @param {RollRequestsMenu} menu - Menu instance
+   * @returns {HTMLElement} Tooltip element
+   */
+  static async createActorFilterTooltip(menu) {
+    // Load saved filter state from user flags
+    const savedFilters = game.user.getFlag(MODULE.ID, 'actorFilters') || {
+      inCombat: false,
+      visible: false,
+      notDead: false
+    };
+
+    // Apply saved filters to menu
+    menu.actorFilters = savedFilters;
+
+    // Render template with filter data
+    const templatePath = 'modules/flash-rolls-5e/templates/actor-filter-tooltip.hbs';
+    const html = await renderTemplate(templatePath, {
+      filters: savedFilters
+    });
+
+    // Create tooltip element
+    const tooltipContainer = document.createElement('div');
+    tooltipContainer.innerHTML = html;
+    const tooltip = tooltipContainer.firstElementChild;
+
+    // Add event listeners for filter changes
+    tooltip.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+      checkbox.addEventListener('change', (event) => {
+        RollMenuStateUtil.applyActorFilters(menu);
+      });
+    });
+
+    return tooltip;
+  }
+
+  /**
+   * Apply actor filters based on current filter settings
+   * @param {RollRequestsMenu} menu - Menu instance
+   */
+  static async applyActorFilters(menu) {
+    const tooltip = menu.element.querySelector('.actor-filter-tooltip');
+    if (!tooltip) return;
+
+    const filters = {
+      inCombat: tooltip.querySelector('[data-filter="inCombat"]').checked,
+      visible: tooltip.querySelector('[data-filter="visible"]').checked,
+      notDead: tooltip.querySelector('[data-filter="notDead"]').checked
+    };
+
+    // Store filters for future use
+    menu.actorFilters = filters;
+
+    // Save filter state to user flags
+    await game.user.setFlag(MODULE.ID, 'actorFilters', filters);
+
+    // Trigger menu refresh to apply filters
+    menu.render();
+  }
+
+  /**
+   * Check if an actor meets the specified filter criteria
+   * @param {Actor} actor - The actor to check
+   * @param {Object} filters - Filter criteria
+   * @param {boolean} filters.inCombat - Show only actors in combat
+   * @param {boolean} filters.visible - Show only visible actors
+   * @param {boolean} filters.notDead - Show only actors that are not dead
+   * @param {TokenDocument} [token] - Optional token document for token-specific checks
+   * @returns {boolean} True if actor meets all active filter criteria
+   */
+  static doesActorPassFilters(actor, filters, token = null) {
+    // If no filters are active, show all actors
+    if (!filters.inCombat && !filters.visible && !filters.notDead) {
+      return true;
+    }
+
+    let passesFilter = false;
+
+    // In Combat filter
+    if (filters.inCombat) {
+      // Check token's combat status first, fall back to actor's combat status
+      const inCombat = token ? token.inCombat : actor.inCombat;
+      if (inCombat) passesFilter = true;
+    }
+
+    // Visible filter
+    if (filters.visible) {
+      if (token) {
+        // Check specific token visibility
+        if (!token.hidden) passesFilter = true;
+      } else {
+        // Check if any token is visible
+        const tokens = actor.getActiveTokens();
+        const hasVisibleToken = tokens.some(token => !token.document.hidden);
+        if (hasVisibleToken) passesFilter = true;
+      }
+    }
+
+    // Not Dead filter
+    if (filters.notDead) {
+      // Check if actor has the "dead" status effect
+      const hasDead = actor.effects.some(effect =>
+        effect.statuses?.has('dead') ||
+        effect.flags?.core?.statusId === 'dead'
+      );
+      if (!hasDead) passesFilter = true;
+    }
+
+    return passesFilter;
   }
 }

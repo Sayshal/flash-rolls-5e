@@ -1,3 +1,14 @@
+/* Flash Rolls Menu Styles */
+@import './flash-rolls-base.css';
+@import './flash-rolls-layout-vertical.css';
+@import './flash-rolls-layout-horizontal.css';
+@import './flash-rolls-components.css';
+@import './flash-rolls-compact.css';
+@import './flash-rolls-drag-drop.css';
+@import './flash-rolls-positioning.css';
+@import './settings.css';
+@import './settings-interface.css';
+
 body{
   --current-sidebar-width: 0px;
   --flash-rolls-menu-offset: 40px;

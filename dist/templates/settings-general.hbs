@@ -5,83 +5,59 @@
   <hr/>
 
   <div class="form-group">
-    <label for="showMenuOnLoad">{{fields.showMenuOnLoad.label}}</label>
-    <input type="checkbox" name="showMenuOnLoad" {{#if showMenuOnLoad}}checked{{/if}} />
-    <p class="hint">{{fields.showMenuOnLoad.hint}}</p> 
-  </div>
-
-  <div class="form-group">
-    <label for="compactMode">{{fields.compactMode.label}}</label>
-    <input type="checkbox" name="compactMode" {{#if compactMode}}checked{{/if}} />
-    <p class="hint">{{fields.compactMode.hint}}</p> 
-  </div>
-
-  <div class="form-group">
-    <label for="menuLayout">{{fields.menuLayout.label}}</label>
-    <select name="menuLayout" data-current-value="{{menuLayout}}">
-      {{#each fields.menuLayout.choices}}
-      <option value="{{@key}}">
-        {{this}}
-      </option>
-      {{/each}}
-    </select>
-    <p class="hint">{{{fields.menuLayout.hint}}}</p> 
+    <label for="skipRollDialog">{{fields.skipRollDialog.label}}</label>
+    <input type="checkbox" name="skipRollDialog" id="skipRollDialog" {{#if skipRollDialog}}checked{{/if}} />
+    <p class="hint">{{fields.skipRollDialog.hint}}</p>
   </div>
 
   <div class="form-group">
     <label for="skipRollDialogOption">{{fields.skipRollDialogOption.label}}</label>
-    <select name="skipRollDialogOption" data-current-value="{{skipRollDialogOption}}">
+    <select name="skipRollDialogOption" id="skipRollDialogOption" data-current-value="{{skipRollDialogOption}}">
       {{#each fields.skipRollDialogOption.choices}}
       <option value="{{@key}}">
         {{this}}
       </option>
       {{/each}}
     </select>
-    <p class="hint">{{{fields.skipRollDialogOption.hint}}}</p> 
-  </div>
-
-  <div class="form-group">
-    <label for="skipRollDialog">{{fields.skipRollDialog.label}}</label>
-    <input type="checkbox" name="skipRollDialog" {{#if skipRollDialog}}checked{{/if}} />
-    <p class="hint">{{fields.skipRollDialog.hint}}</p> 
+    <p class="hint">{{{fields.skipRollDialogOption.hint}}}</p>
   </div>
 
   <div class="form-group">
     <label for="showOnlyPCsWithToken">{{fields.showOnlyPCsWithToken.label}}</label>
-    <input type="checkbox" name="showOnlyPCsWithToken" {{#if showOnlyPCsWithToken}}checked{{/if}} />
-    <p class="hint">{{{fields.showOnlyPCsWithToken.hint}}}</p> 
+    <input type="checkbox" name="showOnlyPCsWithToken" id="showOnlyPCsWithToken" {{#if showOnlyPCsWithToken}}checked{{/if}} />
+    <p class="hint">{{{fields.showOnlyPCsWithToken.hint}}}</p>
   </div>
 
 
   <div class="form-group">
     <label for="removeTemplate">{{fields.removeTemplate.label}}</label>
-    <input type="checkbox" name="removeTemplate" {{#if removeTemplate}}checked{{/if}} />
-    <p class="hint">{{{fields.removeTemplate.hint}}}</p> 
+    <input type="checkbox" name="removeTemplate" id="removeTemplate" {{#if removeTemplate}}checked{{/if}} />
+    <p class="hint">{{{fields.removeTemplate.hint}}}</p>
   </div>
 
   <div class="form-group range">
     <label for="templateRemovalTimeout">{{fields.templateRemovalTimeout.label}}</label>
-    <input type="range" name="templateRemovalTimeout" min="0" max="30" value="{{templateRemovalTimeout}}" />
+    <input type="range" name="templateRemovalTimeout" id="templateRemovalTimeout" min="0" max="30" value="{{templateRemovalTimeout}}" />
     <input type="number" name="templateRemovalTimeout_value" class="range-value-input" value="{{templateRemovalTimeout}}" />
-    <p class="hint">{{{fields.templateRemovalTimeout.hint}}}</p> 
+    <p class="hint">{{{fields.templateRemovalTimeout.hint}}}</p>
   </div>
 
   <div class="form-group">
     <label for="templateAutoTarget">{{fields.templateAutoTarget.label}}</label>
-    <select name="templateAutoTarget" data-current-value="{{templateAutoTarget}}">
+    <select name="templateAutoTarget" id="templateAutoTarget" data-current-value="{{templateAutoTarget}}">
       {{#each fields.templateAutoTarget.choices}}
       <option value="{{@key}}" {{#if (eq @key ../templateAutoTarget)}}selected{{/if}}>
         {{this}}
       </option>
       {{/each}}
     </select>
-    <p class="hint">{{{fields.templateAutoTarget.hint}}}</p> 
+    <p class="hint">{{{fields.templateAutoTarget.hint}}}</p>
   </div>
 
   <div class="form-group">
     <label for="addMacrosToFolder">{{fields.addMacrosToFolder.label}}</label>
-    <input type="checkbox" name="addMacrosToFolder" {{#if addMacrosToFolder}}checked{{/if}} />
-    <p class="hint">{{{fields.addMacrosToFolder.hint}}}</p> 
+    <input type="checkbox" name="addMacrosToFolder" id="addMacrosToFolder" {{#if addMacrosToFolder}}checked{{/if}} />
+    <p class="hint">{{{fields.addMacrosToFolder.hint}}}</p>
   </div>
   
 </section>

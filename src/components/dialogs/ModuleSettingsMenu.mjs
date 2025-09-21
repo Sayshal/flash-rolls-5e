@@ -3,6 +3,7 @@ import { getSettingMenus } from "../../constants/SettingMenus.mjs";
 import { LogUtil } from "../LogUtil.mjs";
 import { SettingsUtil } from "../SettingsUtil.mjs";
 import { GeneralUtil } from "../helpers/GeneralUtil.mjs";
+import { IconLayoutUtil } from "../utils/IconLayoutUtil.mjs";
 
 const { FormDataExtended } = foundry.utils;
 
@@ -59,6 +60,11 @@ export class ModuleSettingsMenu extends HandlebarsApplicationMixin(ApplicationV2
       template: "modules/flash-rolls-5e/templates/settings-general.hbs",
       isGMOnly: true
     },
+    interfaceSettings: {
+      menuKey: "interfaceSettings",
+      template: "modules/flash-rolls-5e/templates/settings-interface.hbs",
+      isGMOnly: true
+    },
     groupRolls: {
       menuKey: "groupRollsSettings",
       template: "modules/flash-rolls-5e/templates/settings-group-rolls.hbs",
@@ -81,7 +87,7 @@ export class ModuleSettingsMenu extends HandlebarsApplicationMixin(ApplicationV2
    */
   static TABS = {
     primary: {
-      initial: "generalSettings",
+      initial: "interfaceSettings",
       tabs: ModuleSettingsMenu.#getTabs(),
       labelPrefix: ""
     }
@@ -158,6 +164,50 @@ export class ModuleSettingsMenu extends HandlebarsApplicationMixin(ApplicationV2
             Object.assign(partContext, menuContext.fieldValues);
           }
 
+          // Add icon layout data for interface settings
+          if (partId === 'interfaceSettings') {
+            partContext.iconConfigs = IconLayoutUtil.getIconConfigurations();
+
+            // Build complete icon list from mappings, then apply saved settings
+            const configs = IconLayoutUtil.getIconConfigurations();
+            const SETTINGS = getSettings();
+            const defaultIconsLayout = SETTINGS.menuIconsLayout.default;
+            const savedSettings = partContext.menuIconsLayout || {};
+
+            // Create a function to merge icon configs with default and saved settings
+            const buildIconList = (iconType, iconConfigs) => {
+              const defaultIcons = defaultIconsLayout[iconType] || [];
+              const savedIcons = savedSettings[iconType] || [];
+
+              const defaultIconsMap = new Map(defaultIcons.map(icon => [icon.id, icon]));
+              const savedIconsMap = new Map(savedIcons.map(icon => [icon.id, icon]));
+
+              // Get all available icons from mappings
+              const allIcons = Object.keys(iconConfigs).map((iconId, index) => {
+                const config = iconConfigs[iconId];
+                const defaultIcon = defaultIconsMap.get(iconId);
+                const savedIcon = savedIconsMap.get(iconId);
+
+                return {
+                  id: iconId,
+                  icon: config.icon,
+                  // Priority: saved settings > default settings > disabled for new icons
+                  enabled: savedIcon ? savedIcon.enabled : (defaultIcon ? defaultIcon.enabled : false),
+                  order: savedIcon ? savedIcon.order : (defaultIcon ? defaultIcon.order : index),
+                  label: game.i18n.localize(config.labelKey || iconId)
+                };
+              });
+
+              // Sort by order
+              return allIcons.sort((a, b) => a.order - b.order);
+            };
+
+            partContext.menuIconsLayout = {
+              moduleActions: buildIconList('moduleActions', configs.moduleActions),
+              actorActions: buildIconList('actorActions', configs.actorActions)
+            };
+          }
+
           partContext.sidebarTabs = Object.values(foundry.applications?.sidebar?.tabs || {}).map(tab => ({
             tabName: tab.tabName,
             name: tab.name,
@@ -228,6 +278,12 @@ export class ModuleSettingsMenu extends HandlebarsApplicationMixin(ApplicationV2
         ModuleSettingsMenu.#element.querySelectorAll('p.hint').forEach(p => p.classList.toggle('shown'));
       });
     });
+
+    // Initialize icon drag and drop functionality
+    const iconContainer = ModuleSettingsMenu.#element.querySelector('.icon-arrangement-container');
+    if (iconContainer) {
+      IconLayoutUtil.initializeDragAndDrop(iconContainer);
+    }
     
     const selects = ModuleSettingsMenu.#element.querySelectorAll('select[data-current-value]');
     selects.forEach(select => {

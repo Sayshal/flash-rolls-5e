@@ -1,4 +1,4 @@
-import { MODULE, ROLL_TYPES } from '../constants/General.mjs';
+import { MODULE, MODULE_ID, ROLL_TYPES } from '../constants/General.mjs';
 import { HOOKS_CORE } from '../constants/Hooks.mjs';
 import { LogUtil } from './LogUtil.mjs';
 import { SettingsUtil } from './SettingsUtil.mjs';
@@ -26,6 +26,7 @@ import { RollMenuExecutionUtil } from './utils/RollMenuExecutionUtil.mjs';
 import { RollMenuStateUtil } from './utils/RollMenuStateUtil.mjs';
 import { RollMenuStatusUtil } from './utils/RollMenuStatusUtil.mjs';
 import { ModuleSettingsMenu } from './dialogs/ModuleSettingsMenu.mjs';
+import { IconLayoutUtil } from './utils/IconLayoutUtil.mjs';
     
 
 /**
@@ -65,6 +66,11 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
     this.accordionStates = game.user.getFlag(MODULE.ID, 'menuAccordionStates') ?? {};
     this.groupExpansionStates = game.user.getFlag(MODULE.ID, 'groupExpansionStates') ?? {};
     this.isSearchFocused = game.user.getFlag('flash-rolls-5e', 'searchFocused') ?? false;
+    this.actorFilters = game.user.getFlag(MODULE.ID, 'actorFilters') ?? {
+      inCombat: false,
+      visible: false,
+      notDead: false
+    };
     
     this.isDragging = false;
     this.isCustomPosition = false;
@@ -106,11 +112,16 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
   async _prepareContext(options) {
     const context = await super._prepareContext(options);
     const preparedContext = await RollMenuActorProcessor.prepareActorContext(this, context);
-    
+
     // Add layout information to context
     const SETTINGS = getSettings();
     preparedContext.menuLayout = SettingsUtil.get(SETTINGS.menuLayout.tag);
-    
+
+    // Add icon data for dynamic rendering
+    preparedContext.enabledModuleIcons = IconLayoutUtil.getEnabledIcons('moduleActions');
+    preparedContext.enabledActorIcons = IconLayoutUtil.getEnabledIcons('actorActions');
+    preparedContext.iconConfigs = IconLayoutUtil.getIconConfigurations();
+
     this._lastPreparedContext = preparedContext;
     return preparedContext;
   }
@@ -290,9 +301,19 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
    * Handle clicks outside the menu
    */
   _onClickOutside = (event) => {
-    if (this.isLocked) return;
     const menu = this.element;
     if (!menu) return;
+
+    // Check if click is on filter tooltip - if outside tooltip, close it (even when locked)
+    const filterTooltip = menu.querySelector('.actor-filter-tooltip');
+    if (filterTooltip && !event.target.closest('.actor-filter-tooltip') && !event.target.closest('#flash5e-filter-actors')) {
+      filterTooltip.remove();
+      return;
+    }
+
+    // Only proceed with menu closing logic if not locked
+    if (this.isLocked) return;
+
     if (event.target.closest('.flash-rolls-menu')) return;
     if (menu.contains(event.target)) return;
     // if (event.target.closest('#flash-rolls-icon')) return;
@@ -329,7 +350,14 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
   _onToggleSelectAll(event) {
     return RollMenuStateUtil.handleToggleSelectAll(event, this);
   }
-  
+
+  /**
+   * Handle actor filter toggle
+   */
+  _onToggleActorFilter(event) {
+    return RollMenuStateUtil.handleToggleActorFilter(event, this);
+  }
+
   /**
    * Handle lock toggle
    */
@@ -384,18 +412,31 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
    * Initialize selected actors from currently selected tokens
    */
   _initializeFromSelectedTokens() {
+    LogUtil.log("_initializeFromSelectedTokens called", {
+      _ignoreTokenControl: this._ignoreTokenControl,
+      currentSelectedActors: Array.from(this.selectedActors),
+      controlledTokensCount: canvas.tokens?.controlled?.length || 0
+    });
+
     const controlledTokens = canvas.tokens?.controlled || [];
     this.selectedActors.clear();
-    
+
     for (const token of controlledTokens) {
       if (token.actor) {
         const uniqueId = token.id;
         this.selectedActors.add(uniqueId);
-        
-        if (this.selectedActors.size === 1) {
-            const isPC = isPlayerOwned(token.actor);
-            this.currentTab = isPC ? 'pc' : 'npc';
-        }
+
+        // // Only auto-switch tabs for drag operations, not for select-all operations
+        // if (this.selectedActors.size === 1 && !this._ignoreTokenControl) {
+        //     const isPC = isPlayerOwned(token.actor);
+        //     LogUtil.log("_initializeFromSelectedTokens - Switching tab", {
+        //       tokenName: token.name,
+        //       isPC,
+        //       newTab: isPC ? 'pc' : 'npc',
+        //       oldTab: this.currentTab
+        //     });
+        //     this.currentTab = isPC ? 'pc' : 'npc';
+        // }
       }
     }
   }
@@ -494,7 +535,7 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
   }
 
   /**
-   * Toggle group selection - selects/deselects all members of the group
+   * Toggle group selection - selects/deselects members using stored token associations
    */
   async _toggleGroupSelection(groupActorId) {
     const groupActor = game.actors.get(groupActorId);
@@ -502,43 +543,86 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
       return;
     }
 
-    // Get all members of the group with same token logic as processing
+    // Get stored token associations from flags
+    const tokenAssociations = groupActor.getFlag(MODULE_ID, 'tokenAssociations') || {};
     const members = [];
     const currentScene = game.scenes.active;
-    
+
+
     if (groupActor.type === 'group') {
       for (const member of groupActor.system.members || []) {
         if (member.actor) {
-          // Check for tokens of this member in the scene
-          const memberTokens = currentScene?.tokens.filter(token => token.actorId === member.actor.id) || [];
-          
-          if (memberTokens.length > 0) {
-            // Add entries for each token
-            memberTokens.forEach(tokenDoc => {
-              members.push({ actor: member.actor, uniqueId: tokenDoc.id });
-            });
+          const memberActorId = member.actor.id;
+          const associatedTokenIds = tokenAssociations[memberActorId] || [];
+
+          if (associatedTokenIds.length > 0) {
+            // Use specific tokens from associations
+            LogUtil.log('Using token associations for member', { memberActorId, associatedTokenIds });
+            for (const tokenId of associatedTokenIds) {
+              const tokenDoc = currentScene?.tokens.get(tokenId);
+              if (tokenDoc && tokenDoc.actorId === member.actor.id) {
+                LogUtil.log('Found token in scene', { tokenId, tokenDoc });
+                members.push({ actor: member.actor, uniqueId: tokenId });
+              } else {
+                LogUtil.log('Token not found in scene, using base actor', { tokenId });
+                // Token not found in current scene, use base actor
+                members.push({ actor: member.actor, uniqueId: member.actor.id });
+              }
+            }
           } else {
-            // No tokens, use actor id
-            members.push({ actor: member.actor, uniqueId: member.actor.id });
+            // No token associations, fall back to all tokens or base actor
+            LogUtil.log('No token associations, using fallback for member', { memberActorId });
+            const memberTokens = currentScene?.tokens.filter(token => token.actorId === member.actor.id) || [];
+            if (memberTokens.length > 0) {
+              LogUtil.log('Using all tokens for member', { memberActorId, tokenCount: memberTokens.length });
+              memberTokens.forEach(tokenDoc => {
+                members.push({ actor: member.actor, uniqueId: tokenDoc.id });
+              });
+            } else {
+              LogUtil.log('No tokens found, using base actor', { memberActorId });
+              members.push({ actor: member.actor, uniqueId: member.actor.id });
+            }
           }
         }
       }
     } else if (groupActor.type === 'encounter') {
+      LogUtil.log('Processing encounter members', { memberCount: groupActor.system.members?.length || 0 });
       for (const member of groupActor.system.members || []) {
         try {
           const memberActor = await fromUuid(member.uuid);
           if (memberActor) {
-            // Check for tokens of this member in the scene
-            const memberTokens = currentScene?.tokens.filter(token => token.actorId === memberActor.id) || [];
-            
-            if (memberTokens.length > 0) {
-              // Add entries for each token
-              memberTokens.forEach(tokenDoc => {
-                members.push({ actor: memberActor, uniqueId: tokenDoc.id });
-              });
+            const memberActorId = memberActor.id;
+            const associatedTokenIds = tokenAssociations[memberActorId] || [];
+            LogUtil.log('Processing encounter member', { memberActorId, memberUuid: member.uuid, associatedTokenIds });
+
+            if (associatedTokenIds.length > 0) {
+              // Use specific tokens from associations
+              LogUtil.log('Using token associations for encounter member', { memberActorId, associatedTokenIds });
+              for (const tokenId of associatedTokenIds) {
+                const tokenDoc = currentScene?.tokens.get(tokenId);
+                LogUtil.log('Token lookup result', { tokenId, found: !!tokenDoc, actorMatch: tokenDoc?.actorId === memberActor.id });
+                if (tokenDoc && tokenDoc.actorId === memberActor.id) {
+                  LogUtil.log('Adding token to members', { tokenId, memberActorId });
+                  members.push({ actor: memberActor, uniqueId: tokenId });
+                } else {
+                  LogUtil.log('Token not found, using base actor', { tokenId, memberActorId });
+                  // Token not found in current scene, use base actor
+                  members.push({ actor: memberActor, uniqueId: memberActor.id });
+                }
+              }
             } else {
-              // No tokens, use actor id
-              members.push({ actor: memberActor, uniqueId: memberActor.id });
+              // No token associations, fall back to all tokens or base actor
+              LogUtil.log('No token associations for encounter member, using fallback', { memberActorId });
+              const memberTokens = currentScene?.tokens.filter(token => token.actorId === memberActor.id) || [];
+              if (memberTokens.length > 0) {
+                LogUtil.log('Using all tokens for encounter member', { memberActorId, tokenCount: memberTokens.length });
+                memberTokens.forEach(tokenDoc => {
+                  members.push({ actor: memberActor, uniqueId: tokenDoc.id });
+                });
+              } else {
+                LogUtil.log('No tokens found for encounter member, using base actor', { memberActorId });
+                members.push({ actor: memberActor, uniqueId: memberActor.id });
+              }
             }
           }
         } catch (error) {
@@ -546,6 +630,8 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
         }
       }
     }
+
+    LogUtil.log('Final members array', [{ members: members.map(m => ({ actorId: m.actor.id, uniqueId: m.uniqueId })) }]);
 
     if (members.length === 0) return;
 
@@ -556,15 +642,18 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
 
     // Toggle selection for all members
     for (const member of members) {
+      // If uniqueId is different from actor.id, it's a token ID
+      const tokenId = member.uniqueId !== member.actor.id ? member.uniqueId : null;
+
       if (allMembersSelected) {
         // Deselect all members
         if (this.selectedActors.has(member.uniqueId)) {
-          this._toggleActorSelection(member.uniqueId, member.actor.id, null);
+          this._toggleActorSelection(member.uniqueId, member.actor.id, tokenId);
         }
       } else {
         // Select all members
         if (!this.selectedActors.has(member.uniqueId)) {
-          this._toggleActorSelection(member.uniqueId, member.actor.id, null);
+          this._toggleActorSelection(member.uniqueId, member.actor.id, tokenId);
         }
       }
     }
@@ -955,7 +1044,7 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
     document.removeEventListener('click', this._onClickOutside, true);
     
     // Clean up search focus flag
-    game.user.setFlag('flash-rolls-5e', 'searchFocused', false);
+    game.user.setFlag(MODULE_ID, 'searchFocused', false);
     
     this._cleanupHooks();
     this._cleanupTimeouts();

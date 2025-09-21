@@ -33,8 +33,15 @@ export const HOOKS_CORE = {
   UPDATE_SETTING: "updateSetting",
   CLIENT_SETTING_CHANGED: "clientSettingChanged",
   GET_ACTOR_CONTEXT_OPTIONS: "getActorContextOptions",
-  GET_CHAT_MESSAGE_CONTEXT_OPTIONS: "getChatMessageContextOptions", 
-  RENDER_ACTOR_DIRECTORY: "renderActorDirectory"
+  GET_CHAT_MESSAGE_CONTEXT_OPTIONS: "getChatMessageContextOptions",
+  RENDER_ACTOR_DIRECTORY: "renderActorDirectory",
+  CREATE_COMBATANT: "createCombatant",
+  DELETE_COMBATANT: "deleteCombatant",
+  UPDATE_COMBAT: "updateCombat",
+  DELETE_COMBAT: "deleteCombat",
+  CREATE_ACTIVE_EFFECT: "createActiveEffect",
+  DELETE_ACTIVE_EFFECT: "deleteActiveEffect",
+  UPDATE_ACTIVE_EFFECT: "updateActiveEffect"
 };
 
 /**

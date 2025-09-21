@@ -252,9 +252,16 @@ export class HooksUtil {
     // this._registerHook(HOOKS_CORE.PRE_CREATE_CHAT_MESSAGE, this._onPreCreateChatMessageGM.bind(this));
     this._registerHook(HOOKS_DND5E.PRE_ROLL_V2, this._onPreRoll.bind(this));
     
-    // Token hooks for updating roll requests menu
-    this._registerHook(HOOKS_CORE.CREATE_TOKEN, this._onTokenChange.bind(this));
-    this._registerHook(HOOKS_CORE.DELETE_TOKEN, this._onTokenChange.bind(this));
+    // Combat hooks for tracking combat status changes
+    this._registerHook(HOOKS_CORE.CREATE_COMBATANT, this._onCombatChange.bind(this));
+    this._registerHook(HOOKS_CORE.DELETE_COMBATANT, this._onCombatChange.bind(this));
+    this._registerHook(HOOKS_CORE.UPDATE_COMBAT, this._onCombatChange.bind(this));
+    this._registerHook(HOOKS_CORE.DELETE_COMBAT, this._onCombatChange.bind(this));
+
+    // ActiveEffect hooks for tracking status effect changes
+    this._registerHook(HOOKS_CORE.CREATE_ACTIVE_EFFECT, this._onActiveEffectChange.bind(this));
+    this._registerHook(HOOKS_CORE.DELETE_ACTIVE_EFFECT, this._onActiveEffectChange.bind(this));
+    this._registerHook(HOOKS_CORE.UPDATE_ACTIVE_EFFECT, this._onActiveEffectChange.bind(this));
     
     // Hooks for updating roll requests menu when data changes
     this._registerHook(HOOKS_CORE.UPDATE_SETTING, this._onSettingUpdate.bind(this));
@@ -777,17 +784,59 @@ export class HooksUtil {
 
   static _onActorUpdate(actor, changes, options, userId) {
     LogUtil.log("HooksUtil._onActorUpdate", [actor, changes]);
+    LogUtil.log("HooksUtil._onActorUpdate - changes.effects:", [changes.effects]);
+
     const ownershipChanged = changes['==ownership'] !== undefined;
-    const statsChanged = changes.system?.attributes?.hp || 
-                        changes.system?.attributes?.ac || 
+    const statsChanged = changes.system?.attributes?.hp ||
+                        changes.system?.attributes?.ac ||
                         changes.system?.attributes?.spell?.dc ||
                         changes.system?.skills?.prc ||
                         changes.system?.abilities ||
                         changes.system?.attributes?.prof;
 
-    if (!statsChanged && !ownershipChanged) return;
-    
+    // Check for effects changes (including death status)
+    const effectsChanged = changes.effects !== undefined;
+
+    LogUtil.log("HooksUtil._onActorUpdate - triggers:", [
+      'statsChanged:', statsChanged,
+      'ownershipChanged:', ownershipChanged,
+      'effectsChanged:', effectsChanged
+    ]);
+
+    if (!statsChanged && !ownershipChanged && !effectsChanged) return;
+
     LogUtil.log("HooksUtil._onActorUpdate - Re-rendering roll requests menu due to actor update", [actor, changes]);
+    RollRequestsMenu.refreshIfOpen();
+  }
+
+  /**
+   * Handle combat-related changes (for combat status)
+   * @param {...any} args - Hook arguments
+   */
+  static _onCombatChange(...args) {
+    LogUtil.log("HooksUtil._onCombatChange", args);
+    LogUtil.log("HooksUtil._onCombatChange - Re-rendering roll requests menu due to combat status change");
+    RollRequestsMenu.refreshIfOpen();
+  }
+
+  /**
+   * Handle ActiveEffect changes (for status effects like death)
+   * @param {ActiveEffect} effect - The active effect
+   * @param {Object} changes - Changes object (for updates)
+   * @param {Object} options - Update options
+   * @param {string} userId - ID of updating user
+   */
+  static _onActiveEffectChange(effect, changes, options, userId) {
+    LogUtil.log("HooksUtil._onActiveEffectChange", [effect, changes, options, userId]);
+
+    // Only refresh if the effect is on an actor (not an item or other document)
+    if (!effect.parent || effect.parent.documentName !== 'Actor') {
+      LogUtil.log("HooksUtil._onActiveEffectChange - Effect not on actor, skipping");
+      return;
+    }
+
+    LogUtil.log("HooksUtil._onActiveEffectChange - Re-rendering roll requests menu due to status effect change");
+    LogUtil.log("HooksUtil._onActiveEffectChange - Effect statuses:", effect.statuses);
     RollRequestsMenu.refreshIfOpen();
   }
 

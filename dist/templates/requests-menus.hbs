@@ -162,80 +162,73 @@
           <i class="fa-solid fa-users-medical"></i>
         </button>
       </li>
-      {{!-- {{else}} --}}
-      {{!-- <li class="actors-tabs">
-        <button class="actor-tab npc-tab{{#if (eq selectedTab "npc")}} active{{/if}}" data-tab="npc">{{localize 'FLASH_ROLLS.ui.menus.npcs'}}</button>
-        <button class="actor-tab pc-tab{{#if (eq selectedTab "pc")}} active{{/if}}" data-tab="pc">{{localize 'FLASH_ROLLS.ui.menus.pcs'}}</button>
-      </li> --}}
-      {{!-- {{/if}} --}}
     </ul>
 
     <ul class="action-icons">
-      {{!-- <li>
-        <i class="icon-option icon fas {{#if actorsLocked}}fa-lock-keyhole{{else}}fa-lock-keyhole-open{{/if}}" id="flash5e-actors-lock"></i>
-      </li> --}}
-      <li data-tooltip="{{localize 'FLASH_ROLLS.ui.inputs.lockMenu'}}" data-tooltip-direction="{{#if (eq menuLayout 'horizontal')}}UP{{else}}RIGHT{{/if}}" data-tooltip-delay="500">
-        <i class="icon-option icon fas {{#if actorsLocked}}fa-lock-keyhole{{else}}fa-lock-keyhole-open{{/if}}" id="flash5e-actors-lock"></i>
-      </li>
-      <li>
-        <label for="flash-rolls-toggle" class="flash5e-switch-compact">
-          <input type="checkbox" name="flash-rolls-toggle" id="flash-rolls-toggle" {{#if rollRequestsEnabled}}checked{{/if}} />
-          <span class="icon-label fas fa-bolt" data-tooltip="{{localize 'FLASH_ROLLS.ui.inputs.toggleRollRequests'}}" data-tooltip-direction="{{#if (eq menuLayout 'horizontal')}}UP{{else}}RIGHT{{/if}}" data-tooltip-delay="500"></span>
-        </label>
-      </li>
+      {{!-- Module Action Icons --}}
+      {{#each enabledModuleIcons as |icon|}}
+        {{#with (lookup ../iconConfigs.moduleActions id)}}
+          <li data-icon-id="{{../id}}">
+            {{#if (eq type "button")}}
+              {{#if (eq ../id "lock-menu")}}
+                <i class="icon-option icon fas {{#if ../../actorsLocked}}fa-lock-keyhole{{else}}fa-lock-keyhole-open{{/if}}"
+                   id="{{element}}"
+                   data-tooltip="{{localize tooltipKey}}"
+                   data-tooltip-direction="{{#if (eq ../../menuLayout 'horizontal')}}UP{{else}}RIGHT{{/if}}"
+                   data-tooltip-delay="500"></i>
+              {{else}}
+                <button id="{{element}}"
+                        data-tooltip="{{localize tooltipKey}}"
+                        data-tooltip-direction="{{#if (eq ../../menuLayout 'horizontal')}}UP{{else}}RIGHT{{/if}}"
+                        data-tooltip-delay="500">
+                  <i class="icon-label fas {{this.icon}}"></i>
+                </button>
+              {{/if}}
+            {{else if (eq type "checkbox")}}
+              <label for="{{this.element}}">
+                <input type="checkbox" name="{{this.element}}" id="{{this.element}}"
+                       {{#if (eq ../id "toggle-requests")}}{{#if ../../rollRequestsEnabled}}checked{{/if}}{{/if}}
+                       {{#if (eq ../id "skip-dialogs")}}{{#if ../../skipRollDialog}}checked{{/if}}{{/if}}
+                       {{#if (eq ../id "group-rolls")}}{{#if ../../groupRollsMsgEnabled}}checked{{/if}}{{/if}}
+                       {{#if (eq ../id "show-options")}}{{#if ../../showOptionsListOnHover}}checked{{/if}}{{/if}} />
+                <span class="icon-label fas {{this.icon}}"
+                      data-tooltip="{{localize tooltipKey}}"
+                      data-tooltip-direction="{{#if (eq ../../menuLayout 'horizontal')}}UP{{else}}RIGHT{{/if}}"
+                      data-tooltip-delay="500"></span>
+              </label>
+            {{/if}}
+          </li>
+        {{/with}}
+      {{/each}}
 
-      {{!-- Skip Dialogs Toggle --}}
-      <li>
-        <label for="flash5e-skip-dialogs" class="flash5e-switch-compact">
-          <input type="checkbox" name="flash5e-skip-dialogs" id="flash5e-skip-dialogs" {{#if skipRollDialog}}checked{{/if}}>
-          <span class="icon-label fas fa-square-question" data-tooltip="{{localize 'FLASH_ROLLS.ui.inputs.skipRollDialog'}}" data-tooltip-direction="{{#if (eq menuLayout 'horizontal')}}UP{{else}}RIGHT{{/if}}" data-tooltip-delay="500"></span>
-        </label>
-      </li>
+      {{#if (and enabledModuleIcons enabledActorIcons)}}
+        <hr />
+      {{/if}}
 
-      {{!-- Group Rolls Toggle --}}
-      <li>
-        <label for="flash5e-group-rolls-msg" class="flash5e-switch-compact">
-          <input type="checkbox" name="flash5e-group-rolls-msg" id="flash5e-group-rolls-msg" {{#if groupRollsMsgEnabled}}checked{{/if}}>
-          <span class="icon-label fas fa-users-rectangle" data-tooltip="{{localize 'FLASH_ROLLS.ui.inputs.groupRollsMsg'}}" data-tooltip-direction="{{#if (eq menuLayout 'horizontal')}}UP{{else}}RIGHT{{/if}}" data-tooltip-delay="500"></span>
-        </label>
-      </li>
-
-      <li>
-        <label for="flash5e-toggle-list" class="flash5e-switch-compact">
-          <input type="checkbox" name="flash5e-toggle-list" id="flash5e-toggle-list" {{#if showOptionsListOnHover}}checked{{/if}}>
-          <span class="icon-label fas fa-bars-sort" data-tooltip="{{localize 'FLASH_ROLLS.ui.inputs.showOptionsListOnHover'}}" data-tooltip-direction="{{#if (eq menuLayout 'horizontal')}}UP{{else}}RIGHT{{/if}}" data-tooltip-delay="500"></span>
-        </label>
-      </li>
-
-      <li>
-        <button id="flash5e-open-settings" data-tooltip="{{localize 'FLASH_ROLLS.ui.inputs.openSettings'}}" data-tooltip-direction="{{#if (eq menuLayout 'horizontal')}}UP{{else}}RIGHT{{/if}}" data-tooltip-delay="500"><i class="icon-label fas fa-cog"></i></button>
-      </li>
-
-      <hr />
-      {{!-- Actor actions --}}
-
-      <li class="bulk-action">
-        <label for="flash5e-actors-all" class="flash5e-switch-compact">
-          <input type="checkbox" name="flash5e-actors-all" id="flash5e-actors-all" {{#if selectAllOn}}checked{{/if}}>
-          <span class="icon-label fas fa-object-group" data-tooltip="{{localize 'FLASH_ROLLS.ui.inputs.selectAll'}}" data-tooltip-direction="{{#if (eq menuLayout 'horizontal')}}UP{{else}}RIGHT{{/if}}"></span>
-        </label>
-      </li>
-
-      <li class="bulk-action">
-        <button id="flash5e-targets" data-tooltip="{{localize 'FLASH_ROLLS.ui.inputs.toggleTargets'}}" data-tooltip-direction="{{#if (eq menuLayout 'horizontal')}}UP{{else}}RIGHT{{/if}}" data-tooltip-delay="500"><i class="icon-label fas fa-crosshairs"></i></button>
-      </li>
-      <li class="bulk-action">
-        <button id="flash5e-heal-selected" data-tooltip="{{localize 'FLASH_ROLLS.ui.inputs.healAll'}}" data-tooltip-direction="{{#if (eq menuLayout 'horizontal')}}UP{{else}}RIGHT{{/if}}" data-tooltip-delay="500"><i class="icon-label fas fa-heart-pulse"></i></button>
-      </li>
-      <li class="bulk-action">
-        <button id="flash5e-kill-selected" data-tooltip="{{localize 'FLASH_ROLLS.ui.inputs.killAll'}}" data-tooltip-direction="{{#if (eq menuLayout 'horizontal')}}UP{{else}}RIGHT{{/if}}" data-tooltip-delay="500"><i class="icon-label fas fa-skull"></i></button>
-      </li>
-      <li class="bulk-action">
-        <button id="flash5e-remove-effects" data-tooltip="{{localize 'FLASH_ROLLS.ui.inputs.removeStatus'}}" data-tooltip-direction="{{#if (eq menuLayout 'horizontal')}}UP{{else}}RIGHT{{/if}}" data-tooltip-delay="500"><i class="icon-label fas fa-sparkles"></i></button>
-      </li>
-      <li class="bulk-action">
-        <button id="flash5e-sheets" data-tooltip="{{localize 'FLASH_ROLLS.ui.inputs.openSheets'}}" data-tooltip-direction="{{#if (eq menuLayout 'horizontal')}}UP{{else}}RIGHT{{/if}}" data-tooltip-delay="500"><i class="icon-label fas fa-square-user"></i></button>
-      </li>
+      {{!-- Actor Action Icons --}}
+      {{#each enabledActorIcons as |icon|}}
+        {{#with (lookup ../iconConfigs.actorActions id)}}
+          <li data-icon-id="{{../id}}" class="bulk-action">
+            {{#if (eq type "button")}}
+              <button id="{{element}}"
+                      data-tooltip="{{localize tooltipKey}}"
+                      data-tooltip-direction="{{#if (eq ../../menuLayout 'horizontal')}}UP{{else}}RIGHT{{/if}}"
+                      data-tooltip-delay="500">
+                <i class="icon-label fas {{this.icon}}"></i>
+              </button>
+            {{else if (eq type "checkbox")}}
+              <label for="{{this.element}}">
+                <input type="checkbox" name="{{this.element}}" id="{{this.element}}"
+                       {{#if (eq ../id "select-all")}}{{#if ../../selectAllOn}}checked{{/if}}{{/if}} />
+                <span class="icon-label fas {{this.icon}}"
+                      data-tooltip="{{localize tooltipKey}}"
+                      data-tooltip-direction="{{#if (eq ../../menuLayout 'horizontal')}}UP{{else}}RIGHT{{/if}}"
+                      data-tooltip-delay="500"></span>
+              </label>
+            {{/if}}
+          </li>
+        {{/with}}
+      {{/each}}
     </ul>
   </div>
 
@@ -243,7 +236,10 @@
   <div class="request-types-accordion">
     <!-- Search Input -->
     <div class="search-container">
-      <input type="text" class="search-input" placeholder="{{localize 'FLASH_ROLLS.ui.search.placeholder'}}" />
+      <label for="search-input" class="sr-only">{{localize 'FLASH_ROLLS.ui.search.placeholder'}}</label>
+      <input type="text" class="search-input" id="search-input"
+             placeholder="{{localize 'FLASH_ROLLS.ui.search.placeholder'}}"
+             aria-label="{{localize 'FLASH_ROLLS.ui.search.placeholder'}}" />
       <i class="icon fas fa-search"></i>
     </div>
 

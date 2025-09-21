@@ -3,6 +3,7 @@ import { RollMenuDragUtil } from './RollMenuDragUtil.mjs';
 import { delay, getActorData, updateCanvasTokenSelection } from '../helpers/Helpers.mjs';
 import { getSettings } from '../../constants/Settings.mjs';
 import { SettingsUtil } from '../SettingsUtil.mjs';
+import { MODULE_ID } from '../../constants/General.mjs';
 
 /**
  * Utility class for handling Roll Requests Menu event listeners
@@ -54,6 +55,7 @@ export class RollMenuEventUtil {
     html.querySelector('#flash5e-skip-dialogs')?.addEventListener('change', menu._onToggleSkipDialogs.bind(menu));
     html.querySelector('#flash5e-group-rolls-msg')?.addEventListener('change', menu._onToggleGroupRollsMsg.bind(menu));
     html.querySelector('#flash5e-actors-all')?.addEventListener('change', menu._onToggleSelectAll.bind(menu));
+    html.querySelector('#flash5e-filter-actors')?.addEventListener('click', menu._onToggleActorFilter.bind(menu));
     html.querySelector('#flash5e-actors-lock')?.addEventListener('click', menu._onToggleLock.bind(menu));
     html.querySelector('.options-toggle-btn')?.addEventListener('click', menu._onToggleOptions.bind(menu));
     html.querySelector('#flash5e-open-settings')?.addEventListener('click', menu._onOpenSettings.bind(menu));
@@ -89,34 +91,32 @@ export class RollMenuEventUtil {
    * Attach action icon handlers for bulk operations
    */
   static attachActionIconHandlers(menu, html) {
-    // Toggle targets for selected actors
     html.querySelector('#flash5e-targets')?.addEventListener('click', () => {
       this.toggleTargetsForSelected(menu);
     });
     
-    // Heal all selected actors
     html.querySelector('#flash5e-heal-selected')?.addEventListener('click', () => {
       this.healSelectedActors(menu);
     });
     
-    // Kill all selected actors
     html.querySelector('#flash5e-kill-selected')?.addEventListener('click', () => {
       this.killSelectedActors(menu);
     });
     
-    // Open sheets for all selected actors
     html.querySelector('#flash5e-sheets')?.addEventListener('click', () => {
       this.openSheetsForSelected(menu);
     });
     
-    // Toggle list checkbox
     html.querySelector('#flash5e-toggle-list')?.addEventListener('change', () => {
       this.toggleOptionsListOnHover(menu);
     });
     
-    // Remove all status effects from selected actors
     html.querySelector('#flash5e-remove-effects')?.addEventListener('click', () => {
       this.removeAllStatusEffectsFromSelected(menu);
+    });
+
+    html.querySelector('#flash5e-group-selected')?.addEventListener('click', () => {
+      this.createGroupFromSelected(menu);
     });
   }
 
@@ -298,13 +298,13 @@ export class RollMenuEventUtil {
       searchInput.addEventListener('focus', (event) => {
         event.target.select();
         menu.isSearchFocused = true;
-        game.user.setFlag('flash-rolls-5e', 'searchFocused', true);
+        game.user.setFlag(MODULE_ID, 'searchFocused', true);
       });
       
       // Hide accordion when search loses focus (if not hovering over menu)
       searchInput.addEventListener('blur', () => {
         menu.isSearchFocused = false;
-        game.user.setFlag('flash-rolls-5e', 'searchFocused', false);
+        game.user.setFlag(MODULE_ID, 'searchFocused', false);
         const accordion = html.querySelector('.request-types-accordion');
         if (accordion && !html.matches(':hover')) {
           accordion.classList.remove('hover-visible');
@@ -473,13 +473,8 @@ export class RollMenuEventUtil {
         const groupId = button.dataset.groupId;
         const isExpanded = menu.groupExpansionStates[groupId] ?? false;
         
-        // Toggle expansion state
         menu.groupExpansionStates[groupId] = !isExpanded;
-        
-        // Save state to user flags
-        await game.user.setFlag('flash-rolls-5e', 'groupExpansionStates', menu.groupExpansionStates);
-        
-        // Re-render to update the display
+        await game.user.setFlag(MODULE_ID, 'groupExpansionStates', menu.groupExpansionStates);
         menu.render();
       });
     });
@@ -848,34 +843,6 @@ export class RollMenuEventUtil {
     }else if(newValue===true && menu.selectedActors.size > 0){
       accordion?.classList.add('hover-visible');
     }
-
-    /*
-    // Special case: If hover is currently disabled and accordion is hidden, 
-    // show it manually without changing the setting
-    if (currentValue===false && accordionVisible===false && menu.selectedActors.size > 0) {
-      accordion.classList.add('hover-visible');
-      return; // Don't change the setting, just show accordion this time
-    }
-    
-    // Update checkbox state immediately
-    const toggleCheckbox = menu.element.querySelector('#flash5e-toggle-list');
-    if (toggleCheckbox) {
-      toggleCheckbox.checked = newValue;
-    }
-    
-    // Update accordion behavior without full re-render
-    RollMenuEventUtil.updateAccordionHoverBehaviorNoRender(menu, newValue);
-    
-    if (!newValue) {
-      // Toggle OFF: Hide accordion and disable hover
-      accordion?.classList.remove('hover-visible');
-    } else {
-      // Toggle ON: Show accordion if actors are selected (enable hover)
-      if (menu.selectedActors.size > 0) {
-        accordion?.classList.add('hover-visible');
-      }
-    }
-    */
   }
 
   /**
@@ -946,6 +913,160 @@ export class RollMenuEventUtil {
       // Clean up tracking
       this._hoveredTokens.delete(token);
       delete token._flashRollsWasSelected;
+    }
+  }
+
+  /**
+   * Create a new group or encounter actor from selected actors
+   * @param {RollRequestsMenu} menu - The menu instance
+   */
+  static async createGroupFromSelected(menu) {
+    if (menu.selectedActors.size === 0) {
+      ui.notifications.warn("No actors selected");
+      return;
+    }
+
+    // Get actor data and group by base actor while tracking token associations
+    const actorGroups = new Map(); // Map of base actor ID to { actor, count, tokenUuids }
+    const tokenAssociations = {}; // Map of base actor ID to array of token UUIDs
+    let playerOwnedCount = 0;
+    let totalSelectedCount = 0;
+
+    for (const uniqueId of menu.selectedActors) {
+      const actor = getActorData(uniqueId);
+      if (!actor) continue;
+
+      totalSelectedCount++;
+
+      // Get the base actor ID
+      const baseActorId = actor.id;
+
+      if (actorGroups.has(baseActorId)) {
+        // Increment quantity and add token ID for existing actor
+        const group = actorGroups.get(baseActorId);
+        group.count++;
+        if (actor.tokenId) {
+          group.tokenIds.push(actor.tokenId);
+        }
+      } else {
+        // Add new actor to the map
+        actorGroups.set(baseActorId, {
+          actor: actor,
+          count: 1,
+          tokenIds: actor.tokenId ? [actor.tokenId] : []
+        });
+
+        // Check ownership only once per unique actor
+        const hasPlayerOwnership = Object.entries(actor.ownership || {}).some(([userId, level]) => {
+          if (userId === 'default') return false;
+          const user = game.users.get(userId);
+          return user && !user.isGM && level >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER;
+        });
+
+        if (hasPlayerOwnership) {
+          playerOwnedCount++;
+        }
+      }
+
+      // Build token associations for flags (store only token IDs)
+      if (!tokenAssociations[baseActorId]) {
+        tokenAssociations[baseActorId] = [];
+      }
+
+      // If uniqueId is different from actor.id, it means this is a token selection
+      if (uniqueId !== actor.id) {
+        // uniqueId is the token ID
+        tokenAssociations[baseActorId].push(uniqueId);
+      }
+    }
+
+    if (actorGroups.size === 0) {
+      ui.notifications.warn("No valid actors found");
+      return;
+    }
+
+    // Determine actor type based on player ownership ratio
+    const playerOwnedRatio = playerOwnedCount / actorGroups.size;
+    const actorType = playerOwnedRatio >= 0.5 ? "group" : "encounter";
+
+    // Generate a default name
+    const defaultName = actorType === "group" ? "New Group" : "New Encounter";
+
+    // Prepare members array based on actor type
+    const members = [];
+    if (actorType === "group") {
+      // Group type: store direct actor references with quantities
+      for (const [baseActorId, { actor, count }] of actorGroups) {
+        // Get the base actor (not the token actor)
+        const baseActor = game.actors.get(baseActorId);
+        if (baseActor) {
+          members.push({
+            actor: baseActor, // Direct base actor reference for group type
+            quantity: count
+          });
+        }
+      }
+    } else {
+      // Encounter type: store base actor UUIDs with proper quantity structure
+      for (const [baseActorId, { actor, count }] of actorGroups) {
+        members.push({
+          uuid: `Actor.${baseActorId}`, // Base actor UUID
+          quantity: {
+            value: count,
+            formula: ""
+          }
+        });
+      }
+    }
+
+    // Create the new actor with members and token associations flag
+    try {
+      const newActor = await Actor.create({
+        name: defaultName,
+        type: actorType,
+        img: "icons/svg/mystery-man.svg", // Default icon
+        system: {
+          members: members
+        },
+        flags: {
+          "flash-rolls-5e": {
+            tokenAssociations: tokenAssociations
+          }
+        },
+        ownership: {
+          default: CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER,
+          [game.user.id]: CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER
+        }
+      });
+
+      if (newActor) {
+        // Open the newly created actor sheet
+        newActor.sheet.render(true);
+
+        // Show success notification
+        const memberSummary = Array.from(actorGroups.values()).map(({ actor, count }) =>
+          count > 1 ? `${actor.name} (x${count})` : actor.name
+        ).join(", ");
+        ui.notifications.info(`Created ${actorType} "${newActor.name}" (${totalSelectedCount} tokens, ${actorGroups.size} unique: ${memberSummary})`);
+
+        LogUtil.log(`createGroupFromSelected - Created ${actorType}:`, {
+          newActor,
+          totalSelectedCount,
+          uniqueActorCount: actorGroups.size,
+          playerOwnedCount,
+          playerOwnedRatio,
+          tokenAssociations,
+          members: Array.from(actorGroups.entries()).map(([id, { actor, count, tokenUuids }]) => ({
+            id,
+            name: actor.name,
+            quantity: count,
+            tokenUuids
+          }))
+        });
+      }
+    } catch (error) {
+      LogUtil.error("Failed to create group/encounter actor:", error);
+      ui.notifications.warn(`Failed to create ${actorType}: ${error.message}`);
     }
   }
 }

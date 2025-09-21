@@ -1,6 +1,7 @@
 import { MODULE_ID } from "../constants/General.mjs";
 import { getSettings, SETTING_SCOPE } from "../constants/Settings.mjs";
 import { getSettingMenus } from "../constants/SettingMenus.mjs";
+import { getDefaultIconLayout } from "../constants/IconMappings.mjs";
 import { LogUtil } from "./LogUtil.mjs";
 import RollRequestsMenu from "./RollRequestsMenu.mjs";
 
@@ -56,14 +57,14 @@ export class SettingsUtil {
    */
   static registerSettingsMenu() {
     const settingMenus = Object.entries(getSettingMenus());
-    
+
     for (const [menuKey, menuData] of settingMenus) {
       if ((menuData.restricted && game.user?.isGM) || !menuData.restricted) {
         const menuObj = {
           name: menuData.tag,
-          label: menuData.label, 
+          label: menuData.label,
           hint: menuData.hint,
-          icon: menuData.icon, 
+          icon: menuData.icon,
           type: menuData.propType,
           restricted: menuData.restricted
         };
@@ -72,6 +73,7 @@ export class SettingsUtil {
     }
 
     SettingsUtil.updateColorScheme();
+    SettingsUtil.validateAndUpdateIconLayout();
   }
 
   static updateColorScheme(){
@@ -165,6 +167,9 @@ export class SettingsUtil {
       case SETTINGS.menuLayout.tag:
         SettingsUtil.applyMenuLayout(newValue);
         break;
+      case SETTINGS.menuIconsLayout.tag:
+        SettingsUtil.applyMenuIconsLayout(newValue);
+        break;
       default:
         break;
     }
@@ -197,7 +202,86 @@ export class SettingsUtil {
     const menuLayout = newValue || SettingsUtil.get(SETTINGS.menuLayout.tag);
 
     LogUtil.log('applyMenuLayout', [menuLayout]);
-    
+
     RollRequestsMenu.refreshIfOpen();
+  }
+
+  static applyMenuIconsLayout(newValue){
+    const SETTINGS = getSettings();
+    const menuIconsLayout = newValue || SettingsUtil.get(SETTINGS.menuIconsLayout.tag);
+
+    LogUtil.log('applyMenuIconsLayout', [menuIconsLayout]);
+
+    RollRequestsMenu.refreshIfOpen();
+  }
+
+  /**
+   * Validate and update the menuIconsLayout setting to include any missing icons
+   * and remove any obsolete icons that no longer exist in IconMappings
+   * @static
+   */
+  static validateAndUpdateIconLayout() {
+    const SETTINGS = getSettings();
+    const currentLayout = SettingsUtil.get(SETTINGS.menuIconsLayout.tag);
+    const defaultLayout = getDefaultIconLayout();
+
+    if (!currentLayout) {
+      LogUtil.log('validateAndUpdateIconLayout - no current layout found, using default');
+      return;
+    }
+
+    let updated = false;
+    const updatedLayout = foundry.utils.deepClone(currentLayout);
+
+    // Check each icon type (moduleActions, actorActions)
+    for (const [iconType, defaultIcons] of Object.entries(defaultLayout)) {
+      if (!updatedLayout[iconType]) {
+        updatedLayout[iconType] = [];
+      }
+
+      // Get valid icon IDs from the default layout (these are the ones that should exist)
+      const validIds = new Set(defaultIcons.map(icon => icon.id));
+
+      // Remove icons that are no longer in the IconMappings
+      const originalLength = updatedLayout[iconType].length;
+      updatedLayout[iconType] = updatedLayout[iconType].filter(icon => {
+        if (!validIds.has(icon.id)) {
+          LogUtil.log(`validateAndUpdateIconLayout - removed obsolete icon: ${icon.id} from ${iconType}`);
+          updated = true;
+          return false;
+        }
+        return true;
+      });
+
+      // Get existing icon IDs after filtering
+      const existingIds = new Set(updatedLayout[iconType].map(icon => icon.id));
+
+      // Find the highest order number in existing icons
+      let maxOrder = Math.max(
+        ...updatedLayout[iconType].map(icon => icon.order || 0),
+        -1
+      );
+
+      // Add any missing icons from the default layout
+      for (const defaultIcon of defaultIcons) {
+        if (!existingIds.has(defaultIcon.id)) {
+          maxOrder++;
+          updatedLayout[iconType].push({
+            ...defaultIcon,
+            order: maxOrder
+          });
+          updated = true;
+          LogUtil.log(`validateAndUpdateIconLayout - added missing icon: ${defaultIcon.id} to ${iconType}`);
+        }
+      }
+    }
+
+    // Save the updated layout if changes were made
+    if (updated) {
+      SettingsUtil.set(SETTINGS.menuIconsLayout.tag, updatedLayout);
+      LogUtil.log('validateAndUpdateIconLayout - updated layout', updatedLayout);
+    } else {
+      LogUtil.log('validateAndUpdateIconLayout - no changes needed');
+    }
   }
 }

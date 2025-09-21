@@ -1,0 +1,107 @@
+/* Base Menu Container and Core Styles */
+#flash-rolls-menu {
+  border-radius: 4px;
+  color: inherit;
+  display: block;
+  font-size: 0.75rem;
+  position: fixed;
+  right: var(--current-sidebar-width, 2px);
+  padding-right: var(--flash-rolls-menu-offset, 0px);
+  bottom: 0;
+  width: auto;
+  z-index: 0;
+  pointer-events: auto;
+  height: auto;
+  background: transparent;
+  transition: right 0.25s ease-in-out;
+}
+
+/* Floating Info */
+#flash-rolls-menu .floating-info {
+  display: none;
+}
+
+/* Base Input Styles */
+#flash-rolls-menu input {
+  background: var(--fr5e-menu-background);
+  color: var(--fr5e-text-color);
+  border: 1px solid var(--fr5e-menu-background);
+}
+
+#flash-rolls-menu input:focus,
+#flash-rolls-menu input:hover {
+  border: 1px solid var(--color-warm-2);
+}
+
+/* Visibility States */
+#flash-rolls-menu.hidden {
+  display: none;
+}
+
+#flash-rolls-menu .request-type-item.hidden,
+#flash-rolls-menu .sub-item.hidden,
+#flash-rolls-menu .status-effect.hidden {
+  display: none !important;
+}
+
+/* Main Container Base Structure */
+#flash-rolls-menu > div[data-application-part=main] {
+  display: flex;
+  position: relative;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  border-radius: 4px;
+}
+
+/* Background Offset for Sidebar Compatibility */
+#flash-rolls-menu:after {
+  content: "";
+  display: block;
+  width: var(--flash-rolls-menu-offset, 0px);
+  height: 100%;
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  top: auto;
+  background: var(--fr5e-menu-background, transparent);
+}
+
+body:not(.crlngn-ui) #flash-rolls-menu:after {
+  background: transparent;
+}
+
+/* Common Content Structure */
+#flash-rolls-menu .main-content,
+#flash-rolls-menu .request-types-accordion {
+  position: relative;
+  pointer-events: all;
+  margin: 0;
+  padding: 1em 1em 0.75em 1em;
+  max-height: 100%;
+  height: auto;
+  overflow-y: hidden;
+  border: 1px solid var(--fr5e-menu-background, rgba(20, 20, 20, 0.9));
+  font-size: var(--font-size-13);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  background: var(--fr5e-menu-background);
+  color: var(--fr5e-text-color);
+}
+
+#flash-rolls-menu .request-types-accordion {
+  gap: 0.25rem;
+}
+
+/* Accordion Visibility Control */
+#flash-rolls-menu .request-types-accordion {
+  display: none !important;
+}
+
+#flash-rolls-menu .request-types-accordion.hover-visible {
+  display: flex !important;
+}
+
+/* No Actors State */
+#flash-rolls-menu.no-actors .main-content ul.action-icons .bulk-action:not([data-icon-id="filter-actors"]) {
+  display: none;
+}

@@ -134,8 +134,9 @@
         "label": "Configure Options",
         "hint": "",
         "tabs": {
-          "groupRolls": "Group Rolls",
           "generalSettings": "General Settings",
+          "interfaceSettings": "Interface",
+          "groupRolls": "Group Rolls",
           "rollRequests": "Roll Requests"
         }
       },
@@ -202,6 +203,10 @@
       "showOptionsListOnHover": {
         "label": "Show Roll Options on Hover",
         "hint": "When enabled, the roll options accordion will appear when you hover over the menu with actors selected. When disabled, click the toggle list button to show roll options."
+      },
+      "menuIconsLayout": {
+        "label": "Menu Icon Layout",
+        "hint": "Customize which icons appear in the menu and their order. Drag icons to reorder them and toggle them on/off."
       }
     },
     "groupRoll": {
@@ -228,7 +233,10 @@
       }
     },
     "ui": {
-      
+      "settings": {
+        "moduleActionsTitle": "Module Actions",
+        "actorActionsTitle": "Actor Actions"
+      },
       "search": {
         "placeholder": "Search"
       },
@@ -253,7 +261,15 @@
         "removeStatus": "Remove Status",
         "openSheets": "Open Sheets",
         "showOptionsListOnHover": "Toggle List",
-        "openSettings": "Open Settings"
+        "openSettings": "Open Settings",
+        "filterActors": "Filter Actors",
+        "groupSelected": "Create Group"
+      },
+      "filters": {
+        "title": "Filter Actors",
+        "inCombat": "Show Only Combatants",
+        "visible": "Show Only Visible",
+        "notDead": "Remove Dead"
       },
       "forms": {
         "pixelsRollTitle": "Pixels Dice - Roll Resolver",

@@ -1,0 +1,172 @@
+/* Horizontal Layout */
+#flash-rolls-menu[data-layout="horizontal"] > div[data-application-part=main] {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  border-radius: 4px;
+  width: auto;
+  height: var(--fr5e-height-regular);
+  max-width: var(--fr5e-max-width-horizontal);
+}
+
+/* Content Border Radius for Horizontal Layout */
+#flash-rolls-menu[data-layout="horizontal"] .main-content {
+  border-radius: 4px;
+}
+
+/* Main Content - Horizontal Layout */
+#flash-rolls-menu[data-layout="horizontal"] .main-content {
+  padding: 1rem 0.25rem 0.25rem 0.25rem;
+  width: auto;
+  height: var(--fr5e-height-regular);
+  min-width: unset;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* Actor Lists - Horizontal Layout */
+#flash-rolls-menu[data-layout="horizontal"] .main-content ul.actors {
+  width: 100%;
+  height: var(--fr5e-actors-height-regular);
+  flex-direction: row;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+#flash-rolls-menu[data-layout="horizontal"] .main-content ul.actors > li.actor-list {
+  flex: 1;
+  overflow-x: auto;
+  overflow-y: hidden;
+  max-height: unset;
+  min-height: unset;
+  margin: 0 0.5rem 0 0;
+  padding: 0.15rem 0;
+}
+
+#flash-rolls-menu[data-layout="horizontal"] .main-content ul.actors > li.actor-list > ul {
+  flex-direction: row;
+  gap: 0.25rem;
+  width: max-content;
+  min-width: max-content;
+  max-width: max-content;
+  margin: auto;
+}
+
+/* Action Icons - Horizontal Layout */
+#flash-rolls-menu[data-layout="horizontal"] .main-content ul.action-icons {
+  width: 100%;
+  height: var(--fr5e-actions-height);
+  flex-direction: row;
+  padding: 0 0.25rem;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+#flash-rolls-menu[data-layout="horizontal"] .main-content ul.action-icons hr {
+  margin: 0 0.5rem;
+  height: 1rem;
+  width: 1px;
+}
+
+/* Element Order - Horizontal Layout */
+#flash-rolls-menu[data-layout="horizontal"] .main-content ul.actors {
+  order: 2;
+}
+
+#flash-rolls-menu[data-layout="horizontal"] .main-content ul.action-icons {
+  order: 1;
+}
+
+/* Actor Display - Horizontal Layout */
+#flash-rolls-menu[data-layout="horizontal"] div.main-content > ul.actors > li .actor {
+  justify-content: center;
+  align-items: center;
+  width: 6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 2px;
+}
+
+#flash-rolls-menu[data-layout="horizontal"] div.main-content > ul.actors > li .actor > .actor-img,
+#flash-rolls-menu[data-layout="horizontal"] div.main-content > ul.actors > li .actor > .actor-data {
+  width: 100%;
+}
+
+#flash-rolls-menu[data-layout="horizontal"] div.main-content > ul.actors > li .actor > .actor-img {
+  height: 5rem;
+  max-height: 5rem;
+}
+
+#flash-rolls-menu[data-layout="horizontal"] div.main-content > ul.actors > li .actor > .actor-stat-bar {
+  flex: 0 0 4px;
+  height: 4px;
+  width: 100%;
+  margin: 0;
+}
+
+/* Actor Tabs - Horizontal Layout */
+#flash-rolls-menu[data-layout="horizontal"] div.main-content > ul.actors > li.actors-tabs {
+  flex-direction: column;
+  justify-content: stretch;
+  align-items: center;
+  flex-wrap: wrap;
+  height: 100%;
+  padding: 0.25rem 0 0.35rem 0;
+}
+
+#flash-rolls-menu[data-layout="horizontal"] div.main-content > ul.actors > li.actors-tabs button {
+  width: 50%;
+  height: 50%;
+  min-height: 50%;
+  flex: 1 0 50%;
+}
+
+/* Request Types Accordion - Horizontal Layout */
+#flash-rolls-menu[data-layout="horizontal"] .request-types-accordion {
+  width: 100%;
+  min-width: var(--fr5e-width-regular);
+  flex-direction: column-reverse;
+  position: absolute;
+  transform: translateY(-100%);
+  left: 0;
+  z-index: 102;
+  height: fit-content;
+  max-height: 400px;
+}
+
+#flash-rolls-menu[data-layout="horizontal"] > div > .request-types-accordion .submenu-tabs {
+  margin: 0.5rem 0;
+  padding: 0;
+}
+
+/* Top Edge Positioning - Show accordion below menu when not enough space above */
+#flash-rolls-menu[data-layout="horizontal"].top-edge .request-types-accordion {
+  transform: translateY(var(--fr5e-height-regular));
+  flex-direction: column;
+}
+
+/* Request Types Menu - Horizontal Layout */
+#flash-rolls-menu[data-layout="horizontal"] > div ul.request-types,
+#flash-rolls-menu[data-layout="horizontal"] > div ul.status-effects {
+  position: relative;
+  margin: 0;
+  padding: 0.5rem;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: auto;
+  min-height: 60px;
+
+  mask-image: linear-gradient(to top, transparent 0rem, rgba(0,0,0,1) 1rem);
+  -webkit-mask-image: linear-gradient(to top, transparent 0rem, rgba(0,0,0,1) 1rem);
+}
+
+/* Top Edge Accordion Contents */
+#flash-rolls-menu[data-layout="horizontal"].top-edge > div ul.request-types,
+#flash-rolls-menu[data-layout="horizontal"].top-edge > div ul.status-effects {
+  mask-image: linear-gradient(to bottom, transparent 0rem, rgba(0,0,0,1) 1rem);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0rem, rgba(0,0,0,1) 1rem);
+  padding: 0.5rem;
+}

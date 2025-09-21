@@ -1,0 +1,345 @@
+/* Compact Mode Overrides */
+
+/* Base Compact Mode Dimensions */
+#flash-rolls-menu.compact > div[data-application-part=main] {
+  width: var(--fr5e-width-compact);
+}
+
+#flash-rolls-menu.compact .main-content {
+  width: var(--fr5e-width-compact);
+  max-width: var(--fr5e-width-compact);
+  min-width: var(--fr5e-width-compact);
+  padding: 1.2em 0 0 0;
+  z-index: 10;
+  gap: 2px;
+  display: flex;
+  flex-direction: row;
+}
+
+#flash-rolls-menu.compact .main-content ul.actors {
+  width: var(--fr5e-actors-width-compact);
+}
+
+#flash-rolls-menu.compact .main-content ul.action-icons {
+  width: var(--fr5e-actions-width);
+}
+
+#flash-rolls-menu.compact .request-types-accordion {
+  width: var(--fr5e-width-regular);
+  min-width: var(--fr5e-width-regular);
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+/* Compact Mode Actor Positioning */
+#flash-rolls-menu.compact div.main-content > ul.actors > li.actor-list > ul {
+  list-style: none;
+  margin: auto;
+  padding: 0;
+}
+
+#flash-rolls-menu.compact div.main-content > ul.actors > li.actor-list > ul > li {
+  position: relative;
+  z-index: 10;
+}
+
+#flash-rolls-menu.compact div.main-content > ul.actors > li.actor-list > ul > li .actor {
+  position: relative;
+}
+
+/* Compact Mode Actor Display */
+#flash-rolls-menu.compact div.main-content > ul.actors > li.actor-list > ul > li > .actor {
+  gap: 0.1rem;
+  padding: 0.1rem;
+  justify-content: center;
+}
+
+#flash-rolls-menu[data-layout="horizontal"].compact div.main-content > ul.actors > li.actor-list > ul > li > .actor .actor-img,
+#flash-rolls-menu[data-layout="vertical"].compact div.main-content > ul.actors > li.actor-list > ul > li > .actor .actor-img {
+  height: 3.75rem;
+  width: 3.75rem;
+  max-height: 3.75rem;
+  max-width: 3.75rem;
+}
+
+/* Hide Actor Data in Compact Mode */
+#flash-rolls-menu.compact div.main-content > ul.actors > li.actor-list > ul > li .actor > div.actor-data {
+  display: none;
+  font-size: 0;
+}
+
+/* Compact Mode Floating Info */
+#flash-rolls-menu.compact .floating-info {
+  display: flex;
+  position: absolute;
+  top: 0;
+  left: -100%;
+  background: var(--fr5e-menu-background);
+  color: var(--fr5e-text-color);
+}
+
+/* Compact Mode Options */
+#flash-rolls-menu.compact div.main-content > ul.actors > li.options {
+  max-height: 1.75em;
+  margin-bottom: 0.5rem;
+  order: 1;
+}
+
+#flash-rolls-menu.compact div.main-content > ul.actors > li.options.expanded {
+  max-height: 10em;
+}
+
+#flash-rolls-menu.compact div.main-content > ul.actors > li.options-toggle {
+  margin-bottom: 0.1rem;
+  margin-top: 0;
+  border-bottom: 1px solid hsla(0, 0%, 100%, .06);
+}
+
+#flash-rolls-menu.compact div.main-content > ul.actors > li.options,
+#flash-rolls-menu.compact div.main-content > ul.actors > li.options-toggle {
+  width: 100%;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  flex-direction: row;
+}
+
+/* Compact Mode Selection Row */
+#flash-rolls-menu.compact div.main-content > ul.actors > li.options .selection-row,
+#flash-rolls-menu.compact div.main-content > ul.actors > li.options-toggle .selection-row {
+  width: 50%;
+  flex: 0 0 50%;
+  padding-top: 0.35rem;
+  align-items: center;
+  justify-content: center;
+}
+
+#flash-rolls-menu.compact div.main-content > ul.actors > li.options .selection-row span.icon-label {
+  display: flex;
+  margin-left: auto;
+  align-items: center;
+}
+
+#flash-rolls-menu.compact div.main-content > ul.actors > li.options .selection-row label[for=flash5e-actors-all] {
+  margin-right: 0;
+}
+
+/* Compact Mode Submenu Tabs */
+#flash-rolls-menu.compact > div > .request-types-accordion .submenu-tabs {
+  display: flex;
+  gap: 0.2rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+#flash-rolls-menu.compact > div > .request-types-accordion .submenu-tabs li {
+  width: 50%;
+  flex: 1 1 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem 0.5rem;
+  background: var(--fr5e-menu-background);
+  border: 1px solid var(--color-border-light-primary);
+  cursor: pointer;
+  font-size: 0.7rem;
+  font-weight: bold;
+  color: var(--fr5e-text-color);
+  transition: all 0.2s ease;
+  height: 1.8rem;
+  margin: 0;
+}
+
+#flash-rolls-menu.compact > div > .request-types-accordion .submenu-tabs li:hover {
+  background: var(--color-warm-3);
+  border-color: var(--color-warm-2);
+}
+
+#flash-rolls-menu.compact > div > .request-types-accordion .submenu-tabs li.active {
+  background: var(--color-warm-2);
+  color: var(--color-light-1);
+}
+
+/* Compact Mode Request Types and Status Effects */
+#flash-rolls-menu.compact > div ul.request-types,
+#flash-rolls-menu.compact > div ul.status-effects {
+  position: absolute;
+  margin: 0;
+  padding: 6.5rem 0 0 .5rem;
+  top: 0;
+  left: 0;
+  height: 100%;
+  max-height: 70vh;
+  min-height: 280px;
+  display: none;
+  overflow-y: auto;
+  flex-direction: column;
+
+  mask-image: linear-gradient(to bottom, transparent 5rem, rgba(0,0,0,1) 6.5rem);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 5rem, rgba(0,0,0,1) 6.5rem);
+}
+
+#flash-rolls-menu.compact > div ul.request-types.active,
+#flash-rolls-menu.compact > div ul.status-effects.active {
+  display: flex;
+}
+
+/* Horizontal Compact Mode Overrides */
+#flash-rolls-menu[data-layout="horizontal"].compact > div[data-application-part=main] {
+  width: auto;
+  max-width: var(--fr5e-max-width-horizontal);
+  height: var(--fr5e-height-compact);
+}
+
+#flash-rolls-menu[data-layout="horizontal"].compact .main-content {
+  width: auto;
+  max-width: unset;
+  min-width: unset;
+  height: var(--fr5e-height-compact);
+  padding: 1rem 0 0 0.25rem;
+  flex-direction: column;
+  gap: 2px;
+}
+
+#flash-rolls-menu[data-layout="horizontal"].compact .main-content ul.actors {
+  width: 100%;
+  height: var(--fr5e-actors-height-compact);
+}
+
+#flash-rolls-menu[data-layout="horizontal"].compact .main-content ul.action-icons {
+  width: 100%;
+  height: var(--fr5e-actions-height);
+}
+
+#flash-rolls-menu[data-layout="horizontal"].compact .main-content {
+  width: auto;
+  min-width: unset;
+  height: var(--fr5e-height-compact);
+}
+
+#flash-rolls-menu[data-layout="horizontal"].compact div.main-content > ul.actors > li .actor {
+  width: 4rem;
+}
+
+#flash-rolls-menu[data-layout="horizontal"].compact.top-edge .request-types-accordion {
+  transform: translateY(var(--fr5e-height-compact));
+  flex-direction: column;
+}
+
+/* Horizontal Compact Accordion Width Override */
+#flash-rolls-menu[data-layout="horizontal"].compact .request-types-accordion {
+  width: 100%;
+  min-width: var(--fr5e-width-regular);
+  flex-direction: column-reverse;
+}
+
+/* Horizontal Compact Request Types and Status Effects */
+#flash-rolls-menu[data-layout="horizontal"].compact > div ul.request-types,
+#flash-rolls-menu[data-layout="horizontal"].compact > div ul.status-effects {
+  position: relative;
+  margin: 0;
+  padding: 0.5rem;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: auto;
+  max-height: unset;
+  min-height: 60px;
+  overflow-y: auto;
+  flex-direction: column;
+
+  mask-image: linear-gradient(to top, transparent 0rem, rgba(0,0,0,1) 1rem);
+  -webkit-mask-image: linear-gradient(to top, transparent 0rem, rgba(0,0,0,1) 1rem);
+}
+
+/* Horizontal Compact Top Edge Accordion Contents */
+#flash-rolls-menu[data-layout="horizontal"].compact.top-edge > div ul.request-types,
+#flash-rolls-menu[data-layout="horizontal"].compact.top-edge > div ul.status-effects {
+  mask-image: linear-gradient(to bottom, transparent 0rem, rgba(0,0,0,1) 1rem);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0rem, rgba(0,0,0,1) 1rem);
+  padding: 0.5rem;
+}
+
+/* Actor Data Tooltip for Compact Mode */
+#flash-rolls-menu.compact .actor-data-tooltip {
+  position: absolute;
+  width: 8rem;
+  background: var(--fr5e-menu-background);
+  color: var(--fr5e-text-color);
+  padding: 0.5em 0.5rem;
+  font-size: var(--font-size-11);
+  border-radius: 4px;
+  border: 1px solid var(--color-warm-2);
+  z-index: 1000;
+  pointer-events: none;
+  margin: 0 1rem;
+  opacity: 0;
+  transition: opacity 0.2s ease 0s;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  row-gap: 0.1rem;
+}
+
+#flash-rolls-menu.compact .actor-data-tooltip.visible {
+  opacity: 1;
+  transition-delay: 0.5s;
+}
+
+#flash-rolls-menu.compact .actor-data-tooltip .actor-name {
+  width: auto;
+  display: block;
+  font-weight: 600;
+  padding: 2px 0;
+  margin-left: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: var(--font-size-12);
+  opacity: 0.75;
+}
+
+#flash-rolls-menu.compact .actor-data-tooltip .actor-stats {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: row;
+  list-style-type: none;
+  font-size: var(--font-size-11);
+  line-height: 1em;
+  gap: 2px;
+  align-items: center;
+  justify-content: stretch;
+  flex-wrap: wrap;
+  width: auto;
+  min-width: 0;
+}
+
+#flash-rolls-menu.compact .actor-data-tooltip .actor-stats > li.actor-stat {
+  background-color: rgba(0, 0, 0, 0.15);
+  padding: 2px 4px;
+  display: flex;
+  width: calc(50% - 2px);
+  flex: 1 1 calc(50% - 2px);
+  line-height: 1em;
+  margin: 0;
+  gap: 2px;
+}
+
+#flash-rolls-menu.compact .actor-data-tooltip .actor-stats > li.actor-stat .stat-abbrev {
+  font-weight: bold;
+  width: calc(50% - 2px);
+  flex: 1 1 calc(50% - 2px);
+}
+
+/* Compact Mode Positioning Overrides */
+#flash-rolls-menu.custom-position.compact:not([data-layout="horizontal"]) {
+  max-width: var(--fr5e-width-compact);
+}
+
+#flash-rolls-menu[data-layout="horizontal"].custom-position.compact {
+  max-width: var(--fr5e-max-width-horizontal);
+  max-height: var(--fr5e-height-compact);
+}

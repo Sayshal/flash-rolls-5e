@@ -1,0 +1,117 @@
+/* Custom Position State */
+#flash-rolls-menu.custom-position {
+  transition: none;
+  z-index: var(--z-index-app);
+  max-width: var(--fr5e-width-regular);
+  overflow: visible;
+  --flash-rolls-menu-offset: 0px;
+}
+
+#flash-rolls-menu.custom-position .drag-handle {
+  background: rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#flash-rolls-menu.custom-position .drag-handle i {
+  opacity: 0.8;
+}
+
+#flash-rolls-menu.custom-position[data-layout="vertical"].left-edge > div:not(.actor-data-tooltip) {
+  flex-direction: row;
+}
+
+#flash-rolls-menu.custom-position[data-layout="vertical"].left-edge div.main-content:not(.actor-data-tooltip) > ul.actors > li.actor-list > ul > li.actor {
+  flex-direction: row-reverse;
+}
+
+/* Custom Position Actor Tabs Ordering */
+#flash-rolls-menu.custom-position div.main-content > ul.actors > li.actors-tabs,
+#flash-rolls-menu.docked-right div.main-content > ul.actors > li.actors-tabs {
+  order: 2;
+  margin: 0;
+  border-top: 0;
+}
+
+#flash-rolls-menu.custom-position div.main-content > ul.actors > li.actor-list,
+#flash-rolls-menu.docked-right div.main-content > ul.actors > li.actor-list {
+  order: 3;
+  margin-bottom: 0;
+}
+
+/* Horizontal Layout Custom Position Override */
+#flash-rolls-menu[data-layout="horizontal"].custom-position {
+  max-width: var(--fr5e-max-width-horizontal);
+  max-height: var(--fr5e-height-regular);
+}
+
+/* Docked Right State - docked to right edge with custom vertical position */
+#flash-rolls-menu.docked-right {
+  position: fixed !important;
+  right: var(--current-sidebar-width, 2px) !important;
+  padding-right: var(--flash-rolls-menu-offset, 0px) !important;
+  left: auto !important;
+  bottom: auto !important;
+  z-index: 0;
+}
+
+body.crlngn-tabs #flash-rolls-menu.docked-right {
+  padding-right: var(--flash-rolls-menu-offset, 16px) !important;
+}
+
+/* Docked Bottom Styles */
+#flash-rolls-menu.docked-bottom {
+  position: relative !important;
+  transform: translateY(-0.5rem) !important;
+  top: auto !important;
+  left: 0 !important;
+  bottom: auto !important;
+  z-index: 0;
+  padding: 0 !important;
+  transition: opacity 0.2s ease-in-out !important;
+  flex-direction: column;
+  --offset: 0px;
+}
+
+#flash-rolls-menu.docked-bottom.offset {
+  transform: translate(var(--offset, 0px), -10px) !important;
+}
+
+#flash-rolls-menu.docked-bottom:after {
+  width: 100%;
+  height: 0.5rem;
+  background: transparent;
+  bottom: -0.5rem !important;
+  content: "";
+  pointer-events: all;
+}
+
+#flash-rolls-menu.docked-bottom > * {
+  pointer-events: all;
+}
+
+body.flash5e-sidebar-expanded #flash-rolls-menu.docked-bottom {
+  /* Placeholder for future sidebar expanded styles */
+}
+
+/* Near Snap Indicator */
+#flash-rolls-menu.near-snap {
+  animation: outline-animate 0.75s infinite linear;
+  outline: 5px solid var(--color-warm-2);
+}
+
+@keyframes outline-animate {
+  0% {
+    outline-color: transparent;
+  }
+  50% {
+    outline-color: var(--color-warm-2);
+  }
+  100% {
+    outline-color: transparent;
+  }
+}
+
+/* Snapping Animation */
+#flash-rolls-menu.snapping-default {
+  transition: top 0.3s ease-in-out, left 0.3s ease-in-out, right 0.3s ease-in-out, bottom 0.3s ease-in-out !important;
+}

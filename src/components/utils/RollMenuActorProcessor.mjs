@@ -1,4 +1,4 @@
-import { MODULE } from '../../constants/General.mjs';
+import { MODULE, MODULE_ID } from '../../constants/General.mjs';
 import { LogUtil } from '../LogUtil.mjs';
 import { SettingsUtil } from '../SettingsUtil.mjs';
 import { getSettings } from '../../constants/Settings.mjs';
@@ -6,6 +6,7 @@ import { buildRollTypes } from '../helpers/Helpers.mjs';
 import { RollMenuActorUtil } from './RollMenuActorUtil.mjs';
 import { ActorStatusUtil } from '../ActorStatusUtil.mjs';
 import { RollMenuStatusUtil } from './RollMenuStatusUtil.mjs';
+import { RollMenuStateUtil } from './RollMenuStateUtil.mjs';
 
 /**
  * Utility class for processing actors for the Roll Requests Menu
@@ -45,7 +46,72 @@ export class RollMenuActorProcessor {
         npcActors.push(...actorEntries);
       }
     }
-    
+
+    // Apply actor filters if any are active
+    const actorFilters = menu.actorFilters || {};
+    if (actorFilters.inCombat || actorFilters.visible || actorFilters.notDead) {
+      // Filter PC actors
+      const filteredPCActors = pcActors.filter(actorData => {
+        const actor = game.actors.get(actorData.id);
+        if (!actor) return false;
+
+        // Get token document if this is a token-based entry
+        const token = actorData.tokenId ? currentScene?.tokens.get(actorData.tokenId) : null;
+        return RollMenuStateUtil.doesActorPassFilters(actor, actorFilters, token);
+      });
+      pcActors.length = 0;
+      pcActors.push(...filteredPCActors);
+
+      // Filter NPC actors
+      const filteredNPCActors = npcActors.filter(actorData => {
+        const actor = game.actors.get(actorData.id);
+        if (!actor) return false;
+
+        // Get token document if this is a token-based entry
+        const token = actorData.tokenId ? currentScene?.tokens.get(actorData.tokenId) : null;
+        return RollMenuStateUtil.doesActorPassFilters(actor, actorFilters, token);
+      });
+      npcActors.length = 0;
+      npcActors.push(...filteredNPCActors);
+
+      // Filter group actors (both the groups themselves and their members)
+      const filteredGroupActors = groupActors.filter(groupData => {
+        if (groupData.isGroup) {
+          // For groups, check if the group itself or any of its members pass the filter
+          const groupActor = game.actors.get(groupData.id);
+          const groupToken = groupData.tokenId ? currentScene?.tokens.get(groupData.tokenId) : null;
+          const groupPasses = groupActor && RollMenuStateUtil.doesActorPassFilters(groupActor, actorFilters, groupToken);
+
+          // Also check if any members pass the filter
+          if (groupData.members) {
+            groupData.members = groupData.members.filter(memberData => {
+              const memberActor = game.actors.get(memberData.id);
+              if (!memberActor) return false;
+
+              // Get member token document if this is a token-based entry
+              const memberToken = memberData.tokenId ? currentScene?.tokens.get(memberData.tokenId) : null;
+              return RollMenuStateUtil.doesActorPassFilters(memberActor, actorFilters, memberToken);
+            });
+
+            // Show group if either the group itself passes or it has members that pass
+            return groupPasses || groupData.members.length > 0;
+          }
+
+          return groupPasses;
+        } else {
+          // Regular actor processing for non-group entries
+          const actor = game.actors.get(groupData.id);
+          if (!actor) return false;
+
+          // Get token document if this is a token-based entry
+          const token = groupData.tokenId ? currentScene?.tokens.get(groupData.tokenId) : null;
+          return RollMenuStateUtil.doesActorPassFilters(actor, actorFilters, token);
+        }
+      });
+      groupActors.length = 0;
+      groupActors.push(...filteredGroupActors);
+    }
+
     const rollRequestsEnabled = SettingsUtil.get(SETTINGS.rollRequestsEnabled.tag);
     const skipRollDialog = SettingsUtil.get(SETTINGS.skipRollDialog.tag);
     const groupRollsMsgEnabled = SettingsUtil.get(SETTINGS.groupRollsMsgEnabled.tag);
@@ -252,11 +318,16 @@ export class RollMenuActorProcessor {
   }
 
   /**
-   * Process a group or encounter actor
+   * Process a group or encounter actor for display in the Flash Rolls menu.
+   *
+   * This method converts a D&D 5e group/encounter actor into Flash Rolls menu data.
+   * The result is an array of group data objects that can be displayed in the Flash Rolls menu,
+   * with each group containing its member actors properly associated with specific tokens.
+   *
    * @param {Actor} actor - The group/encounter actor to process
    * @param {Scene} currentScene - Current active scene
-   * @param {RollRequestsMenu} menu - Menu instance
-   * @returns {Array} Array of group actor data objects with members
+   * @param {RollRequestsMenu} menu - Menu instance for state and settings
+   * @returns {Array} Array of group actor data objects with members for menu display
    */
   static async processGroupActor(actor, currentScene, menu) {
     if (ActorStatusUtil.isBlocked(actor)) {
@@ -274,47 +345,91 @@ export class RollMenuActorProcessor {
     
     if (actor.type === 'group') {
       // Group type: members have direct actor references
+      // Check if we have stored token associations
+      const tokenAssociations = actor.getFlag(MODULE_ID, 'tokenAssociations') || {};
+
       for (const member of actor.system.members || []) {
         if (member.actor && !ActorStatusUtil.isBlocked(member.actor)) {
-          // Check for tokens of this member in the scene
-          const memberTokens = currentScene?.tokens.filter(token => token.actorId === member.actor.id) || [];
-          
-          if (memberTokens.length > 0) {
-            hasAnyMemberTokens = true;
-            // Create entries for each token
-            memberTokens.forEach(tokenDoc => {
-              const memberData = this.createActorData(member.actor, tokenDoc, menu);
-              members.push(memberData);
-            });
+          const memberActorId = member.actor.id;
+          const associatedTokenIds = tokenAssociations[memberActorId] || [];
+
+          if (associatedTokenIds.length > 0) {
+            // Use specific tokens from associations by finding them in current scene
+            for (const tokenId of associatedTokenIds) {
+              const tokenDoc = currentScene?.tokens.get(tokenId);
+              if (tokenDoc && tokenDoc.actorId === member.actor.id) {
+                hasAnyMemberTokens = true;
+                const memberData = this.createActorData(member.actor, tokenDoc, menu);
+                members.push(memberData);
+              } else {
+                // Token not found in current scene, use base actor
+                const memberData = this.createActorData(member.actor, null, menu);
+                members.push(memberData);
+              }
+            }
           } else {
-            // No tokens, create base actor entry
-            const memberData = this.createActorData(member.actor, null, menu);
-            members.push(memberData);
+            // No token associations, fall back to original behavior
+            const memberTokens = currentScene?.tokens.filter(token => token.actorId === member.actor.id) || [];
+
+            if (memberTokens.length > 0) {
+              hasAnyMemberTokens = true;
+              memberTokens.forEach(tokenDoc => {
+                const memberData = this.createActorData(member.actor, tokenDoc, menu);
+                members.push(memberData);
+              });
+            } else {
+              const memberData = this.createActorData(member.actor, null, menu);
+              members.push(memberData);
+            }
           }
         }
       }
     } else if (actor.type === 'encounter') {
       // Encounter type: members have UUIDs and quantities
+      // Check if we have stored token associations
+      const tokenAssociations = actor.getFlag(MODULE_ID, 'tokenAssociations') || {};
+
       for (const member of actor.system.members || []) {
         try {
           const memberActor = await fromUuid(member.uuid);
           if (memberActor && !ActorStatusUtil.isBlocked(memberActor)) {
-            // Check for tokens of this member in the scene
-            const memberTokens = currentScene?.tokens.filter(token => token.actorId === memberActor.id) || [];
-            
-            if (memberTokens.length > 0) {
-              hasAnyMemberTokens = true;
-              // Create entries for each token
-              memberTokens.forEach(tokenDoc => {
-                const memberData = this.createActorData(memberActor, tokenDoc, menu);
+            const memberActorId = memberActor.id;
+            const associatedTokenIds = tokenAssociations[memberActorId] || [];
+
+            if (associatedTokenIds.length > 0) {
+              // Use specific tokens from associations by finding them in current scene
+              for (const tokenId of associatedTokenIds) {
+                const tokenDoc = currentScene?.tokens.get(tokenId);
+                if (tokenDoc && tokenDoc.actorId === memberActor.id) {
+                  hasAnyMemberTokens = true;
+                  const memberData = this.createActorData(memberActor, tokenDoc, menu);
+                  memberData.quantity = 1; // Each specific token has quantity 1
+                  members.push(memberData);
+                } else {
+                  // Token not found in current scene, use base actor
+                  const memberData = this.createActorData(memberActor, null, menu);
+                  memberData.quantity = 1;
+                  members.push(memberData);
+                }
+              }
+            } else {
+              // No token associations, fall back to original behavior
+              const memberTokens = currentScene?.tokens.filter(token => token.actorId === memberActor.id) || [];
+
+              if (memberTokens.length > 0) {
+                hasAnyMemberTokens = true;
+                // Create entries for each token
+                memberTokens.forEach(tokenDoc => {
+                  const memberData = this.createActorData(memberActor, tokenDoc, menu);
+                  memberData.quantity = member.quantity?.value || 1;
+                  members.push(memberData);
+                });
+              } else {
+                // No tokens, create base actor entry
+                const memberData = this.createActorData(memberActor, null, menu);
                 memberData.quantity = member.quantity?.value || 1;
                 members.push(memberData);
-              });
-            } else {
-              // No tokens, create base actor entry
-              const memberData = this.createActorData(memberActor, null, menu);
-              memberData.quantity = member.quantity?.value || 1;
-              members.push(memberData);
+              }
             }
           }
         } catch (error) {

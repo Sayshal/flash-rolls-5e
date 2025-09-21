@@ -1,0 +1,17 @@
+<div class="actor-filter-tooltip" data-tooltip-id="filter-actors">
+  <h4>{{localize "FLASH_ROLLS.ui.filters.title"}}</h4>
+  <div class="filter-options">
+    <label>
+      <input type="checkbox" data-filter="inCombat" {{#if filters.inCombat}}checked{{/if}} />
+      {{localize "FLASH_ROLLS.ui.filters.inCombat"}}
+    </label>
+    <label>
+      <input type="checkbox" data-filter="visible" {{#if filters.visible}}checked{{/if}} />
+      {{localize "FLASH_ROLLS.ui.filters.visible"}}
+    </label>
+    <label>
+      <input type="checkbox" data-filter="notDead" {{#if filters.notDead}}checked{{/if}} />
+      {{localize "FLASH_ROLLS.ui.filters.notDead"}}
+    </label>
+  </div>
+</div>

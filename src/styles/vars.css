@@ -2,7 +2,6 @@
   --fr5e-color-hp-high: #7ab67a;
   --fr5e-color-hp-low: #b67a7a;
   --fr5e-text-color: var(--color-dark-1);
-  --fr5e-text-color: var(--color-light-1);
   --fr5e-menu-background: var(--sidebar-background, rgba(20, 20, 20, 0.9));
   --fr5e-bg-50: rgba(20, 20, 20, 0.5);
   --fr5e-secondary-bg-50: rgba(255, 255, 255, 0.15);
@@ -20,4 +19,23 @@
     --fr5e-bg-50: rgba(255, 255, 255, 0.5);
     --fr5e-secondary-bg-50: rgba(20, 20, 20, 0.15);
   }
+
+  /* Vertical Layout Dimensions */
+  --fr5e-width-compact: 7.25rem;
+  --fr5e-width-regular: 13.5rem;
+  --fr5e-actors-width-compact: 4.75rem;
+  --fr5e-actors-width-regular: 11rem;
+  --fr5e-actions-width: 2rem;
+  
+  /* Horizontal Layout Dimensions */
+  --fr5e-height-compact: 8.25rem;
+  --fr5e-height-regular: 13.5rem;
+  --fr5e-actors-height-compact: 5rem;
+  --fr5e-actors-height-regular: 10.5rem;
+  --fr5e-actions-height: 2rem;
+  --fr5e-max-width-horizontal: clamp(400px, 40vw, 800px);
+  
+  /* Actor Item Dimensions */
+  --fr5e-actor-img-size: 3.5rem;
+  --fr5e-actor-img-size-compact: 3.75rem;
 }

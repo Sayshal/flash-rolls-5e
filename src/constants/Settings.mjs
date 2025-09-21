@@ -1,3 +1,5 @@
+import { getDefaultIconLayout } from "./IconMappings.mjs";
+
 export const SETTING_INPUT = {
   select: "select", 
   checkbox: "checkbox"
@@ -6,6 +8,7 @@ export const SETTING_SCOPE = {
   client: "client",
   world: "world"
 }
+const iconsMenuDefault = getDefaultIconLayout();
 
 /**
  * Get all module settings
@@ -24,9 +27,6 @@ export const getSettings = () => {
         'skipRollDialog',
         'skipRollDialogOption',
         'showOnlyPCsWithToken',
-        'compactMode',
-        'menuLayout',
-        'showOptionsListOnHover',
         'addMacrosToFolder',
         'templateAutoTarget',
         'removeTemplate',
@@ -37,13 +37,33 @@ export const getSettings = () => {
         skipRollDialog: false,
         skipRollDialogOption: 1,
         showOnlyPCsWithToken: true,
-        compactMode: true,
-        menuLayout: "vertical",
-        showOptionsListOnHover: true,
         addMacrosToFolder: true,
         templateAutoTarget: 1,
         removeTemplate: true,
         templateRemovalTimeout: 5
+      },
+      scope: SETTING_SCOPE.world,
+      config: false, 
+      requiresReload: false 
+    },
+
+    interfaceSettings: {
+      tag: "flash5e-interface-settings", 
+      label: game.i18n.localize("FLASH_ROLLS.settings.moduleSettingsMenu.label"),
+      title: game.i18n.localize("FLASH_ROLLS.settings.moduleSettingsMenu.title"),
+      hint: game.i18n.localize("FLASH_ROLLS.settings.moduleSettingsMenu.hint"),
+      propType: Object,
+      fields: [
+        'showMenuOnLoad',
+        'compactMode',
+        'menuLayout',
+        'menuIconsLayout'
+      ],
+      default: {
+        showMenuOnLoad: false,
+        compactMode: true,
+        menuLayout: "vertical",
+        menuIconsLayout: iconsMenuDefault,
       },
       scope: SETTING_SCOPE.world,
       config: false, 
@@ -399,6 +419,16 @@ export const getSettings = () => {
       propType: Boolean,
       inputType: SETTING_INPUT.checkbox,
       default: true,
+      scope: SETTING_SCOPE.world,
+      config: false
+    },
+
+    menuIconsLayout: {
+      tag: "menu-icons-layout",
+      label: game.i18n.localize("FLASH_ROLLS.settings.menuIconsLayout.label"),
+      hint: game.i18n.localize("FLASH_ROLLS.settings.menuIconsLayout.hint"),
+      propType: Object,
+      default: iconsMenuDefault,
       scope: SETTING_SCOPE.world,
       config: false
     }
