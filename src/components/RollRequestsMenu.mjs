@@ -557,70 +557,55 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
 
           if (associatedTokenIds.length > 0) {
             // Use specific tokens from associations
-            LogUtil.log('Using token associations for member', { memberActorId, associatedTokenIds });
             for (const tokenId of associatedTokenIds) {
               const tokenDoc = currentScene?.tokens.get(tokenId);
               if (tokenDoc && tokenDoc.actorId === member.actor.id) {
-                LogUtil.log('Found token in scene', { tokenId, tokenDoc });
                 members.push({ actor: member.actor, uniqueId: tokenId });
               } else {
-                LogUtil.log('Token not found in scene, using base actor', { tokenId });
                 // Token not found in current scene, use base actor
                 members.push({ actor: member.actor, uniqueId: member.actor.id });
               }
             }
           } else {
             // No token associations, fall back to all tokens or base actor
-            LogUtil.log('No token associations, using fallback for member', { memberActorId });
             const memberTokens = currentScene?.tokens.filter(token => token.actorId === member.actor.id) || [];
             if (memberTokens.length > 0) {
-              LogUtil.log('Using all tokens for member', { memberActorId, tokenCount: memberTokens.length });
               memberTokens.forEach(tokenDoc => {
                 members.push({ actor: member.actor, uniqueId: tokenDoc.id });
               });
             } else {
-              LogUtil.log('No tokens found, using base actor', { memberActorId });
               members.push({ actor: member.actor, uniqueId: member.actor.id });
             }
           }
         }
       }
     } else if (groupActor.type === 'encounter') {
-      LogUtil.log('Processing encounter members', { memberCount: groupActor.system.members?.length || 0 });
       for (const member of groupActor.system.members || []) {
         try {
           const memberActor = await fromUuid(member.uuid);
           if (memberActor) {
             const memberActorId = memberActor.id;
             const associatedTokenIds = tokenAssociations[memberActorId] || [];
-            LogUtil.log('Processing encounter member', { memberActorId, memberUuid: member.uuid, associatedTokenIds });
 
             if (associatedTokenIds.length > 0) {
               // Use specific tokens from associations
-              LogUtil.log('Using token associations for encounter member', { memberActorId, associatedTokenIds });
               for (const tokenId of associatedTokenIds) {
                 const tokenDoc = currentScene?.tokens.get(tokenId);
-                LogUtil.log('Token lookup result', { tokenId, found: !!tokenDoc, actorMatch: tokenDoc?.actorId === memberActor.id });
                 if (tokenDoc && tokenDoc.actorId === memberActor.id) {
-                  LogUtil.log('Adding token to members', { tokenId, memberActorId });
                   members.push({ actor: memberActor, uniqueId: tokenId });
                 } else {
-                  LogUtil.log('Token not found, using base actor', { tokenId, memberActorId });
                   // Token not found in current scene, use base actor
                   members.push({ actor: memberActor, uniqueId: memberActor.id });
                 }
               }
             } else {
               // No token associations, fall back to all tokens or base actor
-              LogUtil.log('No token associations for encounter member, using fallback', { memberActorId });
               const memberTokens = currentScene?.tokens.filter(token => token.actorId === memberActor.id) || [];
               if (memberTokens.length > 0) {
-                LogUtil.log('Using all tokens for encounter member', { memberActorId, tokenCount: memberTokens.length });
                 memberTokens.forEach(tokenDoc => {
                   members.push({ actor: memberActor, uniqueId: tokenDoc.id });
                 });
               } else {
-                LogUtil.log('No tokens found for encounter member, using base actor', { memberActorId });
                 members.push({ actor: memberActor, uniqueId: memberActor.id });
               }
             }
@@ -630,8 +615,6 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
         }
       }
     }
-
-    LogUtil.log('Final members array', [{ members: members.map(m => ({ actorId: m.actor.id, uniqueId: m.uniqueId })) }]);
 
     if (members.length === 0) return;
 
