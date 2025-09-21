@@ -1,4 +1,5 @@
 import { isPlayerOwned, hasTokenInScene } from '../helpers/Helpers.mjs';
+import { LogUtil } from '../LogUtil.mjs';
 
 /**
  * Utility class for actor-related operations in the Roll Requests Menu
@@ -12,7 +13,7 @@ export class RollMenuActorUtil {
   static getActorStats(actor) {
     const system = actor.system;
     const stats = [];
-    
+
     // HP
     if (system.attributes?.hp) {
       stats.push({

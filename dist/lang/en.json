@@ -270,7 +270,7 @@
         "title": "Filter Actors",
         "inCombat": "Show Only Combatants",
         "visible": "Show Only Visible",
-        "notDead": "Remove Dead"
+        "removeDead": "Remove Dead"
       },
       "forms": {
         "pixelsRollTitle": "Pixels Dice - Roll Resolver",

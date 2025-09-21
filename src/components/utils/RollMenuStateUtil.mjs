@@ -176,8 +176,21 @@ export class RollMenuStateUtil {
       tooltip.style.top = `${relativeTop - tooltipRect.height - 8}px`;
       tooltip.style.left = `${tooltipLeft}px`;
     } else {
-      tooltip.style.top = `${relativeTop - tooltipRect.height - 8}px`;
-      tooltip.style.left = `${tooltipLeft}px`;
+      // Vertical layout - position tooltip to the left or right of the button
+      const isLeftEdge = menu.element.classList.contains('left-edge');
+      const relativeLeft = buttonRect.left - menuRect.left;
+      const buttonCenterY = relativeTop + (buttonRect.height / 2);
+      const tooltipTop = buttonCenterY - (tooltipRect.height / 2);
+
+      if (isLeftEdge) {
+        // Left edge - tooltip appears to the right of the button
+        tooltip.style.top = `${tooltipTop}px`;
+        tooltip.style.left = `${relativeLeft + buttonRect.width + 20}px`;
+      } else {
+        // Normal vertical - tooltip appears to the left of the button
+        tooltip.style.top = `${tooltipTop}px`;
+        tooltip.style.left = `${relativeLeft - tooltipRect.width - 20}px`;
+      }
     }
   }
 
@@ -307,14 +320,6 @@ export class RollMenuStateUtil {
         hitDieItem.style.display = hasPlayerCharacter ? '' : 'none';
       }
     }
-
-    // Status effects should work regardless of actor selection
-    // Don't disable status effects container or items
-    const statusEffectsContainer = menu.element.querySelector('.status-effects');
-    if (statusEffectsContainer) {
-      // Status effects can be applied even without selection (they just won't do anything)
-      // Keep them enabled for better UX
-    }
   }
 
   /**
@@ -362,7 +367,7 @@ export class RollMenuStateUtil {
     const savedFilters = game.user.getFlag(MODULE.ID, 'actorFilters') || {
       inCombat: false,
       visible: false,
-      notDead: false
+      removeDead: false
     };
 
     // Apply saved filters to menu
@@ -400,16 +405,10 @@ export class RollMenuStateUtil {
     const filters = {
       inCombat: tooltip.querySelector('[data-filter="inCombat"]').checked,
       visible: tooltip.querySelector('[data-filter="visible"]').checked,
-      notDead: tooltip.querySelector('[data-filter="notDead"]').checked
+      removeDead: tooltip.querySelector('[data-filter="removeDead"]').checked
     };
-
-    // Store filters for future use
     menu.actorFilters = filters;
-
-    // Save filter state to user flags
     await game.user.setFlag(MODULE.ID, 'actorFilters', filters);
-
-    // Trigger menu refresh to apply filters
     menu.render();
   }
 
@@ -419,48 +418,41 @@ export class RollMenuStateUtil {
    * @param {Object} filters - Filter criteria
    * @param {boolean} filters.inCombat - Show only actors in combat
    * @param {boolean} filters.visible - Show only visible actors
-   * @param {boolean} filters.notDead - Show only actors that are not dead
+   * @param {boolean} filters.removeDead - Remove dead actors from the list
    * @param {TokenDocument} [token] - Optional token document for token-specific checks
    * @returns {boolean} True if actor meets all active filter criteria
    */
   static doesActorPassFilters(actor, filters, token = null) {
     // If no filters are active, show all actors
-    if (!filters.inCombat && !filters.visible && !filters.notDead) {
+    if (!filters.inCombat && !filters.visible && !filters.removeDead) {
       return true;
     }
 
-    let passesFilter = false;
-
-    // In Combat filter
+    // Check each active filter - ALL must pass for actor to be included
     if (filters.inCombat) {
-      // Check token's combat status first, fall back to actor's combat status
       const inCombat = token ? token.inCombat : actor.inCombat;
-      if (inCombat) passesFilter = true;
+      if (!inCombat) return false;
     }
 
-    // Visible filter
     if (filters.visible) {
       if (token) {
-        // Check specific token visibility
-        if (!token.hidden) passesFilter = true;
+        if (token.hidden) return false;
       } else {
-        // Check if any token is visible
         const tokens = actor.getActiveTokens();
         const hasVisibleToken = tokens.some(token => !token.document.hidden);
-        if (hasVisibleToken) passesFilter = true;
+        if (!hasVisibleToken) return false;
       }
     }
 
-    // Not Dead filter
-    if (filters.notDead) {
-      // Check if actor has the "dead" status effect
+    if (filters.removeDead) {
+      // The actor passed in is already the correct one (token actor if available)
       const hasDead = actor.effects.some(effect =>
         effect.statuses?.has('dead') ||
         effect.flags?.core?.statusId === 'dead'
       );
-      if (!hasDead) passesFilter = true;
+      if (hasDead) return false;
     }
 
-    return passesFilter;
+    return true;
   }
 }

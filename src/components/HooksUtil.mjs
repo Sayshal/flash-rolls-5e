@@ -267,6 +267,7 @@ export class HooksUtil {
     this._registerHook(HOOKS_CORE.UPDATE_SETTING, this._onSettingUpdate.bind(this));
     this._registerHook(HOOKS_CORE.UPDATE_SCENE, this._onSceneUpdate.bind(this));
     this._registerHook(HOOKS_CORE.UPDATE_ACTOR, this._onActorUpdate.bind(this));
+    this._registerHook(HOOKS_CORE.UPDATE_TOKEN, this._onTokenUpdate.bind(this));
     this._registerHook(HOOKS_CORE.RENDER_CHAT_INPUT, this._onRenderChatInput.bind(this));
 
     game.users.forEach(user => {
@@ -810,6 +811,24 @@ export class HooksUtil {
     if (!statsChanged && !ownershipChanged && !effectsChanged) return;
 
     LogUtil.log("HooksUtil._onActorUpdate - Re-rendering roll requests menu due to actor update", [actor, changes]);
+    RollRequestsMenu.refreshIfOpen();
+  }
+
+  /**
+   * Handle token updates that affect filtering (visibility, status effects)
+   * @param {TokenDocument} tokenDoc - Token document that was updated
+   * @param {object} changes - Changed data
+   * @param {object} options - Update options
+   * @param {string} userId - User ID who made the change
+   */
+  static _onTokenUpdate(tokenDoc, changes, options, userId) {
+    LogUtil.log("HooksUtil._onTokenUpdate", [tokenDoc, changes]);
+
+    const visibilityChanged = changes.hidden !== undefined;
+    const effectsChanged = changes.effects !== undefined;
+
+    if (!visibilityChanged && !effectsChanged) return;
+
     RollRequestsMenu.refreshIfOpen();
   }
 

@@ -511,12 +511,17 @@ export function adjustMenuOffset(isExpanded=true){
  * @returns {Actor|null} The actor document, or null if not found
  */
 export function getActorData(uniqueId){
-  const actor = game.actors.get(uniqueId);
-  if (actor) return actor;
-  const token = canvas.tokens?.get(uniqueId);
+  // First check if this is a token ID
   const tokenDoc = game.scenes.active?.tokens.get(uniqueId);
-   
-  return actor || token?.actor || tokenDoc?.actor || null;
+  if (tokenDoc?.actor) return tokenDoc.actor;
+
+  // Check canvas tokens
+  const token = canvas.tokens?.get(uniqueId);
+  if (token?.actor) return token.actor;
+
+  // Finally check if it's a base actor ID
+  const actor = game.actors.get(uniqueId);
+  return actor || null;
 }
 
 export function showConsumptionConfig(){

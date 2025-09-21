@@ -69,7 +69,7 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
     this.actorFilters = game.user.getFlag(MODULE.ID, 'actorFilters') ?? {
       inCombat: false,
       visible: false,
-      notDead: false
+      removeDead: false
     };
     
     this.isDragging = false;
