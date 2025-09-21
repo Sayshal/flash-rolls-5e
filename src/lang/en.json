@@ -37,7 +37,8 @@
       "actorNotFound": "Actor not found",
       "dropError": "Error adding actor to menu",
       "npcHiddenFromPlayers": "NPCs are now hidden from players in the group message.",
-      "npcVisibleToPlayers": "NPCs are now visible to players in the group message."
+      "npcVisibleToPlayers": "NPCs are now visible to players in the group message.",
+      "midiQolActive": "Flash Rolls interception from character sheets has been disabled for compatibility with Midi-QoL."
     },
     "contextMenu": {
       "addToFavorites": "Add to Flash Rolls Menu",
@@ -105,7 +106,7 @@
       },
       "rollInterceptionEnabled": {
         "label": "Send Roll Requests from Player Sheets",
-        "hint": "When enabled, rolls made by the GM for player characters will be automatically redirected to the owner player, if they are online, from character sheets or other modules."
+        "hint": "[Incompatible with Midi-QoL] When enabled, rolls made by the GM for player characters will be automatically redirected to the owner player, if they are online, from character sheets or other modules."
       },
       "showOfflineNotifications": {
         "label": "Show Offline Notifications",

@@ -4,6 +4,7 @@ import { getSettingMenus } from "../constants/SettingMenus.mjs";
 import { getDefaultIconLayout } from "../constants/IconMappings.mjs";
 import { LogUtil } from "./LogUtil.mjs";
 import RollRequestsMenu from "./RollRequestsMenu.mjs";
+import { GeneralUtil } from "./helpers/GeneralUtil.mjs";
 
 /**
  * Utility class for managing module settings
@@ -74,6 +75,18 @@ export class SettingsUtil {
 
     SettingsUtil.updateColorScheme();
     SettingsUtil.validateAndUpdateIconLayout();
+    SettingsUtil.checkMidiQol();
+  }
+
+  static checkMidiQol(){
+    const SETTINGS = getSettings();
+    const isMidiActive = GeneralUtil.isModuleOn(MODULE_ID, 'midi-qol');
+    const isRollInterceptionEnabled = SettingsUtil.get(SETTINGS.rollInterceptionEnabled.tag);
+    
+    if(isMidiActive && isRollInterceptionEnabled){
+      SettingsUtil.set(SETTINGS.rollInterceptionEnabled.tag, false);
+      ui.notifications.warn(game.i18n.localize("FLASH_ROLLS.notifications.midiQolActive"), {permanent: true});
+    }
   }
 
   static updateColorScheme(){
@@ -161,6 +174,9 @@ export class SettingsUtil {
       case SETTINGS.rollRequestsEnabled.tag:
         SettingsUtil.applyRollRequestsEnabled(newValue);
         break;
+      case SETTINGS.rollInterceptionEnabled.tag:
+        SettingsUtil.applyRollInterceptionEnabled(newValue);
+        break;
       case SETTINGS.compactMode.tag:
         SettingsUtil.applyCompactMode(newValue);
         break;
@@ -173,6 +189,10 @@ export class SettingsUtil {
       default:
         break;
     }
+  }
+
+  static applyRollInterceptionEnabled(newValue){
+    SettingsUtil.checkMidiQol();
   }
 
   static applyRollRequestsEnabled(newValue){

@@ -567,6 +567,10 @@ export class HooksUtil {
     // Check if we should hide challenge visibility for Flash Rolls messages
     // This handles the case where the player is the message author but shouldn't see DCs
     LogUtil.log("_onRenderChatMessageHTML #0", [message, html, context]);
+    const isMidiRequest = GeneralUtil.isModuleOn(MODULE_ID, 'midi-qol')
+    if(isMidiRequest){
+      return;
+    }
 
     ChatMessageUtils.interceptRollMessage(message, html, context);
     
@@ -977,6 +981,10 @@ export class HooksUtil {
    */
   static _onPreRoll(config, dialogOptions, messageOptions, d) {
     LogUtil.log("_onPreRoll #0", [config, dialogOptions, messageOptions, d]);
+    // const isMidiRequest = GeneralUtil.isModuleOn(MODULE_ID, 'midi-qol')
+    // if(isMidiRequest){
+    //   return
+    // }
     
     // For attack rolls, check if there's a stored flag indicating this should skip the dialog
     if (config.subject?.item) {
@@ -1059,6 +1067,10 @@ export class HooksUtil {
    */
   static _onPreRollAttackV2(config, dialogOptions, messageOptions) {
     LogUtil.log("_onPreRollAttackV2 triggered", [config, dialogOptions, messageOptions]);
+    // const isMidiRequest = GeneralUtil.isModuleOn(MODULE_ID, 'midi-qol')
+    // if(isMidiRequest){
+    //   return
+    // }
     
     const stored = config.subject?.item?.getFlag(MODULE_ID, 'tempAttackConfig');
     if (stored) {
@@ -1104,6 +1116,10 @@ export class HooksUtil {
     // console.trace("Flash Rolls 5e - _onPreRollDamageV2 triggered #0", [config]);
     const stored = config.subject?.item?.getFlag(MODULE_ID, 'tempDamageConfig');
     LogUtil.log("_onPreRollDamageV2 triggered #0", [config, dialogOptions, messageOptions]);
+    // const isMidiRequest = GeneralUtil.isModuleOn(MODULE_ID, 'midi-qol')
+    // if(isMidiRequest){
+    //   return
+    // }
     
     config.rolls = RollHelpers.consolidateRolls(config.rolls);
     if(config.midiOptions && !game.user.isGM

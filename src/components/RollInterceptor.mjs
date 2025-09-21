@@ -157,6 +157,7 @@ export class RollInterceptor {
       return;
     }
     
+    
     // if (!owner || !owner?.active || owner?.isGM) {
     //   LogUtil.log('_onPreRollIntercept - not a request (ownership)', [owner, owner?.active]);
     //   config.isRollRequest = false;
