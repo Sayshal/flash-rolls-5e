@@ -97,7 +97,7 @@ export class RollInterceptor {
     const rollInterceptionEnabled = SettingsUtil.get(SETTINGS.rollInterceptionEnabled.tag);
     const skipRollDialog = SettingsUtil.get(SETTINGS.skipRollDialog.tag);
     const isMidiRequest = GeneralUtil.isModuleOn(MODULE_ID, 'midi-qol');
-    if(isMidiRequest){
+    if(isMidiRequest && (rollType === ROLL_TYPES.ATTACK || rollType === ROLL_TYPES.DAMAGE)){
       return;
     }
 
