@@ -37,9 +37,6 @@ You can calculate group roll results via API as well, see below.
 ## How to use
 
 ### For Roll Requests and multi-rolls:
-
-  <img width="650" alt="image" src="https://github.com/user-attachments/assets/7df899ba-3966-4edb-87c4-0693c17bf36b" />
-  
   - Click the lightning bolt on sidebar to open the menu
   - Select one or more actors on the list and a menu will appear for the type of roll
   - There are a few toggles on top of the actors list, in the settings section:
