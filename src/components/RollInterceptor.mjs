@@ -96,6 +96,10 @@ export class RollInterceptor {
     const requestsEnabled = SettingsUtil.get(SETTINGS.rollRequestsEnabled.tag);
     const rollInterceptionEnabled = SettingsUtil.get(SETTINGS.rollInterceptionEnabled.tag);
     const skipRollDialog = SettingsUtil.get(SETTINGS.skipRollDialog.tag);
+    const isMidiRequest = GeneralUtil.isModuleOn(MODULE_ID, 'midi-qol');
+    if(isMidiRequest){
+      return;
+    }
 
     let actor;
     if (rollType === ROLL_TYPES.INITIATIVE && config instanceof Actor) {
@@ -121,8 +125,7 @@ export class RollInterceptor {
     }
 
     // Only intercept on GM side
-    if (!game.user.isGM ) return; // || config.isRollRequest === false
-    const isMidiRequest = GeneralUtil.isModuleOn(MODULE_ID, 'midi-qol');
+    if (!game.user.isGM) return; // || config.isRollRequest === false
 
     const hookNames = config?.hookNames || dialog?.hookNames || message?.hookNames || [];
     const isInitiativeRoll = hookNames.includes('initiativeDialog') || hookNames.includes('initiative');
@@ -186,8 +189,11 @@ export class RollInterceptor {
     }
     
     if(isMidiActive && game.user.isGM){
-      LogUtil.log('_onPreRollIntercept - isMidiActive', [isMidiActive]);
-      this._showGMConfigDialog(actor, owner, rollType, config, dialog, message); 
+      LogUtil.log('_onPreRollIntercept - isMidiActive', [isMidiActive, config.sendRequest, message]);
+      this._showGMConfigDialog(actor, owner, rollType, config, dialog, {
+        ...message,
+        create: config.sendRequest === false || config.sendRequest === undefined
+      }); 
       return false;
     }
     

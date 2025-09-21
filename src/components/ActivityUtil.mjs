@@ -118,6 +118,10 @@ export class ActivityUtil {
       LogUtil.error(`Item not found on actor`, [actor, itemId]);
       return;
     }
+    if (isMidiActive) {
+      LogUtil.error(`Interception disabled for midi-qol`, []);
+      return;
+    }
     
     let activity = null;
     let damageConfig = null;
@@ -227,7 +231,7 @@ export class ActivityUtil {
                   autoFastDamage: false,
                   autoRollDamage: false
                 }
-                LogUtil.log('executeActivityRoll - workflow', [damageHandledByUse]);
+                
                 if(workflow && isSaveActivity){ 
                   const damageRoll = await workflow.activity.rollDamage({
                     ...damageConfig,
