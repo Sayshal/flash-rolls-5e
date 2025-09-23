@@ -118,10 +118,6 @@ export class ActivityUtil {
       LogUtil.error(`Item not found on actor`, [actor, itemId]);
       return;
     }
-    if (isMidiActive) {
-      LogUtil.error(`Interception disabled for midi-qol`, []);
-      return;
-    }
     
     let activity = null;
     let damageConfig = null;

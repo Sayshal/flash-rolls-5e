@@ -568,10 +568,6 @@ export class HooksUtil {
     // Check if we should hide challenge visibility for Flash Rolls messages
     // This handles the case where the player is the message author but shouldn't see DCs
     LogUtil.log("_onRenderChatMessageHTML #0", [message, html, context]);
-    const isMidiRequest = GeneralUtil.isModuleOn(MODULE_ID, 'midi-qol')
-    if(isMidiRequest){
-      return;
-    }
 
     ChatMessageUtils.interceptRollMessage(message, html, context);
     
