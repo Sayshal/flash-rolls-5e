@@ -586,4 +586,10 @@ export class GeneralUtil {
     }
     
   }
+
+  static areSkipKeysPressed(event){
+    return areKeysPressed(event, "skipDialogNormal") ||      // Shift
+           areKeysPressed(event, "skipDialogAdvantage") ||   // Alt
+           areKeysPressed(event, "skipDialogDisadvantage");  // Ctrl/Cmd
+  }
 }

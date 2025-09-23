@@ -95,7 +95,8 @@ export class RollInterceptor {
     const SETTINGS = getSettings();
     const requestsEnabled = SettingsUtil.get(SETTINGS.rollRequestsEnabled.tag);
     const rollInterceptionEnabled = SettingsUtil.get(SETTINGS.rollInterceptionEnabled.tag);
-    const skipRollDialog = SettingsUtil.get(SETTINGS.skipRollDialog.tag);
+    const areSkipKeysPressed = GeneralUtil.areSkipKeysPressed(config.event);
+    const skipRollDialog = areSkipKeysPressed || SettingsUtil.get(SETTINGS.skipRollDialog.tag);
 
     let actor;
     if (rollType === ROLL_TYPES.INITIATIVE && config instanceof Actor) {
@@ -116,7 +117,7 @@ export class RollInterceptor {
 
     LogUtil.log('_onPreRollIntercept #1', [requestsEnabled, rollInterceptionEnabled, config.isRollRequest]);
     if (!requestsEnabled || !rollInterceptionEnabled || config.isRollRequest === false) {
-      dialog.configure = config.isRollRequest!==undefined ? false : !RollHelpers.shouldSkipRollDialog(skipRollDialog, {isPC: isPC, isNPC: !isPC});
+      dialog.configure = areSkipKeysPressed ? false : config.isRollRequest!==undefined ? false : !RollHelpers.shouldSkipRollDialog(skipRollDialog, {isPC: isPC, isNPC: !isPC});
       return; 
     }
 
@@ -369,6 +370,7 @@ export class RollInterceptor {
     LogUtil.log('_showGMConfigDialog - config', [rollType, config]);
     const SETTINGS = getSettings();
     const rollRequestsEnabled = SettingsUtil.get(SETTINGS.rollRequestsEnabled.tag);
+    const areSkipKeysPressed = GeneralUtil.areSkipKeysPressed(config.event);
 
     try {
       const normalizedRollType = rollType?.toLowerCase();
@@ -383,7 +385,7 @@ export class RollInterceptor {
       const isOwnerActive = owner && owner?.active && !owner?.isGM;
       
       let result;
-      const shouldSkipDialog = RollHelpers.shouldSkipRollDialog(isOwnerActive ? rollRequestsEnabled : false, {isPC: isOwnerActive, isNPC: !isOwnerActive});
+      const shouldSkipDialog = areSkipKeysPressed || RollHelpers.shouldSkipRollDialog(isOwnerActive ? rollRequestsEnabled : false, {isPC: isOwnerActive, isNPC: !isOwnerActive});
       LogUtil.log('_showGMConfigDialog - rollConfig', [rollConfig, rollKey, shouldSkipDialog, isOwnerActive, owner]);
       // Check if dialog should be skipped - pass rollRequestsEnabled as the sendRequest context
       if (shouldSkipDialog) {

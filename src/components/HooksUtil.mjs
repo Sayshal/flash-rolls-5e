@@ -1003,9 +1003,10 @@ export class HooksUtil {
     
     // For attack rolls, check if there's a stored flag indicating this should skip the dialog
     if (config.subject?.item) {
+      const areSkipKeysPressed = GeneralUtil.areSkipKeysPressed(config.event);
       const stored = config.subject.item.getFlag(MODULE_ID, 'tempAttackConfig');
       LogUtil.log("_onPreRoll - flag", [stored]);
-      if (stored?.skipRollDialog === true) {
+      if (stored?.skipRollDialog === true || areSkipKeysPressed) {
         dialogOptions.configure = false;
         LogUtil.log("_onPreRoll - Local GM roll, skipping dialog via stored flag");
       }
