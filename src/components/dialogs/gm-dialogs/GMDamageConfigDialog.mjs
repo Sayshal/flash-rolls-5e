@@ -76,12 +76,12 @@ export class GMDamageConfigDialog extends GMRollConfigMixin(dnd5e.applications.d
     
     // Prevent dialog flicker
     GeneralUtil.preventDialogFlicker(this.element);
-    
+
     // Skip if already rendered
     if (this.element.querySelector('.gm-roll-config-fields')) {
       return;
     }
-    
+
     GeneralUtil.preventDialogFlicker(this.element);
     if (this.element.querySelector('.gm-roll-config-fields')) {
       return;
@@ -140,7 +140,7 @@ export class GMDamageConfigDialog extends GMRollConfigMixin(dnd5e.applications.d
    */
   static async initConfiguration(actors, rollType, rollKey, options = {}, originalConfig = {}, originalDialog = {}) {
     actors = RollHelpers.validateActors(actors);
-    LogUtil.log('GMDamageConfigDialog, initConfiguration actors', [actors]);
+    LogUtil.log('GMDamageConfigDialog, initConfiguration', [actors, originalConfig, originalDialog]);
     if (!actors) return null;
     
     const actor = actors[0];
@@ -152,11 +152,10 @@ export class GMDamageConfigDialog extends GMRollConfigMixin(dnd5e.applications.d
     
     let storedActivityConfig = {};
     if (itemId) {
-      // Import HooksUtil dynamically to avoid circular dependency
-      
-      storedActivityConfig = HooksUtil.activityConfigCache.get(itemId) || {};
+      // Use the new cache getter with automatic cleanup
+      storedActivityConfig = HooksUtil.getActivityConfigFromCache(itemId) || {};
     }
-    
+
     LogUtil.log('GMDamageConfigDialog - retrieved activity config from cache', [itemId, storedActivityConfig]);
     const SETTINGS = getSettings();
     const isPublicRollsOn = SettingsUtil.get(SETTINGS.publicPlayerRolls.tag) === true;

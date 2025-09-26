@@ -425,18 +425,6 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
       if (token.actor) {
         const uniqueId = token.id;
         this.selectedActors.add(uniqueId);
-
-        // // Only auto-switch tabs for drag operations, not for select-all operations
-        // if (this.selectedActors.size === 1 && !this._ignoreTokenControl) {
-        //     const isPC = isPlayerOwned(token.actor);
-        //     LogUtil.log("_initializeFromSelectedTokens - Switching tab", {
-        //       tokenName: token.name,
-        //       isPC,
-        //       newTab: isPC ? 'pc' : 'npc',
-        //       oldTab: this.currentTab
-        //     });
-        //     this.currentTab = isPC ? 'pc' : 'npc';
-        // }
       }
     }
   }

@@ -40,7 +40,7 @@ export class ActivityUtil {
   /**
    * Find the appropriate activity for a given roll type on an item
    * @param {Item5e} item - The item to search for activities
-   * @param {string} rollType - The type of roll (attack, damage, itemSave)
+   * @param {string} rollType - The type of roll (attack, damage)
    * @returns {Activity5e|null} - The found activity or null
    */
   static findActivityForRoll(item, rollType) {
@@ -253,7 +253,7 @@ export class ActivityUtil {
                 config.usage.consume = getConsumptionConfig(config.usage.consume || {});
                 config.usage.create = getCreateConfig(config.usage.create || {});
                 
-                if(activity.type !== ACTIVITY_TYPES.DAMAGE){
+                if(activity.type !== ACTIVITY_TYPES.DAMAGE && activity.type !== ACTIVITY_TYPES.HEAL){
                   // Only call rollDamage if it wasn't already handled by use() on player side
                   await activity.rollDamage(damageConfig, config.dialog, config.message);
                 }

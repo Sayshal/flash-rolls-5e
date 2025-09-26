@@ -25,8 +25,29 @@ export class HooksUtil {
   static midiTimeout = null;
   static throttleTimers = {};
   static activityConfigCache = new Map(); // In-memory cache for activity configs
+  static CACHE_EXPIRY_MS = 30000; // 30 seconds expiry for cache entries
   static templateRemovalTimers = new Set(); // Track items that already have template removal scheduled
-  
+
+  /**
+   * Get activity config from cache with automatic cleanup of expired entries
+   * @param {string} key - The cache key to retrieve
+   * @returns {object|null} The cached config or null if not found/expired
+   */
+  static getActivityConfigFromCache(key) {
+    const entry = HooksUtil.activityConfigCache.get(key);
+    if (!entry) return null;
+
+    // Check if entry has expired
+    const now = Date.now();
+    if (now - entry.timestamp > HooksUtil.CACHE_EXPIRY_MS) {
+      HooksUtil.activityConfigCache.delete(key);
+      LogUtil.log('getActivityConfigFromCache - deleted expired entry', [key]);
+      return null;
+    }
+
+    return entry.config;
+  }
+
   /**
    * Initialize main module hooks
    */
@@ -996,7 +1017,7 @@ export class HooksUtil {
    */
   static _onPreRoll(config, dialogOptions, messageOptions, d) {
     LogUtil.log("_onPreRoll #0", [config, dialogOptions, messageOptions, d]);
-    // const isMidiRequest = GeneralUtil.isModuleOn(MODULE_ID, 'midi-qol')
+    // const isMidiRequest = GeneralUtil.isModuleOn('midi-qol')
     // if(isMidiRequest){
     //   return
     // }
@@ -1220,7 +1241,11 @@ export class HooksUtil {
   }
   
   /**
-   * Handle pre-use activity hook to prevent usage messages when GM intercepts rolls
+   * Triggered before the use of an activity. Purposes for Flash Rolls:
+   * 1. Prevent usage messages when GM intercepts rolls (they should appear on player side)
+   * 2. Clear out any existing activity configuration flags
+   * 3. Define behavior of consumption dialog on GM side
+   * 4. If Midi-QoL is active, reset some of the activity's options on GM side
    */
   static _onPreUseActivity(activity, config, dialog, message) {
     // console.trace("Flash Rolls 5e - _onPreUseActivity triggered #0", [activity, config, dialog, message]);
@@ -1228,7 +1253,7 @@ export class HooksUtil {
     const SETTINGS = getSettings();
     const requestsEnabled = SettingsUtil.get(SETTINGS.rollRequestsEnabled.tag);
     const rollInterceptionEnabled = SettingsUtil.get(SETTINGS.rollInterceptionEnabled.tag);
-    if (!requestsEnabled || !rollInterceptionEnabled) return;  
+    if (!requestsEnabled || !rollInterceptionEnabled) return; 
 
     const actor = activity.actor;
     const actorOwner = GeneralUtil.getActorOwner(actor);
@@ -1256,7 +1281,7 @@ export class HooksUtil {
         ...config.midiOptions,
         fastForwardDamage: false,
         workflowOptions: {
-          // ...activity.midiOptions.workflowOptions,
+          ...activity.midiOptions.workflowOptions,
           fastForwardDamage: false,
           autoRollAttack: false,
           autoRollDamage: false,
@@ -1280,8 +1305,7 @@ export class HooksUtil {
     if(!game.user.isGM) return;
     
     if (actorOwner && actorOwner.active && !actorOwner.isGM) {
-     
-      if (dialog.configure===true) {
+      if (dialog.configure === true) {
         LogUtil.log("Preventing usage message for player-owned actor", [actor.name]);
         message.create = false;
       }
@@ -1318,7 +1342,9 @@ export class HooksUtil {
         }
       }
     }
+
     if(!requestsEnabled || !rollInterceptionEnabled) return;
+
     const actorOwner = GeneralUtil.getActorOwner(activity.actor);
     const isOwnerActive = actorOwner && actorOwner.active && actorOwner.id !== game.user.id;
     const skipRollDialog = RollHelpers.shouldSkipRollDialog(isOwnerActive, {isPC: isOwnerActive, isNPC: !isOwnerActive} );
@@ -1341,20 +1367,18 @@ export class HooksUtil {
       
       // Use in-memory cache with item ID as key - synchronous and immediate
       const cacheKey = activity.item.id;
-      HooksUtil.activityConfigCache.set(cacheKey, activityConfig);
+      const cacheEntry = {
+        config: activityConfig,
+        timestamp: Date.now()
+      };
+      HooksUtil.activityConfigCache.set(cacheKey, cacheEntry);
       LogUtil.log('_onPostUseActivity - storing activity config in cache', [cacheKey, activityConfig]);
-      
-      // Clear old entries after 30 seconds to prevent memory leaks
-      setTimeout(() => {
-        HooksUtil.activityConfigCache.delete(cacheKey);
-        LogUtil.log('_onPostUseActivity - cleared old cache entry', [cacheKey]);
-      }, 30000);
     }
 
     if(activity.type === ACTIVITY_TYPES.SAVE && activity.damage?.parts?.length > 0){
       LogUtil.log("_onPostUseActivity #1 - roll triggered", [activity, config]);
       activity.rollDamage(config, {
-        configure: config.skipRollDialog!==undefined ? !config.skipRollDialog : !game.user.isGM ||(isOwnerActive && !skipRollDialog)
+        configure: config.skipRollDialog!==undefined ? !config.skipRollDialog : !game.user.isGM || (isOwnerActive && !skipRollDialog)
         // configure: game.user.isGM && config.skipRollDialog!==undefined ? !config.skipRollDialog : !game.user.isGM ||(isOwnerActive && !skipRollDialog)
       }, {});
     }

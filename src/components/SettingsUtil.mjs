@@ -80,10 +80,12 @@ export class SettingsUtil {
 
   static checkMidiQol(){
     const SETTINGS = getSettings();
-    const isMidiActive = GeneralUtil.isModuleOn(MODULE_ID, 'midi-qol');
+    const isMidiActive = GeneralUtil.isModuleOn('midi-qol');
     const isRollInterceptionEnabled = SettingsUtil.get(SETTINGS.rollInterceptionEnabled.tag);
     
-    if(isMidiActive && isRollInterceptionEnabled){
+    LogUtil.log('checkMidiQol', [isMidiActive, isRollInterceptionEnabled]);
+    
+    if(game.user?.isGM && isMidiActive && isRollInterceptionEnabled){
       SettingsUtil.set(SETTINGS.rollInterceptionEnabled.tag, false);
       ui.notifications.warn(game.i18n.localize("FLASH_ROLLS.notifications.midiQolActive"), {permanent: true});
     }
@@ -201,10 +203,8 @@ export class SettingsUtil {
     
     if(newValue){
       requestsIcon.classList.add("active");
-      // requestsIcon.setAttribute("aria-pressed", "true");
     }else{
       requestsIcon.classList.remove("active");
-      // requestsIcon.setAttribute("aria-pressed", "false");
     }
   }
 

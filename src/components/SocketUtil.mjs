@@ -36,6 +36,7 @@ export class SocketUtil {
         }
 
       } catch (e) {
+        LogUtil.error("SocketUtil Error: socketlib is not loaded. Ensure it is installed and enabled.", [e]);
       }
     });
   }

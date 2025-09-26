@@ -189,12 +189,28 @@ export function GMRollConfigMixin(Base) {
      */
     async _onRender(context, options) {
       await super._onRender(context, options);
-      
+
+      // Apply flicker prevention if we need to rebuild
       if (this.config.rolls?.[0]?.data?.situational || this.config.situational) {
         LogUtil.log(`${this.constructor.name}._onRender`, ['Triggering rebuild for initial situational bonus']);
-        // setTimeout(() => {
+
+        // Prevent flicker by keeping opacity during rebuild
+        if (this.element) {
+          this.element.style.transition = 'none';
+          this.element.style.opacity = '1';
+        }
+
+        // Defer rebuild to next frame
+        requestAnimationFrame(() => {
           this.rebuild();
-        // }, 10);
+
+          // Restore transitions after rebuild
+          if (this.element) {
+            requestAnimationFrame(() => {
+              this.element.style.transition = '';
+            });
+          }
+        });
       }
     }
   };

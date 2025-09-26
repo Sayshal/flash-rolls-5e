@@ -42,7 +42,7 @@ export class RollRequestUtil {
    * @param {RollRequestData} requestData - The roll request data
    */
   static async handleRequest(requestData) {
-    const isMidiRequest = GeneralUtil.isModuleOn(MODULE_ID, 'midi-qol');
+    const isMidiRequest = GeneralUtil.isModuleOn('midi-qol');
     LogUtil.log('handleRequest', [requestData]);
     if (game.user.isGM) return;
     

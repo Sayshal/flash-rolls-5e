@@ -19,7 +19,8 @@ export const DEBUG_TAG = [
 export const SOCKET_CALLS = {
   receiveDiceConfig: "receiveDiceConfig",
   getDiceConfig: "getDiceConfig",
-  handleRollRequest: "handleRollRequest"
+  handleRollRequest: "handleRollRequest",
+  removeTemplate: "removeTemplate"
 };
 
 export const HOOK_NAMES = {

@@ -11,6 +11,7 @@ import { GeneralUtil } from './helpers/GeneralUtil.mjs';
 import { ModuleHelpers } from './helpers/ModuleHelpers.mjs';
 import { OfflinePlayerUtil } from './utils/OfflinePlayerUtil.mjs';
 import { RollHelpers } from './helpers/RollHelpers.mjs';
+
 /**
  * Handles intercepting D&D5e rolls on the GM side and redirecting them to players
  */
@@ -43,7 +44,6 @@ export class RollInterceptor {
     this._registerHook(HOOKS_DND5E.PRE_ROLL_DAMAGE_V2, this._onPreRollIntercept.bind(this, ROLL_TYPES.DAMAGE));
     this._registerHook(HOOKS_DND5E.PRE_ROLL_DEATH_SAVE_V2, this._onPreRollIntercept.bind(this, ROLL_TYPES.DEATH_SAVE));
     this._registerHook(HOOKS_DND5E.PRE_ROLL_HIT_DIE_V2, this._onPreRollIntercept.bind(this, ROLL_TYPES.HIT_DIE));
-
     this._registerHook(HOOKS_DND5E.PRE_ROLL_INITIATIVE, this._onPreRollInterceptInitiative.bind(this, ROLL_TYPES.INITIATIVE));
     this._registerHook(HOOKS_DND5E.PRE_ROLL_INITIATIVE_DIALOG, this._onPreRollInterceptInitiative.bind(this, ROLL_TYPES.INITIATIVE));
   }
@@ -96,6 +96,7 @@ export class RollInterceptor {
     const requestsEnabled = SettingsUtil.get(SETTINGS.rollRequestsEnabled.tag);
     const rollInterceptionEnabled = SettingsUtil.get(SETTINGS.rollInterceptionEnabled.tag);
     const areSkipKeysPressed = GeneralUtil.areSkipKeysPressed(config.event);
+    LogUtil.log('_onPreRollIntercept #0.5', [areSkipKeysPressed]);
     const skipRollDialog = areSkipKeysPressed || SettingsUtil.get(SETTINGS.skipRollDialog.tag);
 
     let actor;
@@ -123,7 +124,7 @@ export class RollInterceptor {
 
     // Only intercept on GM side
     if (!game.user.isGM) return; // || config.isRollRequest === false
-    const isMidiRequest = GeneralUtil.isModuleOn(MODULE_ID, 'midi-qol');
+    const isMidiRequest = GeneralUtil.isModuleOn('midi-qol');
 
     const hookNames = config?.hookNames || dialog?.hookNames || message?.hookNames || [];
     const isInitiativeRoll = hookNames.includes('initiativeDialog') || hookNames.includes('initiative');
@@ -345,15 +346,16 @@ export class RollInterceptor {
     
     const dialogOptions = {
       skipRollDialog: false,
-      sendRequest: rollRequestsEnabled && config.isRollRequest
+      sendRequest: rollRequestsEnabled && config.isRollRequest !== false
     };
 
+    LogUtil.log('_getDialogResult - normalizedRollType', [normalizedRollType, ROLL_TYPES.DAMAGE, ROLL_TYPES.ATTACK]);
     if (normalizedRollType === ROLL_TYPES.ATTACK || normalizedRollType === ROLL_TYPES.DAMAGE) {
-      console.log('DialogClass.initConfiguration', [actor, normalizedRollType, rollKey, dialogOptions, config, dialog]);
+      LogUtil.log('DialogClass.initConfiguration A', [actor, normalizedRollType, rollKey, dialogOptions, config, dialog]);
       return await DialogClass.initConfiguration([actor], normalizedRollType, rollKey, dialogOptions, config, dialog);
     } else {
-      console.log('DialogClass.initConfiguration', [actor, normalizedRollType, rollKey, dialogOptions]);
-      return await DialogClass.initConfiguration([actor], normalizedRollType, rollKey, dialogOptions);
+      LogUtil.log('DialogClass.initConfiguration B', [actor, normalizedRollType, rollKey, dialogOptions, config, dialog]);
+      return await DialogClass.initConfiguration([actor], normalizedRollType, rollKey, dialogOptions, config, dialog);
     }
   }
 
@@ -399,12 +401,13 @@ export class RollInterceptor {
         };
       } else {
         result = await this._getDialogResult(
-          DialogClass, 
-          actor, 
-          rollType, 
-          rollKey, 
-          shouldSkipDialog, 
-          config, 
+          DialogClass,
+          actor,
+          rollType,
+          rollKey,
+          shouldSkipDialog,
+          rollRequestsEnabled,
+          config,
           dialog
         );
         LogUtil.log('_showGMConfigDialog - _getDialogResult', [result]);
@@ -423,12 +426,14 @@ export class RollInterceptor {
       }
       
       // Send the roll request to the player with the configured settings
-      // Exclude the event object as it can't be serialized
       // const { event, ...configWithoutEvent } = config;
       delete config.event;
+      // Preserve the original subject (activity) before spreading result
+      const originalSubject = config.subject;
       const finalConfig = {
         ...config,
         ...result,
+        subject: originalSubject, // Restore the original subject (activity)
         rolls: result.rolls,
         requestedBy: game.user.name,
         // For attack activity rolls, prevent the usage message from being created
@@ -584,6 +589,7 @@ export class RollInterceptor {
         // for activities, config.subject is the activity itself
         rollKey = config.subject.item?.id;
         activityId = config.subject.id;
+        LogUtil.log('_sendRollRequest - resolved rollKey and activityId', [rollKey, activityId]);
         break;
       case ROLL_TYPES.HIT_DIE:
         rollKey = typeof config === 'string' ? config : config.denomination;
@@ -664,13 +670,10 @@ export class RollInterceptor {
     
     // Owner is active, send the request
     SocketUtil.execForUser('handleRollRequest', owner.id, requestData);
-
-    // Show notification to GM
     ui.notifications.info(game.i18n.format('FLASH_ROLLS.notifications.rollRequestSent', { 
       player: owner?.name || 'Unknown',
       actor: actor.name || 'Unknown' 
     }));
-    
     
   }
 }

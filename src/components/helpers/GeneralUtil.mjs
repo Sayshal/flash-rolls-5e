@@ -1,6 +1,7 @@
 import { getSettings } from "../../constants/Settings.mjs";
 import { LogUtil } from "../LogUtil.mjs";
 import { SettingsUtil } from "../SettingsUtil.mjs";
+import { SocketUtil } from "../SocketUtil.mjs";
 
 /**
  * Utility class providing general-purpose functionality for the module */
@@ -12,7 +13,8 @@ export class GeneralUtil {
    */
   static isModuleOn(moduleName){
     const module = game.modules?.get(moduleName);
-    return Boolean(module?.active);
+    LogUtil.log('isModuleOn', [moduleName, module, module?.active]);
+    return module?.active ? true : false;
   }
 
   /**
@@ -43,17 +45,17 @@ export class GeneralUtil {
    * @param {HTMLElement} element - The dialog element to apply the transition to
    * @param {number} delay - Delay in milliseconds before fading in (default: 100)
    */
-  static preventDialogFlicker(element, delay = 100) {
+  static preventDialogFlicker(element, delay = 0) {
     if (!element) return;
-    
+
     element.style.opacity = '0';
     element.style.transition = 'opacity 0.15s ease-in';
-    
-    setTimeout(() => {
+
+    requestAnimationFrame(() => {
       if (element) {
         element.style.opacity = '1';
       }
-    }, delay);
+    });
   }
 
   /**
@@ -562,6 +564,13 @@ export class GeneralUtil {
     const removeTemplateSettingOn = SettingsUtil.get(SETTINGS.removeTemplate.tag);
     LogUtil.log("removeTemplateForItem", [item, removeTemplateSettingOn]);
     if(!removeTemplateSettingOn){ return; }
+
+    // If not GM, send request to GM via existing socket
+    if (!game.user.isGM) {
+      LogUtil.log("removeTemplateForItem - requesting GM to remove template", [item?.uuid]);
+      SocketUtil.execForGMs("removeTemplate", item?.uuid);
+      return;
+    }
     
     try {
       // Get templates that match this item UUID
@@ -585,6 +594,22 @@ export class GeneralUtil {
       LogUtil.log("removeTemplateForItem - template not found or already deleted", [item?.uuid, error.message]);
     }
     
+  }
+
+  /**
+   * Removes template by UUID - called via socket from player side
+   * @param {string} itemUuid - The UUID of the item whose template should be removed
+   */
+  static async removeTemplate(itemUuid) {
+    LogUtil.log("removeTemplate", [itemUuid]);
+    try {
+      const item = await fromUuid(itemUuid);
+      if (item && game.user.isGM) {
+        return GeneralUtil.removeTemplateForItem(item);
+      }
+    } catch (error) {
+      LogUtil.error("removeTemplate - error", [error]);
+    }
   }
 
   static areSkipKeysPressed(event){

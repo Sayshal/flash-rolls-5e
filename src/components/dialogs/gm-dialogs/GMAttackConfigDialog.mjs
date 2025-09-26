@@ -178,9 +178,10 @@ export class GMAttackConfigDialog extends GMRollConfigMixin(dnd5e.applications.d
     
     let storedActivityConfig = {};
     if (itemId) {
-      storedActivityConfig = HooksUtil.activityConfigCache.get(itemId) || {};
+      // Use the new cache getter with automatic cleanup
+      storedActivityConfig = HooksUtil.getActivityConfigFromCache(itemId) || {};
     }
-    
+
     LogUtil.log('GMAttackConfigDialog - retrieved activity config from cache', [itemId, storedActivityConfig]);
     
     const SETTINGS = getSettings();

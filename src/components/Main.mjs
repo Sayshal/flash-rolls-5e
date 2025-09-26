@@ -8,6 +8,7 @@ import { RollRequestUtil } from "./RollRequestUtil.mjs";
 import { LogUtil } from "./LogUtil.mjs";
 import { HOOKS_CORE } from "../constants/Hooks.mjs";
 import { ActorDirectoryIconUtil } from "./utils/ActorDirectoryIconUtil.mjs";
+import { GeneralUtil } from "./helpers/GeneralUtil.mjs";
 
 /**
  * @typedef {import("./RollRequestUtil.mjs").RollRequestData} RollRequestData
@@ -52,5 +53,6 @@ export class Main {
     SocketUtil.registerCall(SOCKET_CALLS.getDiceConfig, Main.getDiceConfig);
     SocketUtil.registerCall(SOCKET_CALLS.receiveDiceConfig, Main.receiveDiceConfig);
     SocketUtil.registerCall(SOCKET_CALLS.handleRollRequest, Main.handleRollRequest);
+    SocketUtil.registerCall(SOCKET_CALLS.removeTemplate, GeneralUtil.removeTemplate);
   }
 }
