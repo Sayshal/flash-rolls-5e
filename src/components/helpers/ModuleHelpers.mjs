@@ -1,7 +1,7 @@
 import { MODULE_ID } from "../../constants/General.mjs";
-import { HooksUtil } from "../HooksUtil.mjs";
-import { LogUtil } from "../LogUtil.mjs";
-import { SettingsUtil } from "../SettingsUtil.mjs";
+import { HooksManager } from "../core/HooksManager.mjs";
+import { LogUtil } from "../utils/LogUtil.mjs";
+import { SettingsUtil } from "../utils/SettingsUtil.mjs";
 
 /**
  * Helper functions for module management

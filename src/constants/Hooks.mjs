@@ -146,3 +146,12 @@ export const HOOKS_DND5E = {
   RENDER_SKILL_TOOL_ROLL_DIALOG: "renderSkillToolRollConfigurationDialog",
   RENDER_FORMULA_ROLL_DIALOG: "renderFormulaRollConfigurationDialog"
 }
+
+/**
+ * Flash Rolls 5e Hooks
+ * @constant
+ * @type {Object}
+ */
+export const HOOKS_MODULE = {
+  READY: "ready"
+}

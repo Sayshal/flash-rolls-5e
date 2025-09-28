@@ -1,5 +1,5 @@
 import { isPlayerOwned, hasTokenInScene } from '../helpers/Helpers.mjs';
-import { LogUtil } from '../LogUtil.mjs';
+import { LogUtil } from './LogUtil.mjs';
 
 /**
  * Utility class for actor-related operations in the Roll Requests Menu

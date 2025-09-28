@@ -38,7 +38,7 @@
       "dropError": "Error adding actor to menu",
       "npcHiddenFromPlayers": "NPCs are now hidden from players in the group message.",
       "npcVisibleToPlayers": "NPCs are now visible to players in the group message.",
-      "midiQolActive": "Flash Rolls interception from character sheets has been disabled for compatibility with Midi-QoL."
+      "midiQolActive": "The setting 'Send roll request from player sheets' might conflict with some Midi-QoL features. Test before play, or disable the option below."
     },
     "contextMenu": {
       "addToFavorites": "Add to Flash Rolls Menu",

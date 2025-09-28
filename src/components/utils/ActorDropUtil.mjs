@@ -1,9 +1,9 @@
-import { LogUtil } from '../LogUtil.mjs';
+import { LogUtil } from '../utils/LogUtil.mjs';
 import { isPlayerOwned } from '../helpers/Helpers.mjs';
-import { ActorStatusUtil } from '../ActorStatusUtil.mjs';
+import { ActorStatusManager } from '../managers/ActorStatusManager.mjs';
 
 /**
- * Utility class for handling drag and drop of actors from the directory into the Flash Rolls menu
+ * Handles drag and drop of actors from the directory into the Flash Rolls menu
  */
 export class ActorDropUtil {
   /**
@@ -181,8 +181,8 @@ export class ActorDropUtil {
    * @param {RollRequestsMenu} menu - The menu instance
    */
   static async addActorToMenu(actor, menu) {
-    const isBlocked = ActorStatusUtil.isBlocked(actor);
-    const isFavorite = ActorStatusUtil.isFavorite(actor);
+    const isBlocked = ActorStatusManager.isBlocked(actor);
+    const isFavorite = ActorStatusManager.isFavorite(actor);
     
     if (isFavorite && !isBlocked) {
       ui.notifications.info(game.i18n.format("FLASH_ROLLS.notifications.actorAlreadyAdded", { 
@@ -191,6 +191,6 @@ export class ActorDropUtil {
       return;
     }
 
-    await ActorStatusUtil.setFavorite(actor, true);
+    await ActorStatusManager.setFavorite(actor, true);
   }
 }

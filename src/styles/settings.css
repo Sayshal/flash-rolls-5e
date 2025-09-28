@@ -8,3 +8,12 @@
     width: 100%;
   }
 }
+
+#flash-rolls-settings .form-group.warning {
+  p.warning {
+    background-color: rgba(141, 116, 0, 0.7);
+    color: var(--color-text-primary);
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+  }
+}

@@ -1,11 +1,11 @@
-/* Flash Rolls Menu Styles */
-@import './flash-rolls-base.css';
-@import './flash-rolls-layout-vertical.css';
-@import './flash-rolls-layout-horizontal.css';
-@import './flash-rolls-components.css';
-@import './flash-rolls-compact.css';
-@import './flash-rolls-drag-drop.css';
-@import './flash-rolls-positioning.css';
+/* Flash Rolls Styles */
+@import './menu/flash-rolls-base.css';
+@import './menu/flash-rolls-layout-vertical.css';
+@import './menu/flash-rolls-layout-horizontal.css';
+@import './menu/flash-rolls-components.css';
+@import './menu/flash-rolls-compact.css';
+@import './menu/flash-rolls-drag-drop.css';
+@import './menu/flash-rolls-positioning.css';
 @import './settings.css';
 @import './settings-interface.css';
 

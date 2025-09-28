@@ -1,7 +1,7 @@
-import { LogUtil } from "../LogUtil.mjs";
+import { LogUtil } from "../utils/LogUtil.mjs";
 import { ROLL_TYPES, MODULE_ID } from "../../constants/General.mjs";
 import { getSettings } from "../../constants/Settings.mjs";
-import { SettingsUtil } from "../SettingsUtil.mjs";
+import { SettingsUtil } from "../utils/SettingsUtil.mjs";
 import { getPlayerOwner } from "./Helpers.mjs";
 
 /**

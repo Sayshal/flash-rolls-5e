@@ -1,4 +1,4 @@
-import { ModuleSettingsMenu } from '../components/dialogs/ModuleSettingsMenu.mjs';
+import { ModuleSettingsMenu } from '../components/ui/dialogs/ModuleSettingsMenu.mjs';
 
 // Opens Patreon URL when instantiated
 class PatreonSupport extends FormApplication {

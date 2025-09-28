@@ -1,5 +1,5 @@
-import { ActorStatusUtil } from '../ActorStatusUtil.mjs';
-import { LogUtil } from '../LogUtil.mjs';
+import { ActorStatusManager } from '../managers/ActorStatusManager.mjs';
+import { LogUtil } from './LogUtil.mjs';
 import { HOOKS_CORE } from '../../constants/Hooks.mjs';
 
 /**
@@ -78,8 +78,8 @@ export class ActorDirectoryIconUtil {
     const actor = game.actors.get(actorId);
     if (!actor) return;
 
-    const isFavorite = ActorStatusUtil.isFavorite(actor);
-    const isBlocked = ActorStatusUtil.isBlocked(actor);
+    const isFavorite = ActorStatusManager.isFavorite(actor);
+    const isBlocked = ActorStatusManager.isBlocked(actor);
 
     if (!isFavorite && !isBlocked) return;
     const icon = document.createElement('span');
@@ -92,7 +92,7 @@ export class ActorDirectoryIconUtil {
       icon.addEventListener('click', (event) => {
         event.preventDefault();
         event.stopPropagation();
-        ActorStatusUtil.toggleBlocked(actorId, false);
+        ActorStatusManager.toggleBlocked(actorId, false);
       });
     } else if (isFavorite) {
       icon.className = 'fas fa-bolt';
@@ -102,7 +102,7 @@ export class ActorDirectoryIconUtil {
       icon.addEventListener('click', (event) => {
         event.preventDefault();
         event.stopPropagation();
-        ActorStatusUtil.toggleFavorite(actorId, false);
+        ActorStatusManager.toggleFavorite(actorId, false);
       });
     }
     

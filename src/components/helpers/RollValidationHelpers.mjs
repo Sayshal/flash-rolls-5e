@@ -1,4 +1,4 @@
-import { LogUtil } from '../LogUtil.mjs';
+import { LogUtil } from '../utils/LogUtil.mjs';
 import { NotificationManager } from './Helpers.mjs';
 
 /**

@@ -2,9 +2,9 @@
  * Helper functions for the Flash Rolls 5e module
  */
 import { MODULE, ROLL_TYPES } from '../../constants/General.mjs';
-import { LogUtil } from '../LogUtil.mjs';
-import { GeneralUtil } from './GeneralUtil.mjs';
-import { SettingsUtil } from '../SettingsUtil.mjs';
+import { LogUtil } from '../utils/LogUtil.mjs';
+import { GeneralUtil } from '../utils/GeneralUtil.mjs';
+import { SettingsUtil } from '../utils/SettingsUtil.mjs';
 import { getSettings } from '../../constants/Settings.mjs';
 
 /**
@@ -515,11 +515,9 @@ export function getActorData(uniqueId){
   const tokenDoc = game.scenes.active?.tokens.get(uniqueId);
   if (tokenDoc?.actor) return tokenDoc.actor;
 
-  // Check canvas tokens
   const token = canvas.tokens?.get(uniqueId);
   if (token?.actor) return token.actor;
 
-  // Finally check if it's a base actor ID
   const actor = game.actors.get(uniqueId);
   return actor || null;
 }
@@ -540,19 +538,28 @@ export function showConsumptionConfig(){
   }
 }
   
+/**
+ * Returns a consumption config object based on current situation
+ * @param {Object} consume 
+ * @param {Boolean} isLocalRoll 
+ * @returns 
+ */
+export function getConsumptionConfig(consume, isLocalRoll=true){
+  // const showConsumptionDialog = showConsumptionConfig();
+  let response = { ...consume };
 
-export function getConsumptionConfig(consume){
-  const showConsumtionDialog = showConsumptionConfig();
-  const response = {
-    action: showConsumtionDialog,
-    resources: showConsumtionDialog ?consume.resources : [],
-    spellSlot: showConsumtionDialog
+  if(game.user.isGM){
+    response.action = isLocalRoll ? consume.action : false;
+    response.resources = isLocalRoll ? consume.resources : [];
+    response.spellSlot = isLocalRoll ? consume.spellSlot : false;
   }
   return response;
 }
 
 /**
- * 
+ * Returns a create config object based on current situation
+ * Template placement logic:
+ * - If the roll is local, always prompt for template placement
  * @param {*} createConfig 
  * @param {*} isLocalRoll 
  * @returns 
@@ -560,9 +567,12 @@ export function getConsumptionConfig(consume){
 export function getCreateConfig(createConfig, isLocalRoll=true){
   const SETTINGS = getSettings();
   const placeTemplateForPlayer = SettingsUtil.get(SETTINGS.placeTemplateForPlayer.tag);
-  const promptForTemplate = game.user.isGM ? placeTemplateForPlayer || isLocalRoll : isLocalRoll || !placeTemplateForPlayer;
+  const withTemplate = createConfig.measuredTemplate === true;
+  const promptForTemplate = game.user.isGM ? isLocalRoll || placeTemplateForPlayer : !placeTemplateForPlayer
+
+  LogUtil.log("getCreateConfig", [createConfig, isLocalRoll, placeTemplateForPlayer, withTemplate, promptForTemplate]);
   return {
     ...createConfig,
-    measuredTemplate: createConfig.measuredTemplate ? promptForTemplate : false
+    measuredTemplate: withTemplate ? promptForTemplate : false
   }
 }

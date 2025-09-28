@@ -1,8 +1,8 @@
-import { LogUtil } from '../LogUtil.mjs';
-import { ActorStatusUtil } from '../ActorStatusUtil.mjs';
+import { LogUtil } from '../utils/LogUtil.mjs';
+import { ActorStatusManager } from '../managers/ActorStatusManager.mjs';
 
 /**
- * Utility class for handling drag-to-remove functionality for actors in the Roll Requests Menu
+ * Handles drag-to-remove functionality for actors in the Roll Requests Menu
  */
 export class ActorDragUtil {
   /**
@@ -177,7 +177,7 @@ export class ActorDragUtil {
    */
   static async blockActor(actorId, menu) {
     try {
-      await ActorStatusUtil.blockActor(actorId);
+      await ActorStatusManager.blockActor(actorId);
       
       const actorElement = menu.element.querySelector(`[data-actor-id="${actorId}"]`);
       if (actorElement) {
@@ -185,7 +185,7 @@ export class ActorDragUtil {
         menu.selectedActors.delete(uniqueId);
       }
       
-      // Let the ActorStatusUtil._refreshMenu() handle the re-render automatically
+      // Let the ActorStatusManager._refreshMenu() handle the re-render automatically
       
     } catch (error) {
       LogUtil.error('Error blocking actor', [error]);

@@ -1,5 +1,5 @@
 import { MODULE_ACTION_ICONS, ACTOR_ACTION_ICONS, ICON_TYPES, getIconConfiguration, getDefaultIconLayout } from '../../constants/IconMappings.mjs';
-import { SettingsUtil } from '../SettingsUtil.mjs';
+import { SettingsUtil } from './SettingsUtil.mjs';
 import { getSettings } from '../../constants/Settings.mjs';
 
 /**

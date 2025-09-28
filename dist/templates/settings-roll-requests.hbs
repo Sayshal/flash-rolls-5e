@@ -4,6 +4,12 @@
   <h4><i class="fas fa-globe"></i> {{localize "FLASH_ROLLS.ui.dialogs.worldSettingsLabel"}} <span class="toggle-hint">{{localize 'FLASH_ROLLS.ui.dialogs.toggleHints'}}</span></h4>
   <hr/>
 
+{{#if midiQolActive}}
+  <div class="form-group warning">
+    <p class="warning">{{midiQolActiveWarning}}</p>
+  </div>
+{{/if}}
+
   <div class="form-group">
     <label for="rollInterceptionEnabled">{{fields.rollInterceptionEnabled.label}}</label>
     <input type="checkbox" name="rollInterceptionEnabled" id="rollInterceptionEnabled" {{#if rollInterceptionEnabled}}checked{{/if}} />
