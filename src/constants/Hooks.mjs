@@ -27,6 +27,8 @@ export const HOOKS_CORE = {
   DELETE_TOKEN: "deleteToken",
   CREATE_TOKEN: "createToken",
   UPDATE_ACTOR: "updateActor",
+  CREATE_ACTOR: "createActor",
+  DELETE_ACTOR: "deleteActor",
   UPDATE_ITEM: "updateItem",
   CREATE_ITEM: "createItem",
   DELETE_ITEM: "deleteItem",
@@ -41,7 +43,9 @@ export const HOOKS_CORE = {
   DELETE_COMBAT: "deleteCombat",
   CREATE_ACTIVE_EFFECT: "createActiveEffect",
   DELETE_ACTIVE_EFFECT: "deleteActiveEffect",
-  UPDATE_ACTIVE_EFFECT: "updateActiveEffect"
+  UPDATE_ACTIVE_EFFECT: "updateActiveEffect",
+  RENDER_APPLICATION: "renderApplication",
+  PRE_CREATE_TOKEN: "preCreateToken"
 };
 
 /**

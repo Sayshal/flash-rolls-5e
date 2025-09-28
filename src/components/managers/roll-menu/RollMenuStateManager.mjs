@@ -446,7 +446,7 @@ export class RollMenuStateManager {
 
     if (filters.removeDead) {
       // The actor passed in is already the correct one (token actor if available)
-      const hasDead = actor.effects.some(effect =>
+      const hasDead = actor.appliedEffects.some(effect =>
         effect.statuses?.has('dead') ||
         effect.flags?.core?.statusId === 'dead'
       );

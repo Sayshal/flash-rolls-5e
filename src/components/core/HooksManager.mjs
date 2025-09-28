@@ -17,6 +17,7 @@ import { FlashRollsAPI } from "./FlashRollsAPI.mjs";
 import { RollMenuDragManager } from "../managers/roll-menu/RollMenuDragManager.mjs";
 import { RollHooksHandler } from "../handlers/RollHooksHandler.mjs";
 import { ActivityManager } from "../managers/ActivityManager.mjs";
+import { GroupTokenTracker } from "../managers/GroupTokenTracker.mjs";
 
 /**
  * Utility class for managing all module hooks in one place
@@ -224,6 +225,7 @@ export class HooksManager {
     if (game.user.isGM) {
       RollInterceptor.initialize();
       RollRequestsMenu.showOnLoadIfEnabled();
+      GroupTokenTracker.initialize();
       // Initialize user connections for dice config
       game.users.forEach(user => {
         this._onUserConnected(user);
@@ -238,13 +240,9 @@ export class HooksManager {
     if (module) {
       module.api = FlashRollsAPI;
     }
-    
-    // Create global alias for easier access
-    globalThis.FlashRolls5e = FlashRollsAPI;
 
-    // Notify other modules that Flash Rolls 5e is ready
+    globalThis.FlashRolls5e = FlashRollsAPI;
     Hooks.call("flash-rolls-5e.ready");
-  
   }
   
   /**
@@ -317,6 +315,10 @@ export class HooksManager {
     this._registerHook(HOOKS_CORE.UPDATE_SCENE, this._onSceneUpdate.bind(this));
     this._registerHook(HOOKS_CORE.UPDATE_ACTOR, this._onActorUpdate.bind(this));
     this._registerHook(HOOKS_CORE.UPDATE_TOKEN, this._onTokenUpdate.bind(this));
+    this._registerHook(HOOKS_CORE.CREATE_TOKEN, this._onCreateToken.bind(this));
+    this._registerHook(HOOKS_CORE.DELETE_TOKEN, this._onDeleteToken.bind(this));
+    this._registerHook(HOOKS_CORE.CREATE_ACTOR, this._onCreateActor.bind(this));
+    this._registerHook(HOOKS_CORE.DELETE_ACTOR, this._onDeleteActor.bind(this));
     this._registerHook(HOOKS_CORE.RENDER_CHAT_INPUT, this._onRenderChatInput.bind(this));
   }
 
@@ -623,13 +625,43 @@ export class HooksManager {
   }
 
   /**
-   * Handle token create/delete events to refresh roll requests menu
-   * @param {Token} token - The token document
-   * @param {Object} options - Creation/deletion options  
+   * Handle token creation events to refresh roll requests menu
+   * @param {TokenDocument} tokenDoc - The token document
+   * @param {Object} options - Creation options
    * @param {string} userId - The user ID who performed the action
    */
-  static _onTokenChange(token, options, userId) {
-    LogUtil.log('HooksManager._onTokenChange - Re-rendering roll requests menu due to token create/delete');
+  static _onCreateToken(tokenDoc, options, userId) {
+    RollRequestsMenu.refreshIfOpen();
+  }
+
+  /**
+   * Handle token deletion events to refresh roll requests menu and clean up group associations
+   * @param {TokenDocument} tokenDoc - The token document
+   * @param {Object} options - Deletion options
+   * @param {string} userId - The user ID who performed the action
+   */
+  static _onDeleteToken(tokenDoc, options, userId) {
+    GroupTokenTracker.onDeleteToken(tokenDoc, options, userId);
+    RollRequestsMenu.refreshIfOpen();
+  }
+
+  /**
+   * Handle actor creation events to refresh roll requests menu
+   * @param {Actor} actor - The actor document
+   * @param {Object} options - Creation options
+   * @param {string} userId - The user ID who performed the action
+   */
+  static _onCreateActor(actor, options, userId) {
+    RollRequestsMenu.refreshIfOpen();
+  }
+
+  /**
+   * Handle actor deletion events to refresh roll requests menu
+   * @param {Actor} actor - The actor document
+   * @param {Object} options - Deletion options
+   * @param {string} userId - The user ID who performed the action
+   */
+  static _onDeleteActor(actor, options, userId) {
     RollRequestsMenu.refreshIfOpen();
   }
 
@@ -679,7 +711,6 @@ export class HooksManager {
 
     if (!statsChanged && !ownershipChanged && !effectsChanged) return;
 
-    LogUtil.log("HooksManager._onActorUpdate - Re-rendering roll requests menu due to actor update", [actor, changes]);
     RollRequestsMenu.refreshIfOpen();
   }
 

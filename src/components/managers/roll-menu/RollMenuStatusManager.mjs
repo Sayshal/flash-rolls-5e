@@ -50,7 +50,7 @@ export class RollMenuStatusManager {
   static async applyStatusToActor(statusEffect, actor) {
     try {
       // Check if actor already has this status effect
-      const existingEffect = actor.effects.find(effect => 
+      const existingEffect = actor.appliedEffects.find(effect => 
         effect.statuses?.has(statusEffect.id) || 
         effect.flags?.core?.statusId === statusEffect.id
       );
@@ -62,7 +62,7 @@ export class RollMenuStatusManager {
 
       // Use the actor's toggleStatusEffect method if available (Foundry v10+)
       if (actor.toggleStatusEffect) {
-        const hasEffect = actor.effects.some(e => e.statuses?.has(statusEffect.id));
+        const hasEffect = actor.appliedEffects.some(e => e.statuses?.has(statusEffect.id));
         if (!hasEffect) {
           await actor.toggleStatusEffect(statusEffect.id, { active: true });
           LogUtil.log(`RollMenuStatusManager: Applied ${statusEffect.id} to ${actor.name}`);
@@ -143,7 +143,7 @@ export class RollMenuStatusManager {
     try {
       // Use the actor's toggleStatusEffect method if available (Foundry v10+)
       if (actor.toggleStatusEffect) {
-        const hasEffect = actor.effects.some(e => e.statuses?.has(statusEffect.id));
+        const hasEffect = actor.appliedEffects.some(e => e.statuses?.has(statusEffect.id));
         if (hasEffect) {
           await actor.toggleStatusEffect(statusEffect.id, { active: false });
           LogUtil.log(`RollMenuStatusManager: Removed ${statusEffect.id} from ${actor.name}`);
@@ -153,7 +153,7 @@ export class RollMenuStatusManager {
       }
       
       // Fallback to manual deletion for older versions
-      const existingEffect = actor.effects.find(effect => 
+      const existingEffect = actor.appliedEffects.find(effect => 
         effect.statuses?.has(statusEffect.id) || 
         effect.flags?.core?.statusId === statusEffect.id
       );
@@ -196,7 +196,7 @@ export class RollMenuStatusManager {
       const actor = getActorData(uniqueId);
       if (!actor) continue;
       
-      const existingEffect = actor.effects.find(effect => 
+      const existingEffect = actor.appliedEffects.find(effect => 
         effect.statuses?.has(statusEffect.id) || 
         effect.flags?.core?.statusId === statusEffect.id
       );

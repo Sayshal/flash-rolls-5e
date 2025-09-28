@@ -105,7 +105,7 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
 
   static PARTS = {
     main: {
-      template: `modules/${MODULE.ID}/templates/requests-menus.hbs`
+      template: `modules/${MODULE.ID}/templates/requests-menu.hbs`
     }
   };  
   
@@ -177,34 +177,44 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
     }
     
     const dropZones = this.element.querySelectorAll('.actor-list');
-    
-    dropZones.forEach((zone, index) => {      
+
+    // Remove existing listeners
+    if (this._boundGlobalDragEnd) {
+      document.removeEventListener('dragend', this._boundGlobalDragEnd);
+    }
+
+    dropZones.forEach((zone, index) => {
       zone.removeEventListener('dragover', this._boundDragOver);
       zone.removeEventListener('drop', this._boundDrop);
       zone.removeEventListener('dragenter', this._boundDragEnter);
       zone.removeEventListener('dragleave', this._boundDragLeave);
-      
+
       this._boundDragOver = (e) => {
         this._onDragOver(e);
       };
-      
+
       this._boundDrop = (e) => {
         this._onDrop(e);
       };
-      
+
       this._boundDragEnter = (e) => {
         e.preventDefault();
       };
-      
+
       this._boundDragLeave = (e) => {
         ActorDropUtil.handleDragLeave(e);
       };
-      
+
       zone.addEventListener('dragover', this._boundDragOver);
       zone.addEventListener('drop', this._boundDrop);
       zone.addEventListener('dragenter', this._boundDragEnter);
       zone.addEventListener('dragleave', this._boundDragLeave);
     });
+
+    this._boundGlobalDragEnd = (e) => {
+      this._onGlobalDragEnd(e);
+    };
+    document.addEventListener('dragend', this._boundGlobalDragEnd);
 
     adjustMenuOffset();
     
@@ -407,7 +417,28 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
   async _onDrop(event) {
     await ActorDropUtil.handleDrop(event, this);
   }
-  
+
+  /**
+   * Handle global drag end events to reset drag state when any drag operation ends
+   * @param {DragEvent} event - The drag end event
+   */
+  _onGlobalDragEnd(event) {
+    ActorDropUtil.handleDragLeave(event);
+  }
+
+  /**
+   * Override close to clean up global event listeners
+   * @override
+   */
+  async close(options = {}) {
+    if (this._boundGlobalDragEnd) {
+      document.removeEventListener('dragend', this._boundGlobalDragEnd);
+      this._boundGlobalDragEnd = null;
+    }
+
+    return super.close(options);
+  }
+
   /**
    * Initialize selected actors from currently selected tokens
    */

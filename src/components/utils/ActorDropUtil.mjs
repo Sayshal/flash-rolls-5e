@@ -47,7 +47,17 @@ export class ActorDropUtil {
    */
   static handleDragLeave(event) {
     LogUtil.log('ActorDropUtil.handleDragLeave', [event, event.currentTarget, event.target]);
-    
+
+    // If called from global dragend, just remove all drag-over classes
+    if (!event.currentTarget || typeof event.currentTarget.getBoundingClientRect !== 'function') {
+      const allDragOverElements = document.querySelectorAll('.drag-over');
+      allDragOverElements.forEach(element => {
+        element.classList.remove('drag-over');
+      });
+      LogUtil.log('ActorDropUtil.handleDragLeave - removed drag-over class from all elements (global cleanup)');
+      return;
+    }
+
     const rect = event.currentTarget.getBoundingClientRect();
     const isActuallyLeaving = (
       event.clientX < rect.left ||
@@ -55,7 +65,7 @@ export class ActorDropUtil {
       event.clientY < rect.top ||
       event.clientY > rect.bottom
     );
-    
+
     if (isActuallyLeaving) {
       const dropZone = event.currentTarget.closest('.actor-list, .actors');
       if (dropZone) {

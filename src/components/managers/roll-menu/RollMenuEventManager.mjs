@@ -132,17 +132,17 @@ export class RollMenuEventManager {
         }
         menu._onActorClick.call(menu, event);
       });
-      
-      // Add click handler for character sheet icon
+
+      // Add click handler for character sheet icon (works for both individual and group actors)
       const sheetIcon = wrapper.querySelector('.icon-sheet');
       if (sheetIcon) {
         sheetIcon.addEventListener('click', (event) => {
           event.preventDefault();
           event.stopPropagation();
-          
+
           const actorId = wrapper.dataset.actorId;
           const tokenId = wrapper.dataset.tokenId;
-          
+
           this.openActorSheetById(actorId, tokenId);
         });
       }
@@ -605,7 +605,7 @@ export class RollMenuEventManager {
       totalActors++;
       
       // Get all status effects on the actor
-      const statusEffects = actor.effects.filter(effect => 
+      const statusEffects = actor.appliedEffects.filter(effect =>
         effect.statuses?.size > 0 || effect.flags?.core?.statusId
       );
       

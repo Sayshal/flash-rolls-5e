@@ -54,15 +54,20 @@ export class ActorDragUtil {
     actorElement.classList.add('dragging');
     
     const rect = actorElement.getBoundingClientRect();
-    const dragImage = actorElement.cloneNode(true);
+
+    const dragImage = document.createElement('div');
+    dragImage.style.width = rect.width + 'px';
+    dragImage.style.height = rect.height + 'px';
+    dragImage.style.backgroundColor = 'rgba(0, 0, 0, 0.1)';
+    dragImage.style.border = '2px dashed rgba(255, 255, 255, 0.3)';
+    dragImage.style.borderRadius = '4px';
     dragImage.style.opacity = '0.6';
     dragImage.style.position = 'absolute';
     dragImage.style.top = '-1000px';
     dragImage.style.left = '-1000px';
-    dragImage.style.width = rect.width + 'px';
     dragImage.style.pointerEvents = 'none';
     document.body.appendChild(dragImage);
-    
+
     event.dataTransfer.setDragImage(dragImage, rect.width / 2, rect.height / 2);
     
     setTimeout(() => {
@@ -79,8 +84,76 @@ export class ActorDragUtil {
   }
   
   /**
+   * Create a custom drag image for group actors showing member portraits
+   * @param {HTMLElement} actorElement - The group actor element
+   * @param {Actor} actor - The group actor
+   * @returns {HTMLElement} The custom drag image element
+   */
+  static createGroupDragImage(actorElement, actor) {
+    const dragImage = document.createElement('div');
+    dragImage.className = 'actor actor-group drag-wrapper';
+    dragImage.style.background = getComputedStyle(actorElement).background;
+    dragImage.style.border = getComputedStyle(actorElement).border;
+    dragImage.style.borderRadius = getComputedStyle(actorElement).borderRadius;
+    dragImage.style.padding = getComputedStyle(actorElement).padding;
+
+    // Get the actor images container (non-expanded view)
+    const actorImgContainer = actorElement.querySelector('.actor-img');
+    if (actorImgContainer) {
+      const clonedImgContainer = actorImgContainer.cloneNode(true);
+      dragImage.appendChild(clonedImgContainer);
+    }
+
+    // Add group name
+    const nameDiv = document.createElement('div');
+    nameDiv.className = 'actor-name';
+    nameDiv.textContent = actor.name;
+    nameDiv.style.color = getComputedStyle(actorElement.querySelector('.actor-name') || actorElement).color;
+    nameDiv.style.fontSize = getComputedStyle(actorElement.querySelector('.actor-name') || actorElement).fontSize;
+    nameDiv.style.fontWeight = 'bold';
+    nameDiv.style.textAlign = 'center';
+    nameDiv.style.marginTop = '4px';
+    dragImage.appendChild(nameDiv);
+
+    return dragImage;
+  }
+
+  /**
+   * Create a standard drag image for regular actors with improved formatting
+   * @param {HTMLElement} actorElement - The actor element
+   * @returns {HTMLElement} The drag image element
+   */
+  static createStandardDragImage(actorElement) {
+    const dragImage = document.createElement('div');
+    dragImage.className = actorElement.className;
+    dragImage.style.background = getComputedStyle(actorElement).background;
+    dragImage.style.border = getComputedStyle(actorElement).border;
+    dragImage.style.borderRadius = getComputedStyle(actorElement).borderRadius;
+    dragImage.style.padding = getComputedStyle(actorElement).padding;
+    dragImage.style.display = 'flex';
+    dragImage.style.alignItems = 'center';
+    dragImage.style.gap = '8px';
+
+    // Clone the actor image
+    const actorImg = actorElement.querySelector('.actor-img');
+    if (actorImg) {
+      const clonedImg = actorImg.cloneNode(true);
+      dragImage.appendChild(clonedImg);
+    }
+
+    // Clone the actor name
+    const actorName = actorElement.querySelector('.actor-name');
+    if (actorName) {
+      const clonedName = actorName.cloneNode(true);
+      dragImage.appendChild(clonedName);
+    }
+
+    return dragImage;
+  }
+
+  /**
    * Handle drag over event within the menu
-   * @param {DragEvent} event 
+   * @param {DragEvent} event
    */
   static handleDragOver(event) {
     event.preventDefault();
@@ -101,28 +174,27 @@ export class ActorDragUtil {
   
   /**
    * Handle global drag over (outside the menu)
-   * @param {DragEvent} event 
-   * @param {RollRequestsMenu} menu 
+   * @param {DragEvent} event
+   * @param {RollRequestsMenu} menu
    */
   static handleGlobalDragOver(event, menu) {
     if (!menu._currentDragData) return;
-    
-    const menuRect = menu.element.getBoundingClientRect();
-    const isOverMenu = (
-      event.clientX >= menuRect.left &&
-      event.clientX <= menuRect.right &&
-      event.clientY >= menuRect.top &&
-      event.clientY <= menuRect.bottom
-    );
-    
+
+    // Check if we're over the menu element or any of its children
+    const menuElement = menu.element;
+    const target = document.elementFromPoint(event.clientX, event.clientY);
+    const isOverMenu = menuElement && (menuElement.contains(target) || menuElement === target);
+
     if (!isOverMenu) {
       event.preventDefault();
       event.dataTransfer.dropEffect = 'move';
-      
+
       if (menu._currentDragData.actorElement) {
         menu._currentDragData.actorElement.classList.add('drag-remove-zone');
       }
     } else {
+      event.dataTransfer.dropEffect = 'none';
+
       if (menu._currentDragData.actorElement) {
         menu._currentDragData.actorElement.classList.remove('drag-remove-zone');
       }
@@ -131,29 +203,26 @@ export class ActorDragUtil {
   
   /**
    * Handle global drop (outside the menu)
-   * @param {DragEvent} event 
-   * @param {RollRequestsMenu} menu 
+   * @param {DragEvent} event
+   * @param {RollRequestsMenu} menu
    */
   static handleGlobalDrop(event, menu) {
     if (!menu._currentDragData) return;
-    
-    const menuRect = menu.element.getBoundingClientRect();
-    const isOverMenu = (
-      event.clientX >= menuRect.left &&
-      event.clientX <= menuRect.right &&
-      event.clientY >= menuRect.top &&
-      event.clientY <= menuRect.bottom
-    );
-    
+
+    // Check if we're over the menu element or any of its children
+    const menuElement = menu.element;
+    const target = document.elementFromPoint(event.clientX, event.clientY);
+    const isOverMenu = menuElement && (menuElement.contains(target) || menuElement === target);
+
     if (!isOverMenu) {
       event.preventDefault();
-      
+
       const dragData = JSON.parse(event.dataTransfer.getData('application/json'));
       LogUtil.log('ActorDragUtil.handleGlobalDrop - blocking actor', [dragData.actorName]);
-      
+
       this.blockActor(dragData.actorId, menu);
     }
-    
+
     this.cleanupDrag(menu);
   }
   

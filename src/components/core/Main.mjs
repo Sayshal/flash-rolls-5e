@@ -9,6 +9,7 @@ import { LogUtil } from "../utils/LogUtil.mjs";
 import { HOOKS_CORE } from "../../constants/Hooks.mjs";
 import { ActorDirectoryIconUtil } from "../utils/ActorDirectoryIconUtil.mjs";
 import { GeneralUtil } from "../utils/GeneralUtil.mjs";
+import { GroupTokenTracker } from "../managers/GroupTokenTracker.mjs";
 
 /**
  * @typedef {import("./RollRequestManager.mjs").RollRequestData} RollRequestData
