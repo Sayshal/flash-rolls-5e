@@ -97,11 +97,6 @@ export class RollInterceptor {
     const rollInterceptionEnabled = SettingsUtil.get(SETTINGS.rollInterceptionEnabled.tag);
     const isMidiOn = GeneralUtil.isModuleOn('midi-qol');
 
-    if (!requestsEnabled || !rollInterceptionEnabled || config.isRollRequest === false) {
-      dialog.configure = areSkipKeysPressed ? false : config.isRollRequest!==undefined ? false : !RollHelpers.shouldSkipRollDialog(skipRollDialog, {isPC: isPC, isNPC: !isPC});
-      return; 
-    }
-
     let actor;
     if (rollType === ROLL_TYPES.INITIATIVE && config instanceof Actor) {
       actor = config;
@@ -116,10 +111,17 @@ export class RollInterceptor {
     } else {
       actor = config.subject?.actor || config.subject || config.actor;
     }
-    const owner = GeneralUtil.getActorOwner(actor);   
+
+    // Calculate these variables before using them
+    const owner = GeneralUtil.getActorOwner(actor);
     const isPC = owner?.id === game.user.id && owner?.active;
     const areSkipKeysPressed = GeneralUtil.areSkipKeysPressed(config.event);
     const skipRollDialog = areSkipKeysPressed || SettingsUtil.get(SETTINGS.skipRollDialog.tag);
+
+    if (!requestsEnabled || !rollInterceptionEnabled || config.isRollRequest === false) {
+      dialog.configure = areSkipKeysPressed ? false : config.isRollRequest!==undefined ? false : !RollHelpers.shouldSkipRollDialog(skipRollDialog, {isPC: isPC, isNPC: !isPC});
+      return;
+    }
     LogUtil.log('_onPreRollIntercept #1', [requestsEnabled, rollInterceptionEnabled, config.isRollRequest]);
 
     // Only intercept on GM side, if this is a request
