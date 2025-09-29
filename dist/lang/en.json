@@ -283,7 +283,7 @@
         "openSettings": "Open Settings",
         "filterActors": "Filter Actors",
         "groupSelected": "Create Group",
-        "toggleMovement": "Toggle Movement Block"
+        "toggleMovement": "Toggle Movement"
       },
       "filters": {
         "title": "Filter Actors",
