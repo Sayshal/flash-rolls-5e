@@ -138,6 +138,15 @@ export const ACTOR_ACTION_ICONS = {
     element: "flash5e-group-selected",
     type: "button",
     cssClass: "bulk-action"
+  },
+  "movement": {
+    id: "movement",
+    icon: "fa-person-walking",
+    labelKey: "FLASH_ROLLS.ui.inputs.toggleMovement",
+    tooltipKey: "FLASH_ROLLS.ui.inputs.toggleMovement",
+    element: "flash5e-lock-movement",
+    type: "button",
+    cssClass: "bulk-action"
   }
 };
 
@@ -186,11 +195,12 @@ export function getDefaultIconLayout() {
       { id: "filter-actors", icon: "fa-filter-list", enabled: true, order: 0 },
       { id: "select-all", icon: "fa-object-group", enabled: true, order: 1 },
       { id: "toggle-targets", icon: "fa-crosshairs", enabled: true, order: 2 },
-      { id: "heal-all", icon: "fa-heart-pulse", enabled: true, order: 3 },
-      { id: "kill-all", icon: "fa-skull", enabled: true, order: 4 },
-      { id: "remove-status", icon: "fa-sparkles", enabled: true, order: 5 },
+      { id: "group-selected", icon: "fa-users-medical", enabled: true, order: 3 },
+      { id: "remove-status", icon: "fa-sparkles", enabled: true, order: 4 },
+      { id: "movement", icon: "fa-person-walking", enabled: true, order: 5 },
       { id: "open-sheets", icon: "fa-square-user", enabled: true, order: 6 },
-      { id: "group-selected", icon: "fa-users-medical", enabled: true, order: 7 }
+      { id: "heal-all", icon: "fa-heart-pulse", enabled: true, order: 7 },
+      { id: "kill-all", icon: "fa-skull", enabled: true, order: 8 },
     ]
   };
 }

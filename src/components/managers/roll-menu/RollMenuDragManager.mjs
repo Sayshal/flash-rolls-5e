@@ -180,21 +180,26 @@ export class RollMenuDragManager {
    */
   static async handleDragEnd(event, menu, dragData, moveHandler, upHandler) {
     LogUtil.log('RollMenuDragManager.handleDragEnd');
-    
+
     document.removeEventListener('mousemove', moveHandler);
     document.removeEventListener('mouseup', upHandler);
-    
+
+    if (!menu?.element) {
+      LogUtil.error('RollMenuDragManager.handleDragEnd - Menu element is null');
+      return;
+    }
+
     menu.isDragging = false;
     menu.element.classList.remove('dragging');
     menu.element.classList.remove('near-snap', 'near-snap-right', 'near-snap-bottom', 'near-snap-both');
-    
+
     menu.element.style.zIndex = '';
-    
+
     const snapInfo = this.calculateSnapDistance(menu);
     
     if (snapInfo.type === 'both-edges') {
       const chatNotifications = document.querySelector('#chat-notifications');
-      if (chatNotifications) {
+      if (chatNotifications && menu.element) {
         chatNotifications.insertBefore(menu.element, chatNotifications.firstChild);
       }
       await this.snapToDefault(menu);
@@ -202,7 +207,7 @@ export class RollMenuDragManager {
       await this.snapToBottomEdge(menu);
     } else if (snapInfo.type === 'right-edge') {
       const chatNotifications = document.querySelector('#chat-notifications');
-      if (chatNotifications) {
+      if (chatNotifications && menu.element) {
         chatNotifications.insertBefore(menu.element, chatNotifications.firstChild);
       }
       await this.snapToRightEdge(menu, dragData.currentTop);
@@ -241,11 +246,16 @@ export class RollMenuDragManager {
    * @returns {{type: string, distance: number}} Snap information
    */
   static calculateSnapDistance(menu) {
+    if (!menu?.element) {
+      LogUtil.error('RollMenuDragManager.calculateSnapDistance - Menu element is null');
+      return { type: 'none', distance: Infinity };
+    }
+
     const lightningBolt = document.querySelector(this.LIGHTNING_BOLT_SELECTOR);
     const hotbar = document.querySelector('#hotbar');
-    
+
     if (!lightningBolt && !hotbar) return { type: 'none', distance: Infinity };
-    
+
     const menuRect = menu.element.getBoundingClientRect();
     
     // Check for bottom dock (priority over right dock)
@@ -289,14 +299,19 @@ export class RollMenuDragManager {
    */
   static async snapToRightEdge(menu, currentTop) {
     LogUtil.log('RollMenuDragManager.snapToRightEdge', [currentTop]);
-    
+
+    if (!menu?.element) {
+      LogUtil.error('RollMenuDragManager.snapToRightEdge - Menu element is null');
+      return;
+    }
+
     menu.isCustomPosition = true;
     menu.customPosition = {
       y: currentTop,
       isCustom: true,
       dockedRight: true
     };
-    
+
     menu.element.classList.remove('custom-position', 'left-edge', 'top-edge', 'docked-bottom', 'faded-ui', 'offset');
     menu.element.classList.add('docked-right', 'snapping');
     
@@ -332,19 +347,24 @@ export class RollMenuDragManager {
    */
   static async snapToBottomEdge(menu) {
     LogUtil.log('RollMenuDragManager.snapToBottomEdge');
-    
+
+    if (!menu?.element) {
+      LogUtil.error('RollMenuDragManager.snapToBottomEdge - Menu element is null');
+      return;
+    }
+
     menu.isCustomPosition = true;
     menu.customPosition = {
       isCustom: true,
       dockedBottom: true
     };
-    
+
     menu.element.classList.remove('custom-position', 'left-edge', 'top-edge', 'docked-right', 'offset');
     menu.element.classList.add('docked-bottom', 'snapping');
-    
+
     // Move to #ui-bottom container
     const uiBottom = document.querySelector('#ui-bottom');
-    if (uiBottom && !uiBottom.contains(menu.element)) {
+    if (uiBottom && menu.element && !uiBottom.contains(menu.element)) {
       uiBottom.prepend(menu.element);
     }
     
@@ -411,16 +431,21 @@ export class RollMenuDragManager {
    */
   static async snapToDefault(menu) {
     LogUtil.log('RollMenuDragManager.snapToDefault');
-    
+
+    if (!menu?.element) {
+      LogUtil.error('RollMenuDragManager.snapToDefault - Menu element is null');
+      return;
+    }
+
     menu.isCustomPosition = false;
     menu.customPosition = null;
-    
+
     const SETTINGS = getSettings();
     const originalLayout = SettingsUtil.get(SETTINGS.menuLayout.tag);
-    
+
     menu.element.classList.remove('custom-position', 'left-edge', 'top-edge', 'docked-bottom', 'docked-right', 'faded-ui', 'offset');
     menu.element.classList.add('snapping');
-    
+
     menu.element.style.position = '';
     menu.element.style.inset = '';
     menu.element.style.left = '';
@@ -445,17 +470,17 @@ export class RollMenuDragManager {
    * @param {Object} position 
    */
   static applyCustomPosition(menu, position) {
-    if (!position || !position.isCustom) return;
+    if (!position || !position.isCustom || !menu?.element) return;
 
     const menuSize = menu.element.getBoundingClientRect();
-    
+
     LogUtil.log('RollMenuDragManager.applyCustomPosition', [position]);
     if(position.x < 0){
       position.x = 0;
     }else if (position.x > window.innerWidth - menuSize.width){
       position.x = window.innerWidth - menuSize.width;
     }
-    
+
     if(position.y < 0){
       position.y = 0;
     }else if (position.y > window.innerHeight - menuSize.height){

@@ -4,6 +4,7 @@ import { delay, getActorData, updateCanvasTokenSelection } from '../../helpers/H
 import { getSettings } from '../../../constants/Settings.mjs';
 import { SettingsUtil } from '../../utils/SettingsUtil.mjs';
 import { MODULE_ID } from '../../../constants/General.mjs';
+import { TokenMovementManager } from '../../utils/TokenMovementManager.mjs';
 
 /**
  * Handles Roll Requests Menu event listeners
@@ -117,6 +118,10 @@ export class RollMenuEventManager {
 
     html.querySelector('#flash5e-group-selected')?.addEventListener('click', () => {
       this.createGroupFromSelected(menu);
+    });
+
+    html.querySelector('#flash5e-lock-movement')?.addEventListener('click', () => {
+      this.toggleMovementForSelected(menu);
     });
   }
 
@@ -1068,5 +1073,13 @@ export class RollMenuEventManager {
       LogUtil.error("Failed to create group/encounter actor:", error);
       ui.notifications.warn(`Failed to create ${actorType}: ${error.message}`);
     }
+  }
+
+  /**
+   * Toggle movement restriction for selected actors
+   * @param {RollRequestsMenu} menu - The menu instance
+   */
+  static async toggleMovementForSelected(menu) {
+    await TokenMovementManager.toggleMovementForSelected(menu);
   }
 }

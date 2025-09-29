@@ -38,7 +38,11 @@
       "dropError": "Error adding actor to menu",
       "npcHiddenFromPlayers": "NPCs are now hidden from players in the group message.",
       "npcVisibleToPlayers": "NPCs are now visible to players in the group message.",
-      "midiQolActive": "The setting 'Send roll request from player sheets' might conflict with some Midi-QoL features. Test before play, or disable the option below."
+      "midiQolActive": "The setting 'Send roll request from player sheets' might conflict with some Midi-QoL features. Test before play, or disable the option below.",
+      "movementLocked": "Movement locked for {count} token(s)",
+      "movementUnlocked": "Movement unlocked for {count} token(s)",
+      "movementRestricted": "The GM has restricted movement for this token",
+      "noTokensForMovementLock": "No tokens found for selected actors"
     },
     "contextMenu": {
       "addToFavorites": "Add to Flash Rolls Menu",
@@ -208,6 +212,14 @@
       "menuIconsLayout": {
         "label": "Menu Icon Layout",
         "hint": "Customize which icons appear in the menu and their order. Drag icons to reorder them and toggle them on/off."
+      },
+      "autoBlockMovementInCombat": {
+        "label": "Auto Block Movement in Combat",
+        "hint": "When enabled, players won't be able to move tokens when out of turn. The GM can still move tokens at all times, and can momentarily unblock them for players during combat via menu when needed."
+      },
+      "legacyTokenAssociationsMigrated": {
+        "label": "Legacy Token Associations Migration Status",
+        "hint": "Internal flag tracking whether legacy token associations have been migrated to the new scene-based format."
       }
     },
     "groupRoll": {
@@ -234,6 +246,12 @@
       }
     },
     "ui": {
+      "tooltips": {
+        "dragOutToRemove": "Drag out to remove",
+        "movementLocked": "Movement locked",
+        "characterSheet": "Character sheet",
+        "targetCharacter": "Target character"
+      },
       "settings": {
         "moduleActionsTitle": "Module Actions",
         "actorActionsTitle": "Actor Actions"
@@ -264,7 +282,8 @@
         "showOptionsListOnHover": "Toggle List",
         "openSettings": "Open Settings",
         "filterActors": "Filter Actors",
-        "groupSelected": "Create Group"
+        "groupSelected": "Create Group",
+        "toggleMovement": "Toggle Movement Block"
       },
       "filters": {
         "title": "Filter Actors",

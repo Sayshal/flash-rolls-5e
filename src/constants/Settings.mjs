@@ -30,7 +30,8 @@ export const getSettings = () => {
         'addMacrosToFolder',
         'templateAutoTarget',
         'removeTemplate',
-        'templateRemovalTimeout'
+        'templateRemovalTimeout',
+        'autoBlockMovementInCombat'
       ],
       default: {
         showMenuOnLoad: false,
@@ -40,7 +41,8 @@ export const getSettings = () => {
         addMacrosToFolder: true,
         templateAutoTarget: 1,
         removeTemplate: true,
-        templateRemovalTimeout: 5
+        templateRemovalTimeout: 5,
+        autoBlockMovementInCombat: false
       },
       scope: SETTING_SCOPE.world,
       config: false, 
@@ -429,6 +431,27 @@ export const getSettings = () => {
       hint: game.i18n.localize("FLASH_ROLLS.settings.menuIconsLayout.hint"),
       propType: Object,
       default: iconsMenuDefault,
+      scope: SETTING_SCOPE.world,
+      config: false
+    },
+
+    autoBlockMovementInCombat: {
+      tag: "auto-block-movement-in-combat",
+      label: game.i18n.localize("FLASH_ROLLS.settings.autoBlockMovementInCombat.label"),
+      hint: game.i18n.localize("FLASH_ROLLS.settings.autoBlockMovementInCombat.hint"),
+      propType: Boolean,
+      inputType: SETTING_INPUT.checkbox,
+      default: false,
+      scope: SETTING_SCOPE.world,
+      config: false
+    },
+
+    legacyTokenAssociationsMigrated: {
+      tag: "legacy-token-associations-migrated",
+      label: game.i18n.localize("FLASH_ROLLS.settings.legacyTokenAssociationsMigrated.label"),
+      hint: game.i18n.localize("FLASH_ROLLS.settings.legacyTokenAssociationsMigrated.hint"),
+      propType: Boolean,
+      default: false,
       scope: SETTING_SCOPE.world,
       config: false
     }

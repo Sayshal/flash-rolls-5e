@@ -179,8 +179,9 @@ export class RollMenuStateManager {
       // Vertical layout - position tooltip to the left or right of the button
       const isLeftEdge = menu.element.classList.contains('left-edge');
       const relativeLeft = buttonRect.left - menuRect.left;
-      const buttonCenterY = relativeTop + (buttonRect.height / 2);
-      const tooltipTop = buttonCenterY - (tooltipRect.height / 2);
+      // Align bottom of tooltip with bottom of button
+      const buttonBottom = relativeTop + buttonRect.height;
+      const tooltipTop = buttonBottom - tooltipRect.height;
 
       if (isLeftEdge) {
         // Left edge - tooltip appears to the right of the button

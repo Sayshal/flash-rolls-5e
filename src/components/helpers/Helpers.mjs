@@ -240,7 +240,7 @@ export function hasTokenInScene(actor) {
   // Skip non-character actors
   if (actor.type !== 'character' && actor.type !== 'npc') return false;
   
-  const currentScene = game.scenes.active;
+  const currentScene = game.scenes.current;
   return currentScene && currentScene.tokens.some(token => token.actorId === actor.id);
 }
 
@@ -250,7 +250,7 @@ export function hasTokenInScene(actor) {
  * @param {boolean} selected - Whether to select or deselect
  */
 export function updateCanvasTokenSelection(actorId, selected, tokenId = null) {
-  const scene = game.scenes.active;
+  const scene = game.scenes.current;
   if (!scene) return;
   
   let tokens;
@@ -512,7 +512,7 @@ export function adjustMenuOffset(isExpanded=true){
  */
 export function getActorData(uniqueId){
   // First check if this is a token ID
-  const tokenDoc = game.scenes.active?.tokens.get(uniqueId);
+  const tokenDoc = game.scenes.current?.tokens.get(uniqueId);
   if (tokenDoc?.actor) return tokenDoc.actor;
 
   const token = canvas.tokens?.get(uniqueId);

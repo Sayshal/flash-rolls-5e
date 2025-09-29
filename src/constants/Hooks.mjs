@@ -24,6 +24,7 @@ export const HOOKS_CORE = {
   REFRESH_MEASURED_TEMPLATE: "refreshMeasuredTemplate",
   CONTROL_TOKEN: "controlToken",
   UPDATE_TOKEN: "updateToken",
+  PRE_UPDATE_TOKEN: "preUpdateToken",
   DELETE_TOKEN: "deleteToken",
   CREATE_TOKEN: "createToken",
   UPDATE_ACTOR: "updateActor",
@@ -41,11 +42,16 @@ export const HOOKS_CORE = {
   DELETE_COMBATANT: "deleteCombatant",
   UPDATE_COMBAT: "updateCombat",
   DELETE_COMBAT: "deleteCombat",
+  COMBAT_START: "combatStart",
+  COMBAT_TURN: "combatTurn",
+  COMBAT_TURN_CHANGE: "combatTurnChange",
+  COMBAT_ROUND: "combatRound",
   CREATE_ACTIVE_EFFECT: "createActiveEffect",
   DELETE_ACTIVE_EFFECT: "deleteActiveEffect",
   UPDATE_ACTIVE_EFFECT: "updateActiveEffect",
   RENDER_APPLICATION: "renderApplication",
-  PRE_CREATE_TOKEN: "preCreateToken"
+  PRE_CREATE_TOKEN: "preCreateToken",
+  CANVAS_READY: "canvasReady"
 };
 
 /**

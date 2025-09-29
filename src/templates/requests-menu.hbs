@@ -64,11 +64,14 @@
                         </ul>
                       </div>
                       <div class="actor-img">
-                        {{#if member.isFavorite}}
-                          <i class="fas fa-bolt favorite" data-tooltip="Drag out to remove" data-tooltip-direction="UP"></i>
-                        {{/if}}
                         <span class="icons">
-                          <i class="fas fa-square-user icon-sheet" data-tooltip="Character sheet" data-tooltip-direction="UP"></i>
+                          {{#if member.isFavorite}}
+                            <i class="fas fa-bolt favorite" data-tooltip="{{localize 'FLASH_ROLLS.ui.tooltips.dragOutToRemove'}}" data-tooltip-direction="UP"></i>
+                          {{/if}}
+                          {{#if member.movementRestricted}}
+                            <i class="fas fa-ban movement-restricted" data-tooltip="{{localize 'FLASH_ROLLS.ui.tooltips.movementLocked'}}" data-tooltip-direction="UP"></i>
+                          {{/if}}
+                          <i class="fas fa-square-user icon-sheet" data-tooltip="{{localize 'FLASH_ROLLS.ui.tooltips.characterSheet'}}" data-tooltip-direction="UP"></i>
                           {{!-- <i class="fas fa-crosshairs icon-target" data-tooltip="Target character" data-tooltip-direction="UP"></i> --}}
                         </span>
                         <img src="{{ member.img }}" alt="{{ member.name }}" />
@@ -131,11 +134,14 @@
                   </ul>
                 </div>
                 <div class="actor-img">
-                  {{#if actor.isFavorite}}
-                    <i class="fas fa-bolt favorite" data-tooltip="Drag out to remove" data-tooltip-direction="UP"></i>
-                  {{/if}}
                   <span class="icons">
-                    <i class="fas fa-square-user icon-sheet" data-tooltip="Character sheet" data-tooltip-direction="UP"></i>
+                    {{#if actor.isFavorite}}
+                      <i class="fas fa-bolt favorite" data-tooltip="{{localize 'FLASH_ROLLS.ui.tooltips.dragOutToRemove'}}" data-tooltip-direction="UP"></i>
+                    {{/if}}
+                    {{#if actor.movementRestricted}}
+                      <i class="fas fa-ban movement-restricted" data-tooltip="{{localize 'FLASH_ROLLS.ui.tooltips.movementLocked'}}" data-tooltip-direction="UP"></i>
+                    {{/if}}
+                    <i class="fas fa-square-user icon-sheet" data-tooltip="{{localize 'FLASH_ROLLS.ui.tooltips.characterSheet'}}" data-tooltip-direction="UP"></i>
                     {{!-- <i class="fas fa-crosshairs icon-target" data-tooltip="Target character" data-tooltip-direction="UP"></i> --}}
                   </span>
                   <img src="{{ actor.img }}" alt="{{ actor.name }}" />

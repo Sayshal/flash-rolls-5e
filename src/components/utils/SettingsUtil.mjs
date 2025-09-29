@@ -5,6 +5,7 @@ import { getDefaultIconLayout } from "../../constants/IconMappings.mjs";
 import { LogUtil } from "../utils/LogUtil.mjs";
 import RollRequestsMenu from "../ui/RollRequestsMenu.mjs";
 import { GeneralUtil } from "./GeneralUtil.mjs";
+import { TokenMovementManager } from "./TokenMovementManager.mjs";
 
 /**
  * Utility class for managing module settings
@@ -192,6 +193,9 @@ export class SettingsUtil {
       case SETTINGS.menuIconsLayout.tag:
         SettingsUtil.applyMenuIconsLayout(newValue);
         break;
+      case SETTINGS.autoBlockMovementInCombat.tag:
+        SettingsUtil.applyAutoBlockMovementInCombat(newValue);
+        break;
       default:
         break;
     }
@@ -306,6 +310,26 @@ export class SettingsUtil {
       LogUtil.log('validateAndUpdateIconLayout - updated layout', updatedLayout);
     } else {
       LogUtil.log('validateAndUpdateIconLayout - no changes needed');
+    }
+  }
+
+  /**
+   * Apply auto-block movement in combat setting changes
+   * @param {boolean} newValue - The new setting value
+   * @static
+   */
+  static applyAutoBlockMovementInCombat(newValue) {
+    if (!game.user.isGM) return;
+
+    const activeCombat = game.combat;
+    if (!activeCombat) return;
+
+    LogUtil.log('applyAutoBlockMovementInCombat', [newValue, activeCombat]);
+
+    if (newValue) {
+      TokenMovementManager.onCombatStart(activeCombat, {});
+    } else {
+      TokenMovementManager.onCombatEnd(activeCombat);
     }
   }
 }

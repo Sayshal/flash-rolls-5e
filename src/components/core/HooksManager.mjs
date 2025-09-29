@@ -18,6 +18,7 @@ import { RollMenuDragManager } from "../managers/roll-menu/RollMenuDragManager.m
 import { RollHooksHandler } from "../handlers/RollHooksHandler.mjs";
 import { ActivityManager } from "../managers/ActivityManager.mjs";
 import { GroupTokenTracker } from "../managers/GroupTokenTracker.mjs";
+import { TokenMovementManager } from "../utils/TokenMovementManager.mjs";
 
 /**
  * Utility class for managing all module hooks in one place
@@ -234,6 +235,7 @@ export class HooksManager {
       DiceConfigUtil.getDiceConfig();
     }
     updateSidebarClass(isSidebarExpanded());
+    TokenMovementManager.initializeCombatMovementRestrictions();
 
     // Initialize public API for other modules
     const module = game.modules.get("flash-rolls-5e");
@@ -267,12 +269,16 @@ export class HooksManager {
     this._registerHook(HOOKS_CORE.CHANGE_SIDEBAR_TAB, this._onSidebarUpdate.bind(this));
     this._registerHook(HOOKS_CORE.COLLAPSE_SIDE_BAR, this._onSidebarUpdate.bind(this));
     this._registerHook(HOOKS_CORE.REFRESH_MEASURED_TEMPLATE, this.onRefreshTemplate.bind(this));
+    this._registerHook(HOOKS_CORE.CANVAS_READY, this._onCanvasReady.bind(this));
 
     // Chat message hooks (delegated to ChatMessageManager)
     this._registerHook(HOOKS_CORE.CREATE_CHAT_MESSAGE, ChatMessageManager.onCreateChatMessage.bind(ChatMessageManager));
     this._registerHook(HOOKS_CORE.PRE_CREATE_CHAT_MESSAGE, ChatMessageManager.onPreCreateChatMessage.bind(ChatMessageManager));
     this._registerHook(HOOKS_CORE.RENDER_CHAT_MESSAGE, ChatMessageManager.onRenderChatMessage.bind(ChatMessageManager));
     this._registerHook(HOOKS_CORE.RENDER_CHAT_LOG, ChatMessageManager.onRenderChatLog.bind(ChatMessageManager));
+
+    // Token movement restriction hook
+    this._registerHook(HOOKS_CORE.PRE_UPDATE_TOKEN, this._onPreUpdateToken.bind(this));
 
 
     // Roll configuration hooks
@@ -304,6 +310,12 @@ export class HooksManager {
     this._registerHook(HOOKS_CORE.DELETE_COMBATANT, this._onCombatChange.bind(this));
     this._registerHook(HOOKS_CORE.UPDATE_COMBAT, this._onCombatChange.bind(this));
     this._registerHook(HOOKS_CORE.DELETE_COMBAT, this._onCombatChange.bind(this));
+
+    // Combat hooks for automatic movement blocking
+    this._registerHook(HOOKS_CORE.COMBAT_START, this._onCombatStart.bind(this));
+    this._registerHook(HOOKS_CORE.COMBAT_TURN_CHANGE, this._onCombatTurnChange.bind(this));
+    this._registerHook(HOOKS_CORE.DELETE_COMBAT, this._onDeleteCombat.bind(this));
+    this._registerHook(HOOKS_CORE.CREATE_COMBATANT, this._onCreateCombatant.bind(this));
 
     // ActiveEffect hooks for tracking status effect changes
     this._registerHook(HOOKS_CORE.CREATE_ACTIVE_EFFECT, this._onActiveEffectChange.bind(this));
@@ -635,6 +647,36 @@ export class HooksManager {
   }
 
   /**
+   * Handle token pre-update events to intercept movement restrictions
+   * @param {TokenDocument} tokenDoc - The token document
+   * @param {Object} updateData - The update data
+   * @param {Object} options - Update options
+   * @param {string} userId - The user ID who performed the action
+   * @returns {boolean|void} False to prevent the update, otherwise allow
+   */
+  static _onPreUpdateToken(tokenDoc, updateData, options, userId) {
+    LogUtil.log('HooksManager._onPreUpdateToken called', {
+      tokenDoc,
+      updateData,
+      options,
+      userId,
+      userIsGM: game.users.get(userId)?.isGM
+    });
+
+    const user = game.users.get(userId);
+    if (!user) return;
+
+    const isMovementAllowed = TokenMovementManager.isMovementAllowed(tokenDoc, user, updateData);
+    LogUtil.log('Movement check result:', { isMovementAllowed, user: user.name, token: tokenDoc.name });
+
+    if (!isMovementAllowed) {
+      ui.notifications.warn(game.i18n.localize("FLASH_ROLLS.notifications.movementRestricted"));
+      LogUtil.log('Movement blocked for token:', tokenDoc.name);
+      return false;
+    }
+  }
+
+  /**
    * Handle token deletion events to refresh roll requests menu and clean up group associations
    * @param {TokenDocument} tokenDoc - The token document
    * @param {Object} options - Deletion options
@@ -688,6 +730,15 @@ export class HooksManager {
     }
   }
 
+  /**
+   * Handle canvas ready event when scene viewing changes
+   * @param {Canvas} canvas - The canvas instance
+   */
+  static _onCanvasReady(canvas) {
+    LogUtil.log('HooksManager._onCanvasReady - Re-rendering roll requests menu due to scene view change');
+    RollRequestsMenu.refreshIfOpen();
+  }
+
   static _onActorUpdate(actor, changes, options, userId) {
     LogUtil.log("HooksManager._onActorUpdate", [actor, changes]);
     LogUtil.log("HooksManager._onActorUpdate - changes.effects:", [changes.effects]);
@@ -725,9 +776,8 @@ export class HooksManager {
     LogUtil.log("HooksManager._onTokenUpdate", [tokenDoc, changes]);
 
     const visibilityChanged = changes.hidden !== undefined;
-    const effectsChanged = changes.effects !== undefined;
 
-    if (!visibilityChanged && !effectsChanged) return;
+    if (!visibilityChanged) return;
 
     RollRequestsMenu.refreshIfOpen();
   }
@@ -1172,7 +1222,7 @@ export class HooksManager {
     const oldColorScheme = SettingsUtil.coreColorScheme;
     SettingsUtil.updateColorScheme();
     const newColorScheme = SettingsUtil.coreColorScheme;
-    
+
     // Update the menu if it's open and color scheme changed
     const menuInstance = RollRequestsMenu.getInstance();
     if (menuInstance?.rendered && menuInstance.classList) {
@@ -1185,5 +1235,42 @@ export class HooksManager {
         menuInstance.classList.add(`theme-${newColorScheme}`);
       }
     }
+  }
+
+  /**
+   * Handle combat start for automatic movement blocking
+   * @param {Combat} combat - The combat instance
+   * @param {object} updateData - Update data
+   */
+  static _onCombatStart(combat, updateData) {
+    TokenMovementManager.onCombatStart(combat, updateData);
+  }
+
+  /**
+   * Handle combat turn change for movement control
+   * @param {Combat} combat - The combat instance
+   * @param {object} prior - The prior turn state
+   * @param {object} current - The current turn state
+   */
+  static _onCombatTurnChange(combat, prior, current) {
+    TokenMovementManager.onCombatTurnChange(combat, prior, current);
+  }
+
+  /**
+   * Handle combat deletion for movement cleanup
+   * @param {Combat} combat - The combat instance
+   */
+  static _onDeleteCombat(combat) {
+    TokenMovementManager.onCombatEnd(combat);
+  }
+
+  /**
+   * Handle combatant creation for movement control
+   * @param {Combatant} combatant - The combatant document
+   * @param {object} options - Creation options
+   * @param {string} userId - The user ID who created the combatant
+   */
+  static _onCreateCombatant(combatant, options, userId) {
+    TokenMovementManager.onCreateCombatant(combatant, options, userId);
   }
 }

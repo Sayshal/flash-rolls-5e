@@ -7,6 +7,7 @@ import { RollMenuActorUtil } from '../../utils/RollMenuActorUtil.mjs';
 import { ActorStatusManager } from '../ActorStatusManager.mjs';
 import { RollMenuStatusManager } from './RollMenuStatusManager.mjs';
 import { RollMenuStateManager } from './RollMenuStateManager.mjs';
+import { TokenMovementManager } from '../../utils/TokenMovementManager.mjs';
 
 /**
  * Utility class for processing actors for the Roll Requests Menu
@@ -25,7 +26,7 @@ export class RollMenuActorProcessor {
     const pcActors = [];
     const npcActors = [];
     const groupActors = [];
-    const currentScene = game.scenes.active;
+    const currentScene = game.scenes.current;
     
     for (const actor of actors) {
       // Process group and encounter actors separately
@@ -303,7 +304,8 @@ export class RollMenuActorProcessor {
       hpColor: hpData.hpColor,
       tokenId: token?.id || null,
       isToken: !!token,
-      uniqueId: token?.id || actor.id
+      uniqueId: token?.id || actor.id,
+      movementRestricted: token ? TokenMovementManager.isMovementRestricted(token) : false
     };
   }
 
@@ -324,9 +326,10 @@ export class RollMenuActorProcessor {
       return [];
     }
 
+
     const SETTINGS = getSettings();
     const showOnlyPCsWithToken = SettingsUtil.get(SETTINGS.showOnlyPCsWithToken?.tag);
-    
+
     const tokensInScene = currentScene?.tokens.filter(token => token.actorId === actor.id) || [];
     const groupEntries = [];
 
@@ -337,75 +340,72 @@ export class RollMenuActorProcessor {
 
     if (actor.type === 'group') {
       // Group type: members have direct actor references
-      // Check if we have stored token associations
-      const tokenAssociations = actor.getFlag(MODULE_ID, 'tokenAssociations') || {};
+      // Check if we have stored token associations (new scene-based format)
+      const tokenAssociationsByScene = actor.getFlag(MODULE_ID, 'tokenAssociationsByScene') || {};
+      const tokenAssociations = tokenAssociationsByScene[currentScene?.id] || {};
 
       for (const member of actor.system.members || []) {
         if (member.actor && !ActorStatusManager.isBlocked(member.actor)) {
           const memberActorId = member.actor.id;
           const associatedTokenIds = tokenAssociations[memberActorId] || [];
 
+
           if (associatedTokenIds.length > 0) {
             // Use specific tokens from associations by finding them in current scene
-            for (const tokenId of associatedTokenIds) {
-              const tokenDoc = currentScene?.tokens.get(tokenId);
-              if (tokenDoc && tokenDoc.actorId === member.actor.id) {
-                // Apply filters if active
-                if (hasActiveFilters) {
-                  const actorToCheck = tokenDoc.actor || member.actor;
-                  if (!RollMenuStateManager.doesActorPassFilters(actorToCheck, actorFilters, tokenDoc)) {
-                    continue; // Skip this member if it doesn't pass filters
+            for (const tokenUuid of associatedTokenIds) {
+              try {
+                const tokenDoc = fromUuidSync(tokenUuid);
+                if (tokenDoc && tokenDoc.actorId === member.actor.id && tokenDoc.parent === currentScene) {
+                  // Apply filters if active
+                  if (hasActiveFilters) {
+                    const actorToCheck = tokenDoc.actor || member.actor;
+                    if (!RollMenuStateManager.doesActorPassFilters(actorToCheck, actorFilters, tokenDoc)) {
+                      continue; // Skip this member if it doesn't pass filters
+                    }
                   }
+                  hasAnyMemberTokens = true;
+                  const memberData = this.createActorData(member.actor, tokenDoc, menu);
+                  members.push(memberData);
+                } else {
                 }
-                hasAnyMemberTokens = true;
-                const memberData = this.createActorData(member.actor, tokenDoc, menu);
-                members.push(memberData);
-              } else {
-                // Token not found in current scene, use base actor
-                // Apply filters if active
-                if (hasActiveFilters) {
-                  if (!RollMenuStateManager.doesActorPassFilters(member.actor, actorFilters, null)) {
-                    continue; // Skip this member if it doesn't pass filters
-                  }
-                }
-                const memberData = this.createActorData(member.actor, null, menu);
-                members.push(memberData);
+              } catch (error) {
               }
             }
           } else {
-            // No token associations, fall back to original behavior
-            const memberTokens = currentScene?.tokens.filter(token => token.actorId === member.actor.id) || [];
+            // COMMENTED OUT: No token associations, fall back to original behavior
+            // const memberTokens = currentScene?.tokens.filter(token => token.actorId === member.actor.id) || [];
 
-            if (memberTokens.length > 0) {
-              hasAnyMemberTokens = true;
-              memberTokens.forEach(tokenDoc => {
-                // Apply filters if active
-                if (hasActiveFilters) {
-                  const actorToCheck = tokenDoc.actor || member.actor;
-                  if (!RollMenuStateManager.doesActorPassFilters(actorToCheck, actorFilters, tokenDoc)) {
-                    return; // Skip this member if it doesn't pass filters
-                  }
-                }
-                const memberData = this.createActorData(member.actor, tokenDoc, menu);
-                members.push(memberData);
-              });
-            } else {
-              // Apply filters if active
-              if (hasActiveFilters) {
-                if (!RollMenuStateManager.doesActorPassFilters(member.actor, actorFilters, null)) {
-                  continue; // Skip this member if it doesn't pass filters
-                }
-              }
-              const memberData = this.createActorData(member.actor, null, menu);
-              members.push(memberData);
-            }
+            // if (memberTokens.length > 0) {
+            //   hasAnyMemberTokens = true;
+            //   memberTokens.forEach(tokenDoc => {
+            //     // Apply filters if active
+            //     if (hasActiveFilters) {
+            //       const actorToCheck = tokenDoc.actor || member.actor;
+            //       if (!RollMenuStateManager.doesActorPassFilters(actorToCheck, actorFilters, tokenDoc)) {
+            //         return; // Skip this member if it doesn't pass filters
+            //       }
+            //     }
+            //     const memberData = this.createActorData(member.actor, tokenDoc, menu);
+            //     members.push(memberData);
+            //   });
+            // } else {
+            //   // Apply filters if active
+            //   if (hasActiveFilters) {
+            //     if (!RollMenuStateManager.doesActorPassFilters(member.actor, actorFilters, null)) {
+            //       continue; // Skip this member if it doesn't pass filters
+            //     }
+            //   }
+            //   const memberData = this.createActorData(member.actor, null, menu);
+            //   members.push(memberData);
+            // }
           }
         }
       }
     } else if (actor.type === 'encounter') {
       // Encounter type: members have UUIDs and quantities
-      // Check if we have stored token associations
-      const tokenAssociations = actor.getFlag(MODULE_ID, 'tokenAssociations') || {};
+      // Check if we have stored token associations (new scene-based format)
+      const tokenAssociationsByScene = actor.getFlag(MODULE_ID, 'tokenAssociationsByScene') || {};
+      const tokenAssociations = tokenAssociationsByScene[currentScene?.id] || {};
 
       for (const member of actor.system.members || []) {
         try {
@@ -416,62 +416,55 @@ export class RollMenuActorProcessor {
 
             if (associatedTokenIds.length > 0) {
               // Use specific tokens from associations by finding them in current scene
-              for (const tokenId of associatedTokenIds) {
-                const tokenDoc = currentScene?.tokens.get(tokenId);
-                if (tokenDoc && tokenDoc.actorId === memberActor.id) {
-                  if (hasActiveFilters) {
-                    const actorToCheck = tokenDoc.actor || memberActor;
-                    if (!RollMenuStateManager.doesActorPassFilters(actorToCheck, actorFilters, tokenDoc)) {
-                      continue; 
+              for (const tokenUuid of associatedTokenIds) {
+                try {
+                  const tokenDoc = fromUuidSync(tokenUuid);
+                  if (tokenDoc && tokenDoc.actorId === memberActor.id && tokenDoc.parent === currentScene) {
+                    if (hasActiveFilters) {
+                      const actorToCheck = tokenDoc.actor || memberActor;
+                      if (!RollMenuStateManager.doesActorPassFilters(actorToCheck, actorFilters, tokenDoc)) {
+                        continue;
+                      }
                     }
+                    hasAnyMemberTokens = true;
+                    const memberData = this.createActorData(memberActor, tokenDoc, menu);
+                    memberData.quantity = 1; // Each specific token has quantity 1
+                    members.push(memberData);
                   }
-                  hasAnyMemberTokens = true;
-                  const memberData = this.createActorData(memberActor, tokenDoc, menu);
-                  memberData.quantity = 1; // Each specific token has quantity 1
-                  members.push(memberData);
-                } else {
-                  // Token not found in current scene, use base actor
-                  if (hasActiveFilters) {
-                    if (!RollMenuStateManager.doesActorPassFilters(memberActor, actorFilters, null)) {
-                      continue; 
-                    }
-                  }
-                  const memberData = this.createActorData(memberActor, null, menu);
-                  memberData.quantity = 1;
-                  members.push(memberData);
+                } catch (error) {
                 }
               }
             } else {
-              // No token associations, fall back to original behavior
-              const memberTokens = currentScene?.tokens.filter(token => token.actorId === memberActor.id) || [];
+              // COMMENTED OUT: No token associations, fall back to original behavior
+              // const memberTokens = currentScene?.tokens.filter(token => token.actorId === memberActor.id) || [];
 
-              if (memberTokens.length > 0) {
-                hasAnyMemberTokens = true;
-                // Create entries for each token
-                memberTokens.forEach(tokenDoc => {
-                  // Apply filters if active
-                  if (hasActiveFilters) {
-                    const actorToCheck = tokenDoc.actor || memberActor;
-                    if (!RollMenuStateManager.doesActorPassFilters(actorToCheck, actorFilters, tokenDoc)) {
-                      return; // Skip this member if it doesn't pass filters
-                    }
-                  }
-                  const memberData = this.createActorData(memberActor, tokenDoc, menu);
-                  memberData.quantity = member.quantity?.value || 1;
-                  members.push(memberData);
-                });
-              } else {
-                // No tokens, create base actor entry
-                // Apply filters if active
-                if (hasActiveFilters) {
-                  if (!RollMenuStateManager.doesActorPassFilters(memberActor, actorFilters, null)) {
-                    continue; // Skip this member if it doesn't pass filters
-                  }
-                }
-                const memberData = this.createActorData(memberActor, null, menu);
-                memberData.quantity = member.quantity?.value || 1;
-                members.push(memberData);
-              }
+              // if (memberTokens.length > 0) {
+              //   hasAnyMemberTokens = true;
+              //   // Create entries for each token
+              //   memberTokens.forEach(tokenDoc => {
+              //     // Apply filters if active
+              //     if (hasActiveFilters) {
+              //       const actorToCheck = tokenDoc.actor || memberActor;
+              //       if (!RollMenuStateManager.doesActorPassFilters(actorToCheck, actorFilters, tokenDoc)) {
+              //         return; // Skip this member if it doesn't pass filters
+              //       }
+              //     }
+              //     const memberData = this.createActorData(memberActor, tokenDoc, menu);
+              //     memberData.quantity = member.quantity?.value || 1;
+              //     members.push(memberData);
+              //   });
+              // } else {
+              //   // No tokens, create base actor entry
+              //   // Apply filters if active
+              //   if (hasActiveFilters) {
+              //     if (!RollMenuStateManager.doesActorPassFilters(memberActor, actorFilters, null)) {
+              //       continue; // Skip this member if it doesn't pass filters
+              //     }
+              //   }
+              //   const memberData = this.createActorData(memberActor, null, menu);
+              //   memberData.quantity = member.quantity?.value || 1;
+              //   members.push(memberData);
+              // }
             }
           }
         } catch (error) {
@@ -489,6 +482,11 @@ export class RollMenuActorProcessor {
       }
     }
     
+    // Don't show groups with no members (no token associations)
+    if (members.length === 0) {
+      return [];
+    }
+
     // Process group similar to regular actors - create entries for tokens if they exist
     if (tokensInScene.length > 0) {
       tokensInScene.forEach(tokenDoc => {

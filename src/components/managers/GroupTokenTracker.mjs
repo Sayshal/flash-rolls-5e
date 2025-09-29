@@ -15,6 +15,13 @@ export class GroupTokenTracker {
   static pendingPlacements = new Map();
 
   /**
+   * Cache for associations being built during active placement operations
+   * Prevents race conditions when multiple tokens are created simultaneously
+   * @type {Map<string, Object>}
+   */
+  static activeAssociations = new Map();
+
+  /**
    * Initialize the group token tracker by setting up hooks and wrapping necessary methods.
    * This should be called once during module initialization.
    */
@@ -23,8 +30,63 @@ export class GroupTokenTracker {
 
     this.setupPlaceMembersTracking();
 
-    Hooks.on('createToken', this.onCreateToken.bind(this));
-    Hooks.on('deleteToken', this.onDeleteToken.bind(this));
+    Hooks.on(HOOKS_CORE.CREATE_TOKEN, this.onCreateToken.bind(this));
+    Hooks.on(HOOKS_CORE.DELETE_TOKEN, this.onDeleteToken.bind(this));
+
+    if (game.user.isGM) {
+      this.migrateLegacyAssociationsForAllGroups();
+    }
+  }
+
+  /**
+   * Migrate legacy associations for all group actors
+   */
+  static async migrateLegacyAssociationsForAllGroups() {
+    // Check if migration has already been completed (with fallback if setting doesn't exist yet)
+    let migrationCompleted = false;
+    try {
+      migrationCompleted = game.settings.get(MODULE_ID, 'legacyTokenAssociationsMigrated');
+    } catch (error) {
+      LogUtil.log('GroupTokenTracker: Migration setting not yet registered, proceeding with migration check');
+    }
+
+    if (migrationCompleted) {
+      LogUtil.log('GroupTokenTracker: Legacy migration already completed globally');
+      return;
+    }
+
+    const hasLegacyActors = game.actors.some(actor =>
+      (actor.type === 'group' || actor.type === 'encounter') &&
+      actor.getFlag(MODULE_ID, 'tokenAssociations') &&
+      !actor.getFlag(MODULE_ID, 'tokenAssociationsByScene')
+    );
+
+    if (!hasLegacyActors) {
+      LogUtil.log('GroupTokenTracker: No legacy associations to migrate, setting global flag');
+      try {
+        await game.settings.set(MODULE_ID, 'legacyTokenAssociationsMigrated', true);
+      } catch (error) {
+        LogUtil.log('GroupTokenTracker: Could not set migration flag, setting may not be registered yet');
+      }
+      return;
+    }
+
+    const groupActors = game.actors.filter(actor =>
+      (actor.type === 'group' || actor.type === 'encounter') &&
+      actor.getFlag(MODULE_ID, 'tokenAssociations') &&
+      !actor.getFlag(MODULE_ID, 'tokenAssociationsByScene')
+    );
+
+    for (const groupActor of groupActors) {
+      await this.migrateLegacyAssociations(groupActor);
+    }
+
+    try {
+      await game.settings.set(MODULE_ID, 'legacyTokenAssociationsMigrated', true);
+      LogUtil.log(`GroupTokenTracker: Migrated legacy associations for ${groupActors.length} group actors and set global completion flag`);
+    } catch (error) {
+      LogUtil.log(`GroupTokenTracker: Migrated legacy associations for ${groupActors.length} group actors but could not set completion flag`);
+    }
   }
 
   /**
@@ -115,6 +177,10 @@ export class GroupTokenTracker {
       isPlacing: true  // Flag to track active placement phase
     });
 
+    // Initialize associations cache for this placement operation
+    const currentFlag = groupActor.getFlag(MODULE_ID, 'tokenAssociationsByScene') || {};
+    this.activeAssociations.set(groupActor.id, JSON.parse(JSON.stringify(currentFlag)));
+
     // Monitor for when token placement UI starts (when tokens start being placed)
     // After a short delay, set isPlacing to true to capture the placement operation
     setTimeout(() => {
@@ -131,6 +197,7 @@ export class GroupTokenTracker {
       if (placement && placement.timestamp === this.pendingPlacements.get(groupActor.id)?.timestamp) {
         LogUtil.log(`GroupTokenTracker: Timeout reached for group ${groupActor.name}, cleaning up`);
         this.pendingPlacements.delete(groupActor.id);
+        this.activeAssociations.delete(groupActor.id); // Clean up the cache
       }
     }, 120000); // 2 minutes
   }
@@ -146,37 +213,59 @@ export class GroupTokenTracker {
    * @param {string} userId - User who created the token
    */
   static async onCreateToken(tokenDoc, options, userId) {
-    if (userId !== game.user.id || !game.user.isGM) return;
 
-    // Only process tokens that were marked as coming from group placement
+    if (userId !== game.user.id) return;
+    await this.cleanupCopiedTokenFlags(tokenDoc);
+    if (!game.user.isGM) return;
+
     const fromGroupPlacement = tokenDoc.getFlag(MODULE_ID, 'fromGroupPlacement');
     const groupId = tokenDoc.getFlag(MODULE_ID, 'groupId');
 
-    if (!fromGroupPlacement || !groupId) return;
+
+    if (!fromGroupPlacement || !groupId) {
+      await this.cleanupDanglingAssociations();
+      return;
+    }
 
     const placement = this.pendingPlacements.get(groupId);
     if (!placement) return;
 
     const actorId = tokenDoc.actorId;
-    LogUtil.log(`GroupTokenTracker: Associating token ${tokenDoc.id} with group ${groupId}`);
+    const sceneId = tokenDoc.parent.id;
+    const tokenUuid = tokenDoc.uuid;
 
-    const currentAssociations = placement.groupActor.getFlag(MODULE_ID, 'tokenAssociations') || {};
 
-    if (!currentAssociations[actorId]) {
-      currentAssociations[actorId] = [];
+    // Use cached associations to avoid race conditions between simultaneous token creations
+    const currentAssociations = this.activeAssociations.get(groupId) || {};
+
+    // Initialize scene associations if not exists
+    if (!currentAssociations[sceneId]) {
+      currentAssociations[sceneId] = {};
     }
 
-    if (!currentAssociations[actorId].includes(tokenDoc.id)) {
-      currentAssociations[actorId].push(tokenDoc.id);
+    if (!currentAssociations[sceneId][actorId]) {
+      currentAssociations[sceneId][actorId] = [];
+    }
 
-      await placement.groupActor.setFlag(MODULE_ID, 'tokenAssociations', currentAssociations);
+    // Use UUID instead of just token ID for better cross-scene tracking
+    const existingUuids = [...currentAssociations[sceneId][actorId]]; // Create a copy to avoid race conditions
+
+    if (!existingUuids.includes(tokenUuid)) {
+      existingUuids.push(tokenUuid);
+      // Update the associations object with the new array
+      currentAssociations[sceneId][actorId] = existingUuids;
+
+
+      // Update both the cache and the flag
+      this.activeAssociations.set(groupId, currentAssociations);
+      await placement.groupActor.setFlag(MODULE_ID, 'tokenAssociationsByScene', currentAssociations);
 
       // Remove the temporary fromGroupPlacement flag, keep only groupId
       await tokenDoc.unsetFlag(MODULE_ID, 'fromGroupPlacement');
 
       placement.placedTokenCount++;
 
-      LogUtil.log(`GroupTokenTracker: Updated tokenAssociations for group ${placement.groupActor.name}`, {
+      LogUtil.log(`GroupTokenTracker: Updated tokenAssociationsByScene for group ${placement.groupActor.name}`, {
         associations: currentAssociations,
         placedCount: placement.placedTokenCount,
         expectedCount: placement.expectedTokenCount
@@ -187,14 +276,19 @@ export class GroupTokenTracker {
         placement.isPlacing = false;  // Stop marking new tokens as from this placement
         LogUtil.log(`GroupTokenTracker: All tokens placed for group ${placement.groupActor.name}, cleaning up`);
         this.pendingPlacements.delete(groupId);
+        this.activeAssociations.delete(groupId); // Clean up the cache
       }
+    } else {
     }
+
+    // Clean up any dangling associations after successful placement
+    await this.cleanupDanglingAssociations();
   }
 
   /**
    * Handle token deletion to remove it from group associations.
    * When a token is deleted, check if it has a groupId flag indicating it belongs to a group.
-   * If so, remove it from the group's tokenAssociations to keep the associations clean.
+   * If so, remove it from the group's tokenAssociationsByScene to keep the associations clean.
    *
    * @param {TokenDocument} tokenDoc - The deleted token document
    * @param {object} options - Deletion options
@@ -208,27 +302,35 @@ export class GroupTokenTracker {
     if (!groupActor) return;
 
     const actorId = tokenDoc.actorId;
-    const tokenId = tokenDoc.id;
+    const sceneId = tokenDoc.parent.id;
+    const tokenUuid = tokenDoc.uuid;
 
-    const associations = groupActor.getFlag(MODULE_ID, 'tokenAssociations');
-    if (!associations || !associations[actorId]) return;
+    const associations = groupActor.getFlag(MODULE_ID, 'tokenAssociationsByScene');
+    if (!associations || !associations[sceneId] || !associations[sceneId][actorId]) return;
 
-    const tokenIndex = associations[actorId].indexOf(tokenId);
+    const tokenIndex = associations[sceneId][actorId].indexOf(tokenUuid);
     if (tokenIndex === -1) return;
 
-    LogUtil.log(`GroupTokenTracker: Removing deleted token ${tokenId} from group ${groupId}`);
+    LogUtil.log(`GroupTokenTracker: Removing deleted token ${tokenUuid} from group ${groupId}`);
 
-    associations[actorId].splice(tokenIndex, 1);
+    associations[sceneId][actorId].splice(tokenIndex, 1);
 
-    if (associations[actorId].length === 0) {
-      delete associations[actorId];
+    if (associations[sceneId][actorId].length === 0) {
+      delete associations[sceneId][actorId];
+    }
+
+    if (Object.keys(associations[sceneId]).length === 0) {
+      delete associations[sceneId];
     }
 
     if (Object.keys(associations).length === 0) {
-      await groupActor.unsetFlag(MODULE_ID, 'tokenAssociations');
+      await groupActor.unsetFlag(MODULE_ID, 'tokenAssociationsByScene');
     } else {
-      await groupActor.setFlag(MODULE_ID, 'tokenAssociations', associations);
+      await groupActor.setFlag(MODULE_ID, 'tokenAssociationsByScene', associations);
     }
+
+    // Also trigger cleanup of dangling associations
+    await this.cleanupDanglingAssociations();
   }
 
   /**
@@ -249,8 +351,8 @@ export class GroupTokenTracker {
   }
 
   /**
-   * Clear associations for tokens that no longer exist in the current scene.
-   * This maintenance function ensures the tokenAssociations flag doesn't contain
+   * Clear associations for tokens that no longer exist in their respective scenes.
+   * This maintenance function ensures the tokenAssociationsByScene flag doesn't contain
    * references to tokens that have been deleted or moved to other scenes.
    * Should be called periodically or when switching scenes.
    *
@@ -259,34 +361,73 @@ export class GroupTokenTracker {
   static async cleanupInvalidTokens(groupActor) {
     if (groupActor.type !== 'group' && groupActor.type !== 'encounter') return;
 
-    const associations = groupActor.getFlag(MODULE_ID, 'tokenAssociations');
+    const associations = groupActor.getFlag(MODULE_ID, 'tokenAssociationsByScene');
     if (!associations) return;
-
-    const scene = game.scenes.active;
-    if (!scene) return;
 
     let hasChanges = false;
     const cleanedAssociations = {};
 
-    for (const [actorId, tokenIds] of Object.entries(associations)) {
-      const validTokenIds = tokenIds.filter(tokenId => {
-        const token = scene.tokens.get(tokenId);
-        return token && token.actorId === actorId;
-      });
-
-      if (validTokenIds.length > 0) {
-        cleanedAssociations[actorId] = validTokenIds;
+    for (const [sceneId, sceneAssociations] of Object.entries(associations)) {
+      const scene = game.scenes.get(sceneId);
+      if (!scene) {
+        LogUtil.log(`GroupTokenTracker: Scene ${sceneId} no longer exists, removing associations`);
+        hasChanges = true;
+        continue;
       }
 
-      if (validTokenIds.length !== tokenIds.length) {
-        hasChanges = true;
+      const cleanedSceneAssociations = {};
+
+      for (const [actorId, tokenUuids] of Object.entries(sceneAssociations)) {
+        const validTokenUuids = tokenUuids.filter(tokenUuid => {
+          try {
+            const token = fromUuidSync(tokenUuid);
+            return token && token.actorId === actorId && token.parent.id === sceneId;
+          } catch (error) {
+            LogUtil.log(`GroupTokenTracker: Invalid token UUID ${tokenUuid}, removing`);
+            return false;
+          }
+        });
+
+        if (validTokenUuids.length > 0) {
+          cleanedSceneAssociations[actorId] = validTokenUuids;
+        }
+
+        if (validTokenUuids.length !== tokenUuids.length) {
+          hasChanges = true;
+        }
+      }
+
+      if (Object.keys(cleanedSceneAssociations).length > 0) {
+        cleanedAssociations[sceneId] = cleanedSceneAssociations;
       }
     }
 
     if (hasChanges) {
-      await groupActor.setFlag(MODULE_ID, 'tokenAssociations', cleanedAssociations);
+      if (Object.keys(cleanedAssociations).length === 0) {
+        await groupActor.unsetFlag(MODULE_ID, 'tokenAssociationsByScene');
+      } else {
+        await groupActor.setFlag(MODULE_ID, 'tokenAssociationsByScene', cleanedAssociations);
+      }
       LogUtil.log(`GroupTokenTracker: Cleaned invalid tokens for group ${groupActor.name}`);
     }
+  }
+
+  /**
+   * Clean up dangling token associations across all group actors.
+   * This method checks all group/encounter actors and removes associations to tokens that no longer exist.
+   * Called automatically when tokens are created or deleted to maintain data integrity.
+   */
+  static async cleanupDanglingAssociations() {
+    const groupActors = game.actors.filter(actor =>
+      (actor.type === 'group' || actor.type === 'encounter') &&
+      actor.getFlag(MODULE_ID, 'tokenAssociationsByScene')
+    );
+
+    for (const groupActor of groupActors) {
+      await this.cleanupInvalidTokens(groupActor);
+    }
+
+    LogUtil.log(`GroupTokenTracker: Cleaned dangling associations for ${groupActors.length} group actors`);
   }
 
   /**
@@ -304,23 +445,35 @@ export class GroupTokenTracker {
   }
 
   /**
-   * Get all tokens associated with a group actor in the current scene.
+   * Get all tokens associated with a group actor in the specified scene.
    * Returns a map of actor IDs to their associated token documents.
    *
    * @param {Actor} groupActor - The group actor
+   * @param {Scene} [scene] - The scene to get tokens from (defaults to active scene)
    * @returns {Map<string, TokenDocument[]>} Map of actor IDs to token documents
    */
-  static getGroupTokens(groupActor) {
-    const associations = groupActor.getFlag(MODULE_ID, 'tokenAssociations') || {};
-    const scene = game.scenes.active;
+  static getGroupTokens(groupActor, scene = null) {
+    const targetScene = scene || game.scenes.active;
     const result = new Map();
 
-    if (!scene) return result;
+    if (!targetScene) return result;
 
-    for (const [actorId, tokenIds] of Object.entries(associations)) {
-      const tokens = tokenIds
-        .map(id => scene.tokens.get(id))
-        .filter(token => token && token.actorId === actorId);
+    const associations = groupActor.getFlag(MODULE_ID, 'tokenAssociationsByScene') || {};
+    const sceneAssociations = associations[targetScene.id];
+
+    if (!sceneAssociations) return result;
+
+    for (const [actorId, tokenUuids] of Object.entries(sceneAssociations)) {
+      const tokens = tokenUuids
+        .map(uuid => {
+          try {
+            return fromUuidSync(uuid);
+          } catch (error) {
+            LogUtil.log(`GroupTokenTracker: Invalid token UUID ${uuid}`);
+            return null;
+          }
+        })
+        .filter(token => token && token.actorId === actorId && token.parent.id === targetScene.id);
 
       if (tokens.length > 0) {
         result.set(actorId, tokens);
@@ -328,5 +481,156 @@ export class GroupTokenTracker {
     }
 
     return result;
+  }
+
+  /**
+   * Get all tokens associated with a group actor across all scenes.
+   * Returns a map of scene IDs to maps of actor IDs to token documents.
+   *
+   * @param {Actor} groupActor - The group actor
+   * @returns {Map<string, Map<string, TokenDocument[]>>} Map of scene IDs to actor token maps
+   */
+  static getAllGroupTokens(groupActor) {
+    const associations = groupActor.getFlag(MODULE_ID, 'tokenAssociationsByScene') || {};
+    const result = new Map();
+
+    for (const [sceneId, sceneAssociations] of Object.entries(associations)) {
+      const scene = game.scenes.get(sceneId);
+      if (!scene) continue;
+
+      const sceneTokens = new Map();
+
+      for (const [actorId, tokenUuids] of Object.entries(sceneAssociations)) {
+        const tokens = tokenUuids
+          .map(uuid => {
+            try {
+              return fromUuidSync(uuid);
+            } catch (error) {
+              return null;
+            }
+          })
+          .filter(token => token && token.actorId === actorId);
+
+        if (tokens.length > 0) {
+          sceneTokens.set(actorId, tokens);
+        }
+      }
+
+      if (sceneTokens.size > 0) {
+        result.set(sceneId, sceneTokens);
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * Validate and clean up Flash Rolls 5e module flags from tokens that shouldn't have them.
+   * This handles cases where tokens have inherited flags but aren't properly associated,
+   * including copy-pasted tokens and orphaned associations.
+   *
+   * @param {TokenDocument} tokenDoc - The newly created token document
+   */
+  static async cleanupCopiedTokenFlags(tokenDoc) {
+    const moduleFlags = tokenDoc.getFlag(MODULE_ID);
+    if (!moduleFlags) return;
+
+    const groupId = moduleFlags.groupId;
+    const fromGroupPlacement = moduleFlags.fromGroupPlacement;
+
+    // Skip validation if this is a legitimate group placement in progress
+    if (fromGroupPlacement) return;
+
+    let shouldCleanup = false;
+    const reasons = [];
+
+    // Check if token has groupId but isn't in any group's associations
+    if (groupId) {
+      const groupActor = game.actors.get(groupId);
+      const sceneId = tokenDoc.parent.id;
+      const tokenUuid = tokenDoc.uuid;
+
+      if (!groupActor) {
+        shouldCleanup = true;
+        reasons.push('group actor no longer exists');
+      } else {
+        const associations = groupActor.getFlag(MODULE_ID, 'tokenAssociationsByScene');
+        const isAssociated = associations?.[sceneId]?.[tokenDoc.actorId]?.includes(tokenUuid);
+
+        if (!isAssociated) {
+          shouldCleanup = true;
+          reasons.push('not in group associations');
+        }
+      }
+    }
+
+    // Check for movement restrictions that might be inherited
+    if (moduleFlags.movementRestriction && !groupId) {
+      // Token has movement restriction but no group association
+      // This suggests it inherited the flag from a copy operation
+      shouldCleanup = true;
+      reasons.push('orphaned movement restriction');
+    }
+
+    if (shouldCleanup) {
+      LogUtil.log(`GroupTokenTracker: Cleaning up invalid module flags from token ${tokenDoc.name} (${tokenDoc.id})`);
+      LogUtil.log(`GroupTokenTracker: Cleanup reasons:`, reasons);
+      LogUtil.log(`GroupTokenTracker: Removing flags:`, Object.keys(moduleFlags));
+
+      await tokenDoc.unsetFlag(MODULE_ID);
+    }
+  }
+
+  /**
+   * Add legacy support for migration from old tokenAssociations format
+   * This method migrates old tokenAssociations data to the new tokenAssociationsByScene format
+   * Searches all scenes to preserve tokens that may exist in inactive scenes
+   *
+   * @param {Actor} groupActor - The group actor to migrate
+   */
+  static async migrateLegacyAssociations(groupActor) {
+    const legacyAssociations = groupActor.getFlag(MODULE_ID, 'tokenAssociations');
+    const newAssociations = groupActor.getFlag(MODULE_ID, 'tokenAssociationsByScene');
+
+    if (!legacyAssociations || newAssociations) return;
+
+    LogUtil.log(`GroupTokenTracker: Migrating legacy associations for group ${groupActor.name}`);
+
+    const migratedAssociations = {};
+    let totalMigrated = 0;
+
+    // Search all scenes for tokens matching the legacy token IDs
+    for (const scene of game.scenes) {
+      const sceneAssociations = {};
+
+      for (const [actorId, tokenIds] of Object.entries(legacyAssociations)) {
+        const validUuids = tokenIds
+          .map(tokenId => {
+            const token = scene.tokens.get(tokenId);
+            return token && token.actorId === actorId ? token.uuid : null;
+          })
+          .filter(uuid => uuid !== null);
+
+        if (validUuids.length > 0) {
+          sceneAssociations[actorId] = validUuids;
+          totalMigrated += validUuids.length;
+        }
+      }
+
+      if (Object.keys(sceneAssociations).length > 0) {
+        migratedAssociations[scene.id] = sceneAssociations;
+      }
+    }
+
+    // Only save if we found tokens to migrate
+    if (Object.keys(migratedAssociations).length > 0) {
+      await groupActor.setFlag(MODULE_ID, 'tokenAssociationsByScene', migratedAssociations);
+      LogUtil.log(`GroupTokenTracker: Migrated ${totalMigrated} tokens across ${Object.keys(migratedAssociations).length} scenes for group ${groupActor.name}`);
+    } else {
+      LogUtil.log(`GroupTokenTracker: No valid tokens found to migrate for group ${groupActor.name}`);
+    }
+
+    // Always remove legacy flag after migration attempt
+    await groupActor.unsetFlag(MODULE_ID, 'tokenAssociations');
   }
 }

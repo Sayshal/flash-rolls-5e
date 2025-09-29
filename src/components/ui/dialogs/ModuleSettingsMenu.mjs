@@ -439,6 +439,16 @@ export class ModuleSettingsMenu extends HandlebarsApplicationMixin(ApplicationV2
     const menuKey = ModuleSettingsMenu.PARTS[activeTab].menuKey;
     const defaults = SETTINGS[menuKey].default;
 
+    // Handle icon layout reset for interface settings
+    if (activeTab === 'interfaceSettings') {
+      IconLayoutUtil.resetToDefault();
+      const app = foundry.applications.instances.get('flash-rolls-settings');
+      if (app) {
+        await app.renderPart('interfaceSettings', { force: true });
+        return;
+      }
+    }
+
     const inputs = activeContent.querySelectorAll("input, select");
     inputs.forEach(inputField => {
       inputField.value = defaults[inputField.name];

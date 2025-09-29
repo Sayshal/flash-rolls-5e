@@ -93,28 +93,28 @@
 /* Actor Image Icons */
 #flash-rolls-menu div.main-content > ul.actors > li .actor > .actor-img span.icons {
   position: absolute;
-  opacity: 0;
-  bottom: 0;
-  right: -20px;
-  display: none;
+  top: 0;
+  right: 0;
+  display: flex;
   z-index: 10;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: flex-start;
   padding: 2px;
   width: 20px;
-  height: auto;
+  height: 100%;
   transition: opacity 0.2s ease-out 0.2s, right 0.2s ease-out 0.6s;
-  background: var(--fr5e-bg-50);
+  background: transparent;
   border-radius: 2px;
 }
 
 #flash-rolls-menu div.main-content > ul.actors > li .actor > .actor-img i.icon-sheet,
 #flash-rolls-menu div.main-content > ul.actors > li .actor > .actor-img i.favorite,
+#flash-rolls-menu div.main-content > ul.actors > li .actor > .actor-img i.movement-restricted,
 #flash-rolls-menu div.main-content > ul.actors > li .actor > .actor-img i.icon-target {
   position: relative;
   z-index: 10;
-  text-shadow: 0px 1px 2px rgba(0, 0, 0, 0.5);
+  text-shadow: 0px 1px 3px rgba(0, 0, 0, 0.5);
   color: rgba(245,245,245,1);
   width: 16px;
   height: auto;
@@ -128,21 +128,30 @@
 
 #flash-rolls-menu div.main-content > ul.actors > li .actor > .actor-img i.icon-sheet:before,
 #flash-rolls-menu div.main-content > ul.actors > li .actor > .actor-img i.favorite:before,
+#flash-rolls-menu div.main-content > ul.actors > li .actor > .actor-img i.movement-restricted:before,
 #flash-rolls-menu div.main-content > ul.actors > li .actor > .actor-img i.icon-target:before {
   font-size: var(--font-size-10);
 }
 
 #flash-rolls-menu div.main-content > ul.actors > li .actor > .actor-img:hover span.icons {
-  opacity: 1;
-  display: flex;
-  right: 0;
   transition: opacity 0.2s ease-out 0.2s, right 0.2s ease-out 0.6s;
 }
 
-#flash-rolls-menu div.main-content > ul.actors > li .actor > .actor-img i.favorite {
-  position: absolute;
-  right: 0;
-  top: 2px;
+/* Icons within the span.icons container */
+#flash-rolls-menu div.main-content > ul.actors > li .actor > .actor-img span.icons i.favorite,
+#flash-rolls-menu div.main-content > ul.actors > li .actor > .actor-img span.icons i.movement-restricted {
+  color: rgba(245,245,245,1);
+}
+
+#flash-rolls-menu div.main-content > ul.actors > li .actor > .actor-img span.icons i.icon-sheet {
+  opacity: 0;
+  margin-top: auto;
+  color: rgba(245,245,245,1);
+  transition: opacity 0.2s ease-out 0.2s;
+}
+
+#flash-rolls-menu div.main-content > ul.actors > li .actor > .actor-img:hover span.icons i.icon-sheet {
+  opacity: 1;
 }
 
 /* Actor Image Group Variations */

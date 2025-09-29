@@ -562,10 +562,26 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
       return;
     }
 
-    // Get stored token associations from flags
-    const tokenAssociations = groupActor.getFlag(MODULE_ID, 'tokenAssociations') || {};
+    // Get stored token associations from flags (new scene-based format)
+    const currentScene = game.scenes.current;
+    const tokenAssociationsByScene = groupActor.getFlag(MODULE_ID, 'tokenAssociationsByScene') || {};
+    const tokenAssociations = tokenAssociationsByScene[currentScene?.id] || {};
     const members = [];
-    const currentScene = game.scenes.active;
+
+
+    // Check if any members have token associations on the current scene
+    const hasAssociationsOnCurrentScene = Object.entries(tokenAssociations).some(([actorId, tokenUuids]) => {
+      if (!Array.isArray(tokenUuids) || tokenUuids.length === 0) return false;
+      return tokenUuids.some(tokenUuid => {
+        try {
+          const tokenDoc = fromUuidSync(tokenUuid);
+          const hasAssociation = tokenDoc && tokenDoc.actorId === actorId && tokenDoc.parent === currentScene;
+          return hasAssociation;
+        } catch (error) {
+          return false;
+        }
+      });
+    });
 
 
     if (groupActor.type === 'group') {
@@ -574,27 +590,31 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
           const memberActorId = member.actor.id;
           const associatedTokenIds = tokenAssociations[memberActorId] || [];
 
-          if (associatedTokenIds.length > 0) {
-            // Use specific tokens from associations
-            for (const tokenId of associatedTokenIds) {
-              const tokenDoc = currentScene?.tokens.get(tokenId);
-              if (tokenDoc && tokenDoc.actorId === member.actor.id) {
-                members.push({ actor: member.actor, uniqueId: tokenId });
-              } else {
-                // Token not found in current scene, use base actor
-                members.push({ actor: member.actor, uniqueId: member.actor.id });
+
+          if (hasAssociationsOnCurrentScene && associatedTokenIds.length > 0) {
+            // Use only tokens from associations that exist on current scene
+            for (const tokenUuid of associatedTokenIds) {
+              try {
+                const tokenDoc = fromUuidSync(tokenUuid);
+                const isValid = tokenDoc && tokenDoc.actorId === member.actor.id && tokenDoc.parent === currentScene;
+                if (isValid) {
+                  members.push({ actor: member.actor, uniqueId: tokenDoc.id });
+                }
+              } catch (error) {
+                LogUtil.log(`Failed to resolve token UUID: ${tokenUuid}`, [error]);
               }
             }
+          } else if (!hasAssociationsOnCurrentScene) {
+            // COMMENTED OUT: Fallback mode
+            // const memberTokens = currentScene?.tokens.filter(token => token.actorId === member.actor.id) || [];
+            // if (memberTokens.length > 0) {
+            //   memberTokens.forEach(tokenDoc => {
+            //     members.push({ actor: member.actor, uniqueId: tokenDoc.id });
+            //   });
+            // } else {
+            //   members.push({ actor: member.actor, uniqueId: member.actor.id });
+            // }
           } else {
-            // No token associations, fall back to all tokens or base actor
-            const memberTokens = currentScene?.tokens.filter(token => token.actorId === member.actor.id) || [];
-            if (memberTokens.length > 0) {
-              memberTokens.forEach(tokenDoc => {
-                members.push({ actor: member.actor, uniqueId: tokenDoc.id });
-              });
-            } else {
-              members.push({ actor: member.actor, uniqueId: member.actor.id });
-            }
           }
         }
       }
@@ -606,19 +626,20 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
             const memberActorId = memberActor.id;
             const associatedTokenIds = tokenAssociations[memberActorId] || [];
 
-            if (associatedTokenIds.length > 0) {
-              // Use specific tokens from associations
-              for (const tokenId of associatedTokenIds) {
-                const tokenDoc = currentScene?.tokens.get(tokenId);
-                if (tokenDoc && tokenDoc.actorId === memberActor.id) {
-                  members.push({ actor: memberActor, uniqueId: tokenId });
-                } else {
-                  // Token not found in current scene, use base actor
-                  members.push({ actor: memberActor, uniqueId: memberActor.id });
+            if (hasAssociationsOnCurrentScene && associatedTokenIds.length > 0) {
+              // Use only tokens from associations that exist on current scene
+              for (const tokenUuid of associatedTokenIds) {
+                try {
+                  const tokenDoc = fromUuidSync(tokenUuid);
+                  if (tokenDoc && tokenDoc.actorId === memberActor.id && tokenDoc.parent === currentScene) {
+                    members.push({ actor: memberActor, uniqueId: tokenDoc.id });
+                  }
+                } catch (error) {
+                  console.warn(`Failed to resolve token UUID: ${tokenUuid}`, error);
                 }
               }
-            } else {
-              // No token associations, fall back to all tokens or base actor
+            } else if (!hasAssociationsOnCurrentScene) {
+              // No token associations on current scene, fall back to all tokens or base actor
               const memberTokens = currentScene?.tokens.filter(token => token.actorId === memberActor.id) || [];
               if (memberTokens.length > 0) {
                 memberTokens.forEach(tokenDoc => {
@@ -634,6 +655,7 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
         }
       }
     }
+
 
     if (members.length === 0) return;
 

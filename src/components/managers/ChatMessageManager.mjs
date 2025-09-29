@@ -882,21 +882,21 @@ export class ChatMessageManager {
     let resultIndex = flagData.results.findIndex(r => r.uniqueId === uniqueId);
     
     if (resultIndex === -1) {
-      // Attempt 1: Try matching by actorId directly
+      // 1: Try matching by actorId directly
       resultIndex = flagData.results.findIndex(r => r.actorId === uniqueId);
       
-      // Attempt 2: If uniqueId is a tokenId, try finding by tokenId property
+      // 2: If uniqueId is a tokenId, try finding by tokenId property
       if (resultIndex === -1) {
         resultIndex = flagData.results.findIndex(r => r.tokenId === uniqueId);
       }
       
-      // Attempt 3: extract actorId from speaker and match
+      // 3: extract actorId from speaker and match
       if (resultIndex === -1 && message.speaker?.actor) {
         const speakerActorId = message.speaker.actor;
         resultIndex = flagData.results.findIndex(r => r.actorId === speakerActorId);
       }
       
-      // Attempt 4: If uniqueId looks like a token ID, try to get the actor from the token
+      // 4: If uniqueId looks like a token ID, try to get the actor from the token
       if (resultIndex === -1) {
         const token = canvas.tokens?.get(uniqueId) || game.scenes.active?.tokens?.get(uniqueId);
         if (token && token.actor) {
