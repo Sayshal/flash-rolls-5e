@@ -1,0 +1,68 @@
+<div class="contested-roll-dialog">
+  <section class="dialog-content">
+
+    <section class="actors-section">
+      <div class="actors-list">
+        {{#each actors as |actor index|}}
+          <div class="actor-block" data-actor-id="{{actor.id}}">
+            <div class="actor-info">
+              <img src="{{actor.img}}" alt="{{actor.name}}" class="actor-img" />
+              <span class="actor-name">{{actor.name}}</span>
+            </div>
+            <div class="actor-roll-select">
+              <select name="actorRoll-{{actor.id}}" class="actor-roll-type" data-actor-id="{{actor.id}}">
+                <option value="">{{localize "FLASH_ROLLS.ui.dialogs.contestedRoll.selectRoll"}}</option>
+                <optgroup label="{{localize 'DND5E.Ability'}}">
+                  {{#each ../abilities as |ability abilityKey|}}
+                    <option value="ability:{{abilityKey}}">{{ability.label}}</option>
+                  {{/each}}
+                </optgroup>
+                <optgroup label="{{localize 'DND5E.Skill'}}">
+                  {{#each ../skills as |skill skillKey|}}
+                    <option value="skill:{{skillKey}}">{{skill.label}}</option>
+                  {{/each}}
+                </optgroup>
+                <optgroup label="{{localize 'FLASH_ROLLS.ui.dialogs.contestedRoll.dice'}}">
+                  <option value="dice:1d2">1d2</option>
+                  <option value="dice:1d4">1d4</option>
+                  <option value="dice:1d6">1d6</option>
+                  <option value="dice:1d8">1d8</option>
+                  <option value="dice:1d10">1d10</option>
+                  <option value="dice:1d12">1d12</option>
+                  <option value="dice:1d20">1d20</option>
+                  <option value="dice:1d100">1d100</option>
+                </optgroup>
+              </select>
+            </div>
+          </div>
+          {{#unless @last}}
+            <div class="vs-divider">
+              <span>{{localize "FLASH_ROLLS.ui.dialogs.contestedRoll.vs"}}</span>
+            </div>
+          {{/unless}}
+        {{/each}}
+      </div>
+    </section>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>{{localize "FLASH_ROLLS.ui.dialogs.contestedRoll.rollMode"}}</label>
+        <select name="rollMode" class="roll-mode-select">
+          <option value="publicroll" {{#if (eq rollMode "publicroll")}}selected{{/if}}>{{localize "CHAT.RollPublic"}}</option>
+          <option value="gmroll" {{#if (eq rollMode "gmroll")}}selected{{/if}}>{{localize "CHAT.RollPrivate"}}</option>
+          <option value="blindroll" {{#if (eq rollMode "blindroll")}}selected{{/if}}>{{localize "CHAT.RollBlind"}}</option>
+          <option value="selfroll" {{#if (eq rollMode "selfroll")}}selected{{/if}}>{{localize "CHAT.RollSelf"}}</option>
+        </select>
+      </div>
+    </div>
+  </section>
+
+  <footer class="dialog-buttons">
+    <button type="button" class="dialog-button code-button" data-action="show-code" data-tooltip="{{localize 'FLASH_ROLLS.ui.buttons.createMacro'}}" data-tooltip-direction="UP">
+      <i class="fas fa-code"></i>
+    </button>
+    <button type="button" class="dialog-button" data-action="request">
+      {{localize "FLASH_ROLLS.ui.buttons.request"}}
+    </button>
+  </footer>
+</div>

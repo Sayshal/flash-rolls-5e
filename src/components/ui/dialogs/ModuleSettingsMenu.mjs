@@ -5,7 +5,7 @@ import { SettingsUtil } from "../../utils/SettingsUtil.mjs";
 import { GeneralUtil } from "../../utils/GeneralUtil.mjs";
 import { IconLayoutUtil } from "../../utils/IconLayoutUtil.mjs";
 
-const { FormDataExtended } = foundry.utils;
+const { FormDataExtended } = foundry.applications.ux;
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 

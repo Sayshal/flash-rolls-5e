@@ -10,12 +10,18 @@ import { TokenMovementManager } from '../../utils/TokenMovementManager.mjs';
  * Handles Roll Requests Menu event listeners
  */
 export class RollMenuEventManager {
-  
+
   /**
    * Set to track tokens that were temporarily selected on hover
    * @type {Set<Token>}
    */
   static _hoveredTokens = new Set();
+
+  /**
+   * Reference to the active menu instance
+   * @type {RollRequestsMenu|null}
+   */
+  static activeMenu = null;
   
   /**
    * Attach all event listeners to the menu
@@ -24,7 +30,9 @@ export class RollMenuEventManager {
    */
   static attachListeners(menu, html) {
     LogUtil.log('RollMenuEventManager.attachListeners');
-    
+
+    this.activeMenu = menu;
+
     // Check if there are no actors and clean up tooltips
     const actors = html.querySelectorAll('.actor');
     if (actors.length === 0) {
@@ -33,7 +41,7 @@ export class RollMenuEventManager {
     } else {
       html.classList.remove('no-actors');
     }
-    
+
     this.attachToggleHandlers(menu, html);
     this.attachDragHandlers(menu, html);
     this.attachTabHandlers(menu, html);
@@ -122,6 +130,10 @@ export class RollMenuEventManager {
 
     html.querySelector('#flash5e-lock-movement')?.addEventListener('click', () => {
       this.toggleMovementForSelected(menu);
+    });
+
+    html.querySelector('#flash5e-contested-roll')?.addEventListener('click', () => {
+      this.openContestedRollDialog(menu);
     });
 
     const navButtons = html.querySelectorAll('.actor-actions-nav');
@@ -1223,5 +1235,49 @@ export class RollMenuEventManager {
    */
   static async toggleMovementForSelected(menu) {
     await TokenMovementManager.toggleMovementForSelected(menu);
+  }
+
+  /**
+   * Open contested roll dialog with selected actors
+   * @param {RollRequestsMenu} menu - The menu instance
+   */
+  static async openContestedRollDialog(menu) {
+    const menuToUse = menu || this.activeMenu;
+
+    if (!menuToUse || menuToUse.selectedActors.size === 0) {
+      ui.notifications.warn(game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelected"));
+      return;
+    }
+
+    const actors = [];
+    for (const uniqueId of menuToUse.selectedActors) {
+      const actor = getActorData(uniqueId);
+      if (actor) {
+        const tokenDoc = game.scenes.current?.tokens.get(uniqueId);
+        const token = canvas.tokens?.get(uniqueId);
+        const tokenId = (tokenDoc || token) ? uniqueId : null;
+
+        actors.push({
+          actor: actor,
+          uniqueId: uniqueId,
+          tokenId: tokenId
+        });
+      }
+    }
+
+    if (actors.length === 0) {
+      ui.notifications.warn(game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelected"));
+      return;
+    }
+
+    if (actors.length < 2) {
+      ui.notifications.warn(game.i18n.localize("FLASH_ROLLS.notifications.twoActorsRequired"));
+      return;
+    }
+
+    const selectedActors = actors.slice(0, 2);
+
+    const { ContestedRollDialog } = await import('../../../components/ui/dialogs/ContestedRollDialog.mjs');
+    await ContestedRollDialog.show(selectedActors);
   }
 }

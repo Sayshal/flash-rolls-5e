@@ -6,6 +6,7 @@ import { LogUtil } from "../utils/LogUtil.mjs";
 import { SettingsUtil } from "../utils/SettingsUtil.mjs";
 import { getSettings } from "../../constants/Settings.mjs";
 import { RollHelpers } from "../helpers/RollHelpers.mjs";
+import { ChatMessageManager } from "../managers/ChatMessageManager.mjs";
 
 /**
  * Public API for Flash Rolls 5e that can be used by other modules
@@ -25,6 +26,8 @@ export class FlashRollsAPI {
    * @param {boolean} [options.disadvantage] - Roll with disadvantage
    * @param {boolean} [options.skipRollDialog] - Skip the roll dialog
    * @param {boolean} [options.sendAsRequest] - Send to players instead of rolling locally
+   * @param {string} [options.groupRollId=null] - Group roll identifier for combining multiple rolls into one message
+   * @param {boolean} [options.isContestedRoll=false] - Whether this is part of a contested roll
    * @returns {Promise<void>}
    */
   static async requestRoll(options = {}) {
@@ -35,14 +38,14 @@ export class FlashRollsAPI {
         return;
       }
       
-      const { requestType, rollKey = null, actorIds = [], dc, situationalBonus, advantage, disadvantage, skipRollDialog, sendAsRequest = true } = options;
-      
+      const { requestType, rollKey = null, actorIds = [], dc, situationalBonus, advantage, disadvantage, skipRollDialog, sendAsRequest = true, groupRollId = null, isContestedRoll = false } = options;
+
       if (!requestType) {
         ui.notifications.error(game.i18n.localize("FLASH_ROLLS.notifications.missingRequestType"));
         return;
       }
-      
-      const config = { dc, situationalBonus, advantage, disadvantage, skipRollDialog, sendAsRequest };
+
+      const config = { dc, situationalBonus, advantage, disadvantage, skipRollDialog, sendAsRequest, groupRollId, isContestedRoll };
       
       LogUtil.log('FlashRollsAPI.requestRoll', [requestType, rollKey, actorIds, config]);
       
@@ -115,10 +118,10 @@ export class FlashRollsAPI {
       const mockMenu = {
         selectedActors: new Set(actorIds),
         selectedRequestType: requestType,
-        isLocked: true, 
-        close: () => {} 
+        isLocked: true,
+        close: () => {}
       };
-      
+
       // Use orchestrator to handle the roll request
       return RollMenuOrchestrator.triggerRoll(normalizedRequestType, rollKey, mockMenu, config);
     } catch (error) {
@@ -473,5 +476,9 @@ export class FlashRollsAPI {
       ui.notifications.error(`Error calculating group roll: ${error.message}`);
       return null;
     }
+  }
+
+  static async createGroupRollMessage(actorEntries, rollType, rollKey, config = {}, groupRollId) {
+    return ChatMessageManager.createGroupRollMessage(actorEntries, rollType, rollKey, config, groupRollId);
   }
 }

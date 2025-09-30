@@ -802,7 +802,7 @@
 .actor-filter-tooltip {
   position: absolute;
   background: var(--fr5e-menu-background);
-  border: 1px solid var(--fr5e-secondary-bg-50);
+  border: 1px solid var(--fr5e-secondary-bg-5);
   border-radius: 4px;
   padding: 0.25rem 0.5rem;
   z-index: 10000;
@@ -826,7 +826,7 @@
   color: var(--color-warm-2);
   margin-bottom: 0.25rem;
   padding-bottom: 0.25rem;
-  border-bottom: 1px solid var(--fr5e-secondary-bg-50);
+  border-bottom: 1px solid var(--fr5e-secondary-bg-5);
   font-size: var(--font-size-11);
 }
 

@@ -87,7 +87,8 @@ export function getFullRollName(rollType, rollKey) {
  */
 export function showBatchedNotifications(pendingNotifications, getRollTypeDisplayFn = getRollTypeDisplay) {
   if (pendingNotifications.length === 0) return;
-  
+  if (!ui?.notifications) return;
+
   // Group by roll type
   const notificationsByType = {};
   for (const notif of pendingNotifications) {
@@ -102,7 +103,7 @@ export function showBatchedNotifications(pendingNotifications, getRollTypeDispla
     }
     notificationsByType[key].actors.push(notif.actor);
   }
-  
+
   const entries = Object.values(notificationsByType);
   if (entries.length === 1 && entries[0].actors.length === 1) {
     // Single roll request - use original format
@@ -119,7 +120,7 @@ export function showBatchedNotifications(pendingNotifications, getRollTypeDispla
       const actorNames = entry.actors.join(", ");
       messages.push(`${rollTypeDisplay} (${actorNames})`);
     }
-    
+
     ui.notifications.info(game.i18n.format('FLASH_ROLLS.notifications.rollRequestsReceivedMultiple', {
       gm: entries[0].gm,
       requests: messages.join("; ")
@@ -364,7 +365,9 @@ export class NotificationManager {
    */
   static notify(type, message, options = {}) {
     if (!options.batch) {
-      ui.notifications[type](message);
+      if (ui?.notifications?.[type]) {
+        ui.notifications[type](message);
+      }
       return;
     }
     

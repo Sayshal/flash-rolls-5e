@@ -74,11 +74,6 @@ export const RollHelpers = {
    * @returns {BasicRollProcessConfiguration} The process configuration for D&D5e actor roll methods
    */
   buildRollConfig(requestData, rollConfig, additionalConfig = {}) {
-    LogUtil.log('RollHelpers.buildRollConfig - incoming rollConfig', [
-      'parts:', rollConfig.parts,
-      'data:', rollConfig.data,
-      'requestData.config.situational:', requestData.config.situational
-    ]);
     
     // Build BasicRollProcessConfiguration
     const config = {
@@ -97,8 +92,7 @@ export const RollHelpers = {
       subject: null,
       chatMessage: true,
       legacy: false,
-      // Include rollMode if it's in the config
-      ...(requestData.config.rollMode && { rollMode: requestData.config.rollMode }),
+      // ...(requestData.config.rollMode && { rollMode: requestData.config.rollMode }),
       ...additionalConfig
     };
     
@@ -685,25 +679,46 @@ export const RollHelpers = {
   consolidateRolls(rolls) {
     if (!rolls || rolls.length === 0) return rolls;
     if (rolls.length === 1) return rolls;
-    
-    let consolidatedRoll = rolls[0];
-    
+    if (rolls._consolidated) return rolls;
+
+    const consolidatedRoll = rolls[0];
+
     for (let i = 1; i < rolls.length; i++) {
       if (rolls[i]) {
-        consolidatedRoll = foundry.utils.mergeObject(
-          consolidatedRoll,
-          rolls[i],
-          {
-            insertKeys: true, // true - add new keys from source
-            insertValues: true, // true - add new array values
-            overwrite: false, // false - don't overwrite existing non-null values in target
-            inplace: true // true - modify the target object in place
+        const sourceRoll = rolls[i];
+
+        if (sourceRoll.parts && Array.isArray(sourceRoll.parts)) {
+          consolidatedRoll.parts = consolidatedRoll.parts || [];
+          for (const part of sourceRoll.parts) {
+            if (!consolidatedRoll.parts.includes(part)) {
+              consolidatedRoll.parts.push(part);
+            }
           }
-        );
+        }
+
+        if (sourceRoll.data && typeof sourceRoll.data === 'object') {
+          consolidatedRoll.data = consolidatedRoll.data || {};
+          for (const [key, value] of Object.entries(sourceRoll.data)) {
+            if (!(key in consolidatedRoll.data)) {
+              consolidatedRoll.data[key] = value;
+            }
+          }
+        }
+
+        if (sourceRoll.options && typeof sourceRoll.options === 'object') {
+          consolidatedRoll.options = consolidatedRoll.options || {};
+          for (const [key, value] of Object.entries(sourceRoll.options)) {
+            if (!(key in consolidatedRoll.options)) {
+              consolidatedRoll.options[key] = value;
+            }
+          }
+        }
       }
     }
-    
-    return [consolidatedRoll];
+
+    const result = [consolidatedRoll];
+    result._consolidated = true;
+    return result;
   },
 
   /**

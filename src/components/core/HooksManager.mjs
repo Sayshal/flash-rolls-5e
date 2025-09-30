@@ -188,6 +188,7 @@ export class HooksManager {
     document.body.classList.add("flash5e");
     SettingsUtil.registerSettings();
     DiceConfigUtil.initialize();
+    this._registerHook(HOOKS_CORE.RENDER_CHAT_MESSAGE, ChatMessageManager.onRenderChatMessage.bind(ChatMessageManager));
   }
   
   /**
@@ -274,7 +275,6 @@ export class HooksManager {
     // Chat message hooks (delegated to ChatMessageManager)
     this._registerHook(HOOKS_CORE.CREATE_CHAT_MESSAGE, ChatMessageManager.onCreateChatMessage.bind(ChatMessageManager));
     this._registerHook(HOOKS_CORE.PRE_CREATE_CHAT_MESSAGE, ChatMessageManager.onPreCreateChatMessage.bind(ChatMessageManager));
-    this._registerHook(HOOKS_CORE.RENDER_CHAT_MESSAGE, ChatMessageManager.onRenderChatMessage.bind(ChatMessageManager));
     this._registerHook(HOOKS_CORE.RENDER_CHAT_LOG, ChatMessageManager.onRenderChatLog.bind(ChatMessageManager));
 
     // Token movement restriction hook
@@ -447,131 +447,7 @@ export class HooksManager {
   static _onPreCreateChatMessageGM(message, data, options, userId) {
     LogUtil.log("_onPreCreateChatMessageGM", [message, data, options, userId]);
   }
-  
-  /**
-   * Intercept rendered chat messages to handle group rolls
-   */
-  static _onRenderChatMessageHTML(message, html, context) {
-    // Check if we should hide challenge visibility for Flash Rolls messages
-    // This handles the case where the player is the message author but shouldn't see DCs
-    LogUtil.log("_onRenderChatMessageHTML #0", [message, html, context]);
 
-    ChatMessageManager.interceptRollMessage(message, html, context);
-    
-    // Handle group roll messages
-    if (message.getFlag(MODULE_ID, 'isGroupRoll')) {
-      // Handle NPC hiding
-      const SETTINGS = getSettings();
-      const globalHidden = SettingsUtil.get(SETTINGS.groupRollNPCHidden.tag);
-      const messageHidden = message.getFlag(MODULE_ID, 'npcHiddenOverride');
-      const isGM = game.user.isGM;
-      
-      // Hide NPCs based on global setting and message override
-      // If override exists, use it; otherwise use global setting
-      const shouldHideNPCs = (messageHidden !== undefined ? messageHidden : globalHidden) && !isGM;
-      
-      if (shouldHideNPCs) {
-        const flagData = message.getFlag(MODULE_ID, 'rollData');
-        if (flagData && flagData.results) {
-          const actorResults = html.querySelectorAll('.actor-result');
-          actorResults.forEach((element, index) => {
-            const result = flagData.results[index];
-            if (result) {
-              const actor = game.actors.get(result.actorId);
-              const shouldHide = actor && !actor.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER);
-              
-              if (shouldHide) {
-                element.classList.add('npc-hidden');
-              }
-            }
-          });
-        }
-      }
-      
-      // Attach group roll event listeners
-      ChatMessageManager._attachGroupRollListeners(html, message);
-    }
-    
-    this._addSelectTargetsButton(message, html);
-
-    if(game.user.isGM){
-      // Try to get item from context first, then from message flags
-      let item = context.subject?.item;
-      if (!item && message.flags?.dnd5e?.item?.uuid) {
-        item = fromUuidSync(message.flags.dnd5e.item.uuid);
-      }
-      
-      LogUtil.log("_onRenderChatMessageHTML - item", [item, context, message.flags?.dnd5e?.item]);
-      if (item) {
-        // Clear the activity config cache for this item after the message is rendered
-        setTimeout(() => {
-          HooksManager.activityConfigCache.delete(item.id);
-          LogUtil.log("_onRenderChatMessageHTML - cleared activity config cache", [item.id]);
-        }, 1000); 
-      }
-    }
-
-    LogUtil.log("_onRenderChatMessageHTML", [message, html, context]);
-
-    if (!game.user.isGM) {
-      // Check if this is a Flash Rolls request by looking for our flags
-      const hasFlashRollsFlag = message.flags?.[MODULE_ID]?.isFlashRollRequest || 
-                               message.flags?.[MODULE_ID]?.groupRollId ||
-                               message.getFlag('dnd5e', 'roll')?._requestedBy;
-      
-      LogUtil.log("_onRenderChatMessageHTML #1", [hasFlashRollsFlag]);
-      if (hasFlashRollsFlag) {
-        const challengeVisibility = game.settings.get("dnd5e", "challengeVisibility");
-        LogUtil.log("_onRenderChatMessageHTML #2", [challengeVisibility]);
-        
-        let showDC = true;
-        switch(challengeVisibility) {
-          case "none":
-            showDC = false;
-            break;
-          case "all":
-            showDC = true;
-            break;
-          case "player":
-            showDC = message.author.id === game.user.id || !message.author.isGM;
-            LogUtil.log("_onRenderChatMessageHTML #3", [message.author.id, game.user.id, showDC]);
-            break;
-          default:
-            showDC = true;
-            break;
-        }
-        
-        if (showDC===false) {
-          setTimeout(() => {
-            const chatCard = html.querySelectorAll("[data-display-challenge]");
-            chatCard.forEach((el) => delete el.dataset.displayChallenge);
-            
-            const diceTotals = html.querySelectorAll(".success, .failure, .critical, .fumble");
-            LogUtil.log("_onRenderChatMessageHTML #4", [html, diceTotals]);
-            diceTotals?.forEach((el) => {
-              LogUtil.log("_onRenderChatMessageHTML #4b", [el]);
-              el.classList.remove("success", "failure", "critical", "fumble");
-            });
-              
-            // Remove the success/failure icons
-            diceTotals?.forEach((el) => el.querySelector(".icons")?.remove());
-            LogUtil.log("_onRenderChatMessageHTML #5", [html]);
-            
-            // Optionally hide DC values in the message content
-            html.querySelectorAll(".save-dc, .dc, .target-dc").forEach((el) => {
-              const text = el.textContent;
-              if (text && text.includes("DC")) {
-                el.textContent = text.replace(/DC\s*\d+/gi, "");
-              }
-            });
-          }, 50);
-        }
-      }
-    }
-    return false
-    
-  }
-  
   /**
    * Add "Select Targeted" button to damage roll messages with saves
    * @param {ChatMessage} message - The chat message
@@ -819,82 +695,7 @@ export class HooksManager {
   static _onRenderApplicationV2(app, html, options) {
     LogUtil.log("_onRenderApplicationV2", [app, html, options]);
   }
-  
-  /**
-   * Handle render chat log to attach listeners to existing group roll messages and schedule template removal
-   */
-  static _onRenderChatLog(app, html) {
-    const groupRollElements = html.querySelectorAll('.flash5e-group-roll');
-    groupRollElements.forEach(element => {
-      const messageElement = element.closest('.chat-message');
-      if (messageElement) {
-        const messageId = messageElement.dataset.messageId;
-        const message = game.messages.get(messageId);
-        if (message && message.getFlag(MODULE_ID, 'isGroupRoll')) {
-          
-          // Handle NPC hiding
-          const SETTINGS = getSettings();
-          const globalHidden = SettingsUtil.get(SETTINGS.groupRollNPCHidden.tag);
-          const messageHidden = message.getFlag(MODULE_ID, 'npcHiddenOverride');
-          const isGM = game.user.isGM;
-          
-          // Hide NPCs based on global setting and message override
-          // If override exists, use it; otherwise use global setting
-          const shouldHideNPCs = (messageHidden !== undefined ? messageHidden : globalHidden) && !isGM;
-          
-          if (shouldHideNPCs) {
-            const flagData = message.getFlag(MODULE_ID, 'rollData');
-            if (flagData && flagData.results) {
-              const actorResults = element.querySelectorAll('.actor-result');
-              actorResults.forEach((actorElement, index) => {
-                const result = flagData.results[index];
-                if (result) {
-                  const actor = game.actors.get(result.actorId);
-                  const shouldHide = actor && !actor.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER);
-                  
-                  if (shouldHide) {
-                    actorElement.classList.add('npc-hidden');
-                  }
-                }
-              });
-            }
-          }
-          
-          // Attach group roll listeners
-          ChatMessageManager._attachGroupRollListeners(element, message);
-        }
-      }
-    });
 
-    // Handle template removal for damage messages when chat log renders
-    const damageMessages = html.querySelectorAll('.chat-message');
-    damageMessages.forEach(messageElement => {
-      const messageId = messageElement.dataset.messageId;
-      const message = game.messages.get(messageId);
-      
-      if (message?.flags?.dnd5e?.roll?.type === 'damage' && message.flags?.dnd5e?.item?.uuid) {
-        const itemUuid = message.flags.dnd5e.item.uuid;
-        const item = fromUuidSync(itemUuid);
-        
-        if (item && !HooksManager.templateRemovalTimers.has(itemUuid)) {
-          LogUtil.log("_onRenderChatLog - scheduling template removal for rendered damage message", [item.name, itemUuid]);
-          
-          // Mark this item as having scheduled removal
-          HooksManager.templateRemovalTimers.add(itemUuid);
-          
-          const SETTINGS = getSettings();
-          const timeoutSeconds = SettingsUtil.get(SETTINGS.templateRemovalTimeout.tag);
-          const timeoutMs = timeoutSeconds * 1000;
-          
-          setTimeout(() => {
-            GeneralUtil.removeTemplateForItem(item);
-            HooksManager.templateRemovalTimers.delete(itemUuid);
-          }, timeoutMs);
-        }
-      }
-    });
-  }
-  
   /**
    * Handle render Sidebar
    */

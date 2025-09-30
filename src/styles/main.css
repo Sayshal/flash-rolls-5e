@@ -8,6 +8,7 @@
 @import './menu/flash-rolls-positioning.css';
 @import './settings.css';
 @import './settings-interface.css';
+@import './contested-roll-dialog.css';
 
 body{
   --current-sidebar-width: 0px;
@@ -41,7 +42,7 @@ body.flash5e {
       font-size: var(--font-size-12);
       height: 0.86rem;
       width: 1.6rem;
-      background: var(--fr5e-secondary-bg-50, rgba(255, 255, 255, 0.35));
+      background: var(--fr5e-secondary-bg-5, rgba(255, 255, 255, 0.35));
       border-radius: 1.5em;
       border: 0;
       z-index: 0;
@@ -222,13 +223,12 @@ body.flash5e {
 }
 
 
-
+/* Dialog */
 .flash5e-dialog {
-  min-height: 200px;
 
   .window-content{
     background: var(--left-control-main-bg);
-    color: var(--color-light-1);
+    color: var(--color-text-primary);
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -237,6 +237,7 @@ body.flash5e {
     padding: 2em;
   }
 
+  /*
   .dialog-buttons {
     flex: 0 0 auto;
     gap: 0.5em;
@@ -270,6 +271,7 @@ body.flash5e {
       background: var(--color-warm-2);
     }
   }
+    */
 
   .formula-input label {
     margin: 1em 0 0.5em 0;

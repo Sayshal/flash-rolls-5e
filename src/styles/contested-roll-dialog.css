@@ -1,0 +1,194 @@
+/* Contested Roll Dialog Styles */
+.application.flash5e-contested-roll-dialog {
+  > .window-content {
+    padding: 0;
+  }
+
+  > .window-content > .contested-roll-dialog {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    height: 100%;
+    max-height: 70vh;
+
+    .dialog-content {
+      flex: 1 1 auto;
+      overflow-y: auto;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+
+      .form-row {
+        display: flex;
+        flex-direction: row;
+        gap: 1rem;
+
+        .form-group {
+          flex: 1 1 50%;
+        }
+      }
+
+      .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+
+        label {
+          font-weight: 500;
+          font-size: var(--font-size-13);
+
+          &.checkbox {
+            flex-direction: row;
+            align-items: center;
+            gap: 0.5rem;
+            cursor: pointer;
+
+            input[type="checkbox"] {
+              margin: 0;
+              cursor: pointer;
+            }
+          }
+        }
+      }
+
+      .actors-section {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        border-radius: 4px;
+
+        h3 {
+          margin: 1rem 0 0 0;
+          font-size: var(--font-size-16);
+          font-weight: 600;
+          border-bottom: 1px solid var(--fr5e-secondary-bg-5);
+          padding-bottom: 0.5rem;
+        }
+
+        .actors-list {
+          display: flex;
+          flex-direction: row;
+          justify-content: center;
+          flex-wrap: nowrap;
+          overflow-x: auto;
+          gap: 1rem;
+          padding-bottom: 0.65rem;
+        }
+
+        .vs-divider {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 0.5rem 0;
+          margin: 0.25rem 0;
+
+          span {
+            font-size: var(--font-size-18);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+          }
+        }
+
+        .actor-block {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 0.75rem;
+          padding: 1.5rem 0.5rem;
+          background: var(--fr5e-secondary-bg-5);
+          border-radius: 0.5rem;
+          flex: 1 0 10rem;
+          position: relative;
+
+          .actor-info {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: auto;
+            align-items: center;
+            gap: 1rem;
+
+            .actor-img {
+              width: 10rem;
+              height: 10rem;
+              border-radius: 0.5rem;
+              background: transparent;
+              object-fit: cover;
+              object-position: top center;
+              flex-shrink: 0;
+            }
+
+            .actor-name {
+              font-weight: 600;
+              font-size: var(--font-size-16);
+              color: inherit;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              white-space: nowrap;
+            }
+          }
+
+          .delete-actor {
+            flex: 0 0 auto;
+            background: transparent;
+            color: inherit;
+            width: 36px;
+            height: 36px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            border: 0;
+
+            &:hover {
+              color: var(--color-warm-2);
+            }
+
+            i {
+              pointer-events: none;
+            }
+          }
+        }
+      }
+    }
+
+  }
+
+  footer.dialog-buttons {
+    display: flex;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem;
+    margin: 0;
+
+    .dialog-button {
+      flex: 1 1 auto;
+      padding: 0.75rem 1.5rem;
+      border-radius: 4px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+      height: auto;
+
+      i {
+        pointer-events: none;
+      }
+
+      &.code-button {
+        flex: 0 0 auto;
+        padding: 0.75rem;
+        width: auto;
+      }
+    }
+  }
+}

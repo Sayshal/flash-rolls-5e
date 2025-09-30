@@ -38,11 +38,16 @@
       "dropError": "Error adding actor to menu",
       "npcHiddenFromPlayers": "NPCs are now hidden from players in the group message.",
       "npcVisibleToPlayers": "NPCs are now visible to players in the group message.",
-      "midiQolActive": "The setting 'Send roll request from player sheets' might conflict with some Midi-QoL features. Test before play, or disable the option below.",
+      "midiQolActive": "The setting 'Send roll request from player sheets' might conflict with some Midi-QoL features, particularly damage application and card layout. Test before play, or disable the option below.",
       "movementLocked": "Movement locked for {count} token(s)",
       "movementUnlocked": "Movement unlocked for {count} token(s)",
       "movementRestricted": "The GM has restricted movement for this token",
-      "noTokensForMovementLock": "No tokens found for selected actors"
+      "noTokensForMovementLock": "No tokens found for selected actors",
+      "noVsActorsSelected": "No opposing actors selected for contested roll",
+      "noRollSelected": "No roll type selected for {name}",
+      "rollFailed": "Failed to execute roll for {name}",
+      "codeCopied": "Code copied to clipboard",
+      "twoActorsRequired": "Two actors must be selected for a contested roll"
     },
     "contextMenu": {
       "addToFavorites": "Add to Flash Rolls Menu",
@@ -270,7 +275,9 @@
         "save": "Save",
         "reloadButton": "Reload",
         "cancelButton": "Cancel",
-        "createMacro": "Create Macro"
+        "createMacro": "Create Macro",
+        "request": "Request",
+        "showCode": "Show Code"
       },
       "inputs": {
         "lockMenu": "Lock Menu",
@@ -287,7 +294,8 @@
         "openSettings": "Open Settings",
         "filterActors": "Filter Actors",
         "groupSelected": "Create Group",
-        "toggleMovement": "Toggle Movement"
+        "toggleMovement": "Toggle Movement",
+        "contestedRoll": "Contested Roll"
       },
       "filters": {
         "title": "Filter Actors",
@@ -337,6 +345,19 @@
           "title": "Adjust MidiQOL Settings?",
           "description": "Some of your current settings on MidiQOL won't work well with Flash Rolls 5e. Would you like to adjust them? This preference will be saved so you don't see this message again.",
           "changes": "The following settings from MidiQOL will be disabled if you confirm: <ul><li>Auto Fast Forward Ability Checks</li><li>Auto Roll Attack (Player)</li><li>Auto Roll Damage (Player)</li></ul>"
+        },
+        "contestedRoll": {
+          "title": "Contested Roll",
+          "rollMode": "Roll Mode",
+          "flavor": "Flavor Text",
+          "flavorPlaceholder": "Optional description for the roll",
+          "hideNpcNames": "Hide NPC Names",
+          "actors": "Actors",
+          "vs": "Vs",
+          "selectRoll": "Select Roll Type",
+          "dice": "Dice",
+          "removeActor": "Remove Actor",
+          "customRoll": "Custom Roll"
         }
       },
       "menus": {

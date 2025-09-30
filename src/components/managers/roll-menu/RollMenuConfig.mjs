@@ -25,20 +25,8 @@ export class RollMenuConfig {
     const sendAsRequest = configOverrides.hasOwnProperty('sendAsRequest') ? configOverrides.sendAsRequest : undefined;
     const npcActors = actors.filter(actor => pcActors.includes(actor.id));
     const confirmedSkipDialog = RollHelpers.shouldSkipRollDialog(skipRollDialog, {isPC: pcActors.length > 0, isNPC: npcActors.length > 0});
-
-    LogUtil.log('RollMenuConfig.getRollConfiguration', [
-      'sendAsRequest:', sendAsRequest,
-      'rollRequestsEnabled:', rollRequestsEnabled,
-      'skipRollDialog:', skipRollDialog,
-      'confirmedSkipDialog:', confirmedSkipDialog,
-      'pcActors.length:', pcActors,
-      'npcActors.length:', npcActors,
-      'actors:', actors
-    ]);
     
-    // Show GM configuration dialog (unless skip dialogs is enabled or it's a custom roll)
     if (!confirmedSkipDialog && rollMethodName !== ROLL_TYPES.CUSTOM) {
-      // Use appropriate dialog based on roll type
       let DialogClass;
       if ([ROLL_TYPES.SKILL, ROLL_TYPES.TOOL].includes(rollMethodName)) {
         DialogClass = GMSkillToolConfigDialog;
@@ -47,12 +35,17 @@ export class RollMenuConfig {
       } else {
         DialogClass = GMRollConfigDialog;
       }
-      const config = await DialogClass.initConfiguration(actors, rollMethodName, rollKey, { 
+      const config = await DialogClass.initConfiguration(actors, rollMethodName, rollKey, {
         confirmedSkipDialog,
-        sendRequest: sendAsRequest===true || (sendAsRequest===undefined && rollRequestsEnabled) || false 
+        sendRequest: sendAsRequest===true || (sendAsRequest===undefined && rollRequestsEnabled) || false
       });
-      LogUtil.log('getRollConfiguration', [config]);
-      
+      LogUtil.log('getRollConfiguration', [config, configOverrides]);
+
+      if (config && configOverrides.groupRollId) {
+        config.groupRollId = configOverrides.groupRollId;
+        config.isContestedRoll = configOverrides.isContestedRoll || false;
+      }
+
       return config; // Will be null if cancelled
     } else {
       // Use default BasicRollProcessConfiguration when skipping dialogs
@@ -71,12 +64,17 @@ export class RollMenuConfig {
         skipRollDialog: true,
         sendRequest: configOverrides.hasOwnProperty('sendAsRequest') ? configOverrides.sendAsRequest : (rollRequestsEnabled && pcActors.length > 0)
       };
-      
+
       // Death saves always have DC 10
       if (rollMethodName === ROLL_TYPES.DEATH_SAVE) {
         config.target = 10;
       }
-      
+
+      if (configOverrides.groupRollId) {
+        config.groupRollId = configOverrides.groupRollId;
+        config.isContestedRoll = configOverrides.isContestedRoll || false;
+      }
+
       return config;
     }
   }

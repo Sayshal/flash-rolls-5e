@@ -24,13 +24,13 @@
       display: flex;
       flex-direction: row;
       gap: 0.25rem;
-      padding: 0.25rem 0;
+      padding: .25rem 0 0 0;
       align-items: center;
       justify-content: flex-start;
-      border-top: 1px solid rgba(0, 0, 0, 0.5);
+      border-top: 1px solid rgba(0,0,0,0.35);
 
       &:hover {
-        background-color: rgba(255, 255, 255, 0.05);
+        background-color: var(--fr5e-secondary-bg-5);
       }
     }
     
@@ -46,7 +46,7 @@
       display: none;
       padding: 0.25rem;
       margin-top: 0.25rem;
-      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      border-top: 1px solid var(--fr5e-secondary-bg-5);
 
       .dice-total{
         display: none;
@@ -72,14 +72,45 @@
   }
 
   .actor-image {
-    width: 2em;
-    height: 2em;
+    width: 38px;
+    height: 38px;
     object-fit: cover;
     margin-right: 0.25em;
+    border-radius: 4px;
   }
 
   .actor-name{
     margin-right: auto;
+  }
+
+  .vs-divider{
+    width: 100%;
+    padding: 0;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--color-text-primary);
+
+    span {
+      color: var(--color-text-primary) !important;
+      font-family: var(--dnd5e-font-roboto-slab) !important;
+      font-size: 1rem;
+    }
+
+    &::before,
+    &::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      opacity: 0.5;
+    }
+    &::before {
+      background: linear-gradient(to left, var(--color-text-primary), rgba(255, 255, 255, 0));
+    }
+    &::after {
+      background: linear-gradient(to right, var(--color-text-primary), rgba(255, 255, 255, 0));
+    }
   }
 
   .dice-btn{
@@ -111,14 +142,13 @@
     align-items: center;
     justify-content: center;
     border-radius: 4px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--fr5e-bg-50);
     padding: 3px;
   }
   .dice-formula {
-    background-color: rgba(0, 0, 0, 0.1);
+    background-color: var(--fr5e-secondary-bg-5);
   }
   .roll-breakdown {
-    background-color: rgba(0, 0, 0, 0.2);
     .dice-tooltip .total {
       display: none;
     }
@@ -133,7 +163,7 @@
   margin-top: 0.5rem;
   padding: 0.5rem;
   border-radius: 4px;
-  background: rgba(0, 0, 0, 0.1);
+  background: var(--fr5e-secondary-bg-5);
   border: 1px solid transparent;
   
   &.success {
@@ -146,7 +176,9 @@
   
   .group-result-summary {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
+    justify-content: center;
     gap: 0.5rem;
     font-size: 1.1em;
     font-weight: 600;
@@ -177,7 +209,8 @@
   .group-result-details {
     margin-top: 0.25rem;
     padding-top: 0.25rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid rgba(0,0,0,0.35);
+    text-align: center;
     
     .summary-text {
       font-size: 0.9em;
@@ -189,10 +222,9 @@
 
 .group-roll-dc-control {
   margin-top: 0.5rem;
-  padding: .25rem;
+  padding: .25rem 0;
   border-radius: 4px;
-  background: rgba(255, 255, 255, 0.075);
-  border: 1px dotted rgba(255, 255, 255, 0.25);
+  border-top: 1px solid var(--fr5e-bg-50);
   color: inherit;
   border: 1px solid transparent;
   
@@ -211,24 +243,91 @@
     .dc-input {
       width: 25%;
       text-align: center;
-      padding: 4px;
-      border: 1px solid transparent;
-      border-radius: 3px;
-      background: rgba(0, 0, 0, 0.2);
+      padding: 0.25rem;
+      border: 1px solid var(--fr5e-secondary-bg-5);
+      border-radius: 6px;
+      background: var(--fr5e-bg-50);
       font-size: 1.1rem;
+      height: 1.75em;
       color: inherit;
       
       &:focus {
         outline: none;
-        border-color: rgba(0, 100, 200, 0.5);
-        background: rgba(0, 0, 0, 0.3);
+        border-color: var(--color-warm-2);
       }
       
       &::placeholder {
-        color: rgba(255, 255, 255, 0.4);
+        color: rgba(255, 255, 255, 0.5);
         font-style: italic;
         font-size: 0.8rem;
       }
+    }
+  }
+}
+
+.flash5e-group-roll.flash5e-contested-roll {
+  .group-roll-list{
+    gap: 0;
+    margin-top: 1em;
+  }
+  .group-roll-list > .actor-result .actor-summary {
+    border-top: none;
+    padding: 0;
+  }
+
+  .actor-image {
+    width: 38px;
+    height: 38px;
+  }
+
+  .actor-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    flex: 1;
+
+    .actor-name {
+      font-weight: 600;
+    }
+
+    .roll-type {
+      font-size: 0.8em;
+      opacity: 0.5;
+    }
+  }
+
+  .group-roll-list > .actor-result.npc-hidden {
+    display: flex;
+
+    .actor-summary .actor-info .actor-name {
+      font-size: 0;
+
+      &::before {
+        content: "???";
+        font-size: var(--font-size-16);
+      }
+    }
+
+    .actor-summary .actor-info .roll-type {
+      font-size: 0;
+
+      &::before {
+        content: "???";
+        font-size: 0.65em;
+      }
+    }
+
+    .actor-summary .roll-result .roll-value {
+      font-size: 0;
+
+      &::before {
+        content: "?";
+        font-size: var(--font-size-20);
+      }
+    }
+
+    .roll-breakdown {
+      display: none !important;
     }
   }
 }
@@ -239,4 +338,3 @@
   right: 0;
   z-index: 10;
 }
-

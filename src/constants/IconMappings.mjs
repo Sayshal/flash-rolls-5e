@@ -147,6 +147,15 @@ export const ACTOR_ACTION_ICONS = {
     element: "flash5e-lock-movement",
     type: "button",
     cssClass: "bulk-action"
+  },
+  "contested-roll": {
+    id: "contested-roll",
+    icon: "fa-swords",
+    labelKey: "FLASH_ROLLS.ui.inputs.contestedRoll",
+    tooltipKey: "FLASH_ROLLS.ui.inputs.contestedRoll",
+    element: "flash5e-contested-roll",
+    type: "button",
+    cssClass: "bulk-action"
   }
 };
 
@@ -201,6 +210,7 @@ export function getDefaultIconLayout() {
       { id: "open-sheets", icon: "fa-square-user", enabled: true, order: 6 },
       { id: "heal-all", icon: "fa-heart-pulse", enabled: true, order: 7 },
       { id: "kill-all", icon: "fa-skull", enabled: true, order: 8 },
+      { id: "contested-roll", icon: "fa-swords", enabled: true, order: 9 }
     ]
   };
 }

@@ -143,7 +143,7 @@ export function GMRollConfigMixin(Base) {
         return;
       }
       
-      const formData = new FormDataExtended(this.form);
+      const formData = new foundry.applications.ux.FormDataExtended(this.form);
       const situational = formData.get('roll.0.situational') || formData.get('rolls.0.situational') || '';
       const dc = formData.get('dc');
       const sendRequest = formData.get('flash5e-send-request');

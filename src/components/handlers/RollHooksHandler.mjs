@@ -25,6 +25,9 @@ export class RollHooksHandler {
    * @param {Object} messageOptions - Chat message options
    */
   static onPreRollGM(config, dialogOptions, messageOptions) {
+    if (config._flashRollsProcessed) return;
+    config._flashRollsProcessed = true;
+
     LogUtil.log("RollHooksHandler.onPreRollGM", [config, dialogOptions, messageOptions]);
 
     config.rolls = RollHelpers.consolidateRolls(config.rolls);
@@ -52,6 +55,9 @@ export class RollHooksHandler {
    * @param {Object} messageOptions - Chat message options
    */
   static onPreRollInitiativeDialog(config, dialogOptions, messageOptions) {
+    if (config._flashRollsProcessed) return;
+    config._flashRollsProcessed = true;
+
     const actor = config.subject;
     const storedConfig = actor.getFlag(MODULE_ID, 'tempInitiativeConfig');
 
@@ -82,6 +88,9 @@ export class RollHooksHandler {
    * @param {Object} messageOptions - Chat message options
    */
   static onPreRollAttackV2(config, dialogOptions, messageOptions) {
+    if (config._flashRollsProcessed) return;
+    config._flashRollsProcessed = true;
+
     LogUtil.log("RollHooksHandler.onPreRollAttackV2 triggered", [config, dialogOptions, messageOptions]);
 
     const stored = config.subject?.item?.getFlag(MODULE_ID, 'tempAttackConfig');
@@ -124,6 +133,9 @@ export class RollHooksHandler {
    * @param {Object} messageOptions - Chat message options
    */
   static onPreRollDamageV2(config, dialogOptions, messageOptions) {
+    if (config._flashRollsProcessed) return;
+    config._flashRollsProcessed = true;
+
     const stored = config.subject?.item?.getFlag(MODULE_ID, 'tempDamageConfig');
     LogUtil.log("RollHooksHandler.onPreRollDamageV2 triggered", [config, dialogOptions, messageOptions]);
     const isMidiActive = GeneralUtil.isModuleOn('midi-qol');
@@ -190,6 +202,9 @@ export class RollHooksHandler {
    * @param {Object} message - Message options
    */
   static onPreRollAbilityCheck(config, dialog, message) {
+    if (config._flashRollsProcessed) return;
+    config._flashRollsProcessed = true;
+
     LogUtil.log("RollHooksHandler.onPreRollAbilityCheck", [config, dialog, message]);
     if (config.isRollRequest) {
       dialog.configure = true;
@@ -207,6 +222,9 @@ export class RollHooksHandler {
    * @param {Object} messageOptions - Chat message options
    */
   static onPreRollHitDieV2(config, dialogOptions, messageOptions) {
+    if (config._flashRollsProcessed) return;
+    config._flashRollsProcessed = true;
+
     LogUtil.log("RollHooksHandler.onPreRollHitDieV2 triggered", [config, dialogOptions, messageOptions]);
 
     if (config.rolls && config.rolls.length > 1) {

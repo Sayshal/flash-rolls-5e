@@ -950,7 +950,7 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
    * @param {Array} actorsData - Array of actor entries with unique IDs
    */
   async _orchestrateRollsForActors(config, pcActors, npcActors, rollMethodName, rollKey, actorsData) {
-    return RollMenuOrchestrator.orchestrateRollsForActors(config, pcActors, npcActors, rollMethodName, rollKey, actorsData, this);
+    return RollMenuOrchestrator.orchestrateRollsForActors(config, pcActors, npcActors, rollMethodName, rollKey, actorsData);
   }
 
   /**

@@ -1,0 +1,64 @@
+<div class="flash5e-group-roll flash5e-contested-roll">
+  <div class="group-roll-list contested-roll-list">
+    {{#each results}}
+    <div class="actor-result {{#if @first}}contestant-1{{else}}contestant-2{{/if}} {{#if isWinner}}success{{/if}} {{#if isLoser}}failure{{/if}} {{#if shouldHide}}npc-hidden{{/if}}" data-actor-id="{{actorId}}"{{#if tokenId}} data-token-id="{{tokenId}}"{{/if}}>
+      <div class="actor-summary">
+        <img class="actor-image" src="{{actorImg}}" alt="{{actorName}}" />
+        <div class="actor-info">
+          <span class="actor-name">{{actorName}}</span>
+          <span class="roll-type">{{../flavor}}</span>
+        </div>
+        <span class="roll-result">
+          {{#if rolled}}
+            <span class="roll-value toggle" title="Click to see roll breakdown">{{total}}</span>
+          {{else}}
+            <span class="dice-btn fas fa-dice-d20 rollable"
+                  data-action="roll"
+                  data-type="{{../rollType}}"
+                  data-roll-key="{{../rollKey}}"
+                  data-actor-id="{{actorId}}"
+                  {{#if tokenId}}data-token-id="{{tokenId}}"{{/if}}
+                  data-group-roll-id="{{../groupRollId}}"
+                  {{#if ../rollType}}{{#eq ../rollType "skill"}}data-skill="{{../rollKey}}"{{/eq}}{{/if}}
+                  {{#if ../rollType}}{{#eq ../rollType "tool"}}data-tool="{{../rollKey}}"{{/eq}}{{/if}}
+                  {{#if ../rollType}}{{#eq ../rollType "save"}}data-ability="{{../rollKey}}"{{/eq}}{{/if}}
+                  {{#if ../rollType}}{{#eq ../rollType "ability"}}data-ability="{{../rollKey}}"{{/eq}}{{/if}}
+                  title="Click to roll"
+                  alt="Pending Roll"></span>
+          {{/if}}
+        </span>
+      </div>
+      {{#if rollBreakdown}}
+      <div class="roll-breakdown">
+        {{{rollBreakdown}}}
+      </div>
+      {{/if}}
+    </div>
+    {{#unless @last}}
+    <div class="vs-divider">
+      <span>VS</span>
+    </div>
+    {{/unless}}
+    {{/each}}
+  </div>
+
+  {{#if allRolled}}
+    {{#if contestedResult.complete}}
+    <div class="group-roll-footer contested-result">
+      <div class="group-result-summary">
+        {{#if contestedResult.isTie}}
+        <span class="group-result-label">Result:</span>
+        <i class="fas fa-handshake tie-icon"></i>
+        <span class="group-result-value tie">Tie</span>
+        <span class="result-details">({{contestedResult.winnerTotal}} vs {{contestedResult.loserTotal}})</span>
+        {{else}}
+        <span class="group-result-label">Winner:</span>
+        <i class="fas fa-trophy winner-icon"></i>
+        <span class="group-result-value">{{contestedResult.winnerName}}</span>
+        {{!-- <span class="result-details">({{contestedResult.winnerTotal}} vs {{contestedResult.loserTotal}})</span> --}}
+        {{/if}}
+      </div>
+    </div>
+    {{/if}}
+  {{/if}}
+</div>

@@ -9,6 +9,7 @@ import { ensureCombatForInitiative, filterActorsForInitiative } from '../../help
 import { ChatMessageManager } from '../ChatMessageManager.mjs';
 import { RollMenuConfig } from './RollMenuConfig.mjs';
 import { OfflinePlayerManager } from './OfflinePlayerManager.mjs';
+import { RollMenuExecutor } from './RollMenuExecutor.mjs';
 
 /**
  * Utility class for orchestrating roll requests and execution
@@ -23,16 +24,18 @@ export class RollMenuOrchestrator {
    * @param {string} rollMethodName - The roll method name
    * @param {string} rollKey - The roll key
    * @param {Array} actorsData - Array of actor entries with unique IDs
-   * @param {RollRequestsMenu} menu - Menu instance for accessing methods
    */
-  static async orchestrateRollsForActors(config, pcActors, npcActors, rollMethodName, rollKey, actorsData, menu) {
+  static async orchestrateRollsForActors(config, pcActors, npcActors, rollMethodName, rollKey, actorsData) {
     const SETTINGS = getSettings();
     const successfulRequests = [];
     const offlinePlayerActors = [];
     const onlinePlayerActors = [];
-    let groupRollId = foundry.utils.randomID();
-    
+    let groupRollId = config.groupRollId || foundry.utils.randomID();
+
     LogUtil.log('RollMenuOrchestrator.orchestrateRollsForActors', [
+      'groupRollId:', groupRollId,
+      'config.groupRollId:', config.groupRollId,
+      'config.isContestedRoll:', config.isContestedRoll,
       'config.sendRequest:', config.sendRequest,
       'pcActors:', pcActors.map(p => `${p.actor.name}(${p.owner?.name})`),
       'npcActors:', npcActors.map(n => n.name)
@@ -77,9 +80,11 @@ export class RollMenuOrchestrator {
     ));
 
     const groupRollsMsgEnabled = SettingsUtil.get(SETTINGS.groupRollsMsgEnabled.tag);
-    
+
     // Create group message FIRST so individual rolls can update it
-    if (groupRollsMsgEnabled && allActors.length > 1) {
+    // Skip if groupRollId already exists (e.g., from contested rolls where the group message was already created)
+    const groupMessageAlreadyExists = groupRollId && ChatMessageManager.groupRollMessages.has(groupRollId);
+    if (groupRollsMsgEnabled && allActors.length > 1 && !groupMessageAlreadyExists) {
       await ChatMessageManager.createGroupRollMessage(
         allActorEntries,
         rollMethodName,
@@ -114,8 +119,18 @@ export class RollMenuOrchestrator {
 
     // Player Rolls: Actors owned by active players
     for (const { actor, owner } of onlinePlayerActors) {
-      const useGroupId = groupRollsMsgEnabled && allActors.length > 1 ? groupRollId : null;
-      
+      const useGroupId = groupRollsMsgEnabled && (allActorEntries.length > 1 || config.isContestedRoll) ? groupRollId : null;
+
+      LogUtil.log('orchestrateRollsForActors - Sending to player', {
+        actor: actor.name,
+        owner: owner.name,
+        useGroupId,
+        groupRollId,
+        'allActorEntries.length': allActorEntries.length,
+        'config.isContestedRoll': config.isContestedRoll,
+        groupRollsMsgEnabled
+      });
+
       let currentRollKey = rollKey;
       if (rollMethodName === ROLL_TYPES.HIT_DIE) {
         currentRollKey = actor.system.attributes.hd.largestAvailable;
@@ -123,7 +138,7 @@ export class RollMenuOrchestrator {
           continue;
         }
       }
-      
+
       await this.sendRollRequestToPlayer(actor, owner, rollMethodName, currentRollKey, config, true, useGroupId);
       successfulRequests.push({ actor, owner });
       await delay(250);
@@ -135,14 +150,14 @@ export class RollMenuOrchestrator {
     // Handle NPC actors using traditional GM rolls
     if (npcActors.length > 0) {
       config.skipRollDialog = true;
-      config.groupRollId = groupRollsMsgEnabled && allActors.length > 1 ? groupRollId : null;
-      
+      config.groupRollId = (groupRollsMsgEnabled && (allActorEntries.length > 1 || config.isContestedRoll)) ? groupRollId : null;
+
       const npcActorIds = npcActors.map(actor => actor.id);
-      const npcActorEntries = actorsData.filter(entry => 
+      const npcActorEntries = actorsData.filter(entry =>
         entry && entry.actor && npcActorIds.includes(entry.actor.id)
       );
-      
-      await menu._handleGMRollsWithTokens(npcActorEntries, rollMethodName, rollKey, config);
+
+      await RollMenuExecutor.handleGMRollsWithTokens(npcActorEntries, rollMethodName, rollKey, config);
     }
   }
 
@@ -229,6 +244,9 @@ export class RollMenuOrchestrator {
    * @param {string} [config.situationalBonus] - Situational bonus
    * @param {boolean} [config.advantage] - Roll with advantage
    * @param {boolean} [config.disadvantage] - Roll with disadvantage
+   * @param {boolean} [config.sendAsRequest] - Send to players instead of rolling locally
+   * @param {string} [config.groupRollId] - Group roll identifier for combining multiple rolls
+   * @param {boolean} [config.isContestedRoll] - Whether this is part of a contested roll
    */
   static async triggerRoll(requestType, rollKey, menu, config = {}) {
     const SETTINGS = getSettings();
@@ -269,12 +287,13 @@ export class RollMenuOrchestrator {
     
     const { pcActors, npcActors } = categorizeActorsByOwnership(actors);
     const rollConfig = await RollMenuConfig.getRollConfiguration(actors, rollMethodName, rollKey, skipRollDialog, pcActors, config);
+    LogUtil.log('RollMenuOrchestrator.triggerRoll', [rollConfig]);
     
     if (!rollConfig) return;
     
-    await this.orchestrateRollsForActors(rollConfig, pcActors, npcActors, rollMethodName, rollKey, actorsData, menu);
+    await this.orchestrateRollsForActors(rollConfig, pcActors, npcActors, rollMethodName, rollKey, actorsData);
     
-    if (!menu.isLocked && typeof menu.close === 'function') {
+    if (!menu?.isLocked && typeof menu?.close === 'function') {
       setTimeout(() => menu.close(), 500);
     }
   }
@@ -462,7 +481,7 @@ export class RollMenuOrchestrator {
     
     const requestData = {
       type: "rollRequest",
-      groupRollId: groupRollId || foundry.utils.randomID(),
+      groupRollId: groupRollId,
       actorId: actor.isToken ? actor.token.id : actor.id,
       isTokenActor: actor.isToken, 
       baseActorId: actor.isToken ? actor._actor?.id : actor.id,
@@ -477,8 +496,12 @@ export class RollMenuOrchestrator {
       targetTokenIds: Array.from(game.user.targets).map(t => t.id),
       preserveTargets: SettingsUtil.get(SETTINGS.useGMTargetTokens.tag)
     };
-    
-    LogUtil.log('RollMenuOrchestrator.sendRollRequestToPlayer - sending request', []);
+
+    LogUtil.log('RollMenuOrchestrator.sendRollRequestToPlayer - sending request', {
+      actor: actor.name,
+      owner: owner.name,
+      groupRollId: requestData.groupRollId
+    });
     SocketUtil.execForUser('handleRollRequest', owner.id, requestData);
     
     if (!suppressNotification) {
