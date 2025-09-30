@@ -1865,8 +1865,8 @@ body.flash5e-sidebar-expanded #flash-rolls-menu.docked-bottom {
     > .actor-img{
       height: 2.5rem;
       max-height: 2.5rem;
-      max-width: 10.65rem;
-      width: 10.65rem;
+      max-width: 9.65rem;
+      width: 9.65rem;
 
       &.group-1,
       &.group2,
@@ -1908,7 +1908,7 @@ body.flash5e-sidebar-expanded #flash-rolls-menu.docked-bottom {
         width: 3.5rem;
       }
       li > .actor-name {
-        width: 10.5rem;
+        width: 9.65rem;
         display:flex;
         align-items: center;
         justify-content: center;
@@ -1918,7 +1918,7 @@ body.flash5e-sidebar-expanded #flash-rolls-menu.docked-bottom {
 
     .group-expand-btn{
       height: 14px;
-      width: 10.5rem;
+      width: 9.65rem;
       top: 4rem;
       border-radius: 4px;
       z-index: 1;

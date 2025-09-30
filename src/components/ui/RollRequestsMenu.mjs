@@ -116,6 +116,7 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
     // Add layout information to context
     const SETTINGS = getSettings();
     preparedContext.menuLayout = SettingsUtil.get(SETTINGS.menuLayout.tag);
+    preparedContext.maxIconsPerRow = SettingsUtil.get(SETTINGS.maxIconsPerRow.tag) || 5;
 
     // Add icon data for dynamic rendering
     preparedContext.enabledModuleIcons = IconLayoutUtil.getEnabledIcons('moduleActions');

@@ -50,7 +50,7 @@ export const getSettings = () => {
     },
 
     interfaceSettings: {
-      tag: "flash5e-interface-settings", 
+      tag: "flash5e-interface-settings",
       label: game.i18n.localize("FLASH_ROLLS.settings.moduleSettingsMenu.label"),
       title: game.i18n.localize("FLASH_ROLLS.settings.moduleSettingsMenu.title"),
       hint: game.i18n.localize("FLASH_ROLLS.settings.moduleSettingsMenu.hint"),
@@ -59,17 +59,19 @@ export const getSettings = () => {
         'showMenuOnLoad',
         'compactMode',
         'menuLayout',
-        'menuIconsLayout'
+        'menuIconsLayout',
+        'maxIconsPerRow'
       ],
       default: {
         showMenuOnLoad: false,
         compactMode: true,
         menuLayout: "vertical",
         menuIconsLayout: iconsMenuDefault,
+        maxIconsPerRow: 5
       },
       scope: SETTING_SCOPE.world,
-      config: false, 
-      requiresReload: false 
+      config: false,
+      requiresReload: false
     },
 
     groupRollsSettings: {
@@ -336,6 +338,16 @@ export const getSettings = () => {
         "horizontal": game.i18n.localize("FLASH_ROLLS.settings.menuLayout.choices.horizontal")
       },
       default: "vertical",
+      scope: SETTING_SCOPE.world,
+      config: false
+    },
+
+    maxIconsPerRow: {
+      tag: "max-icons-per-row",
+      label: game.i18n.localize("FLASH_ROLLS.settings.maxIconsPerRow.label"),
+      hint: game.i18n.localize("FLASH_ROLLS.settings.maxIconsPerRow.hint"),
+      propType: Number,
+      default: 5,
       scope: SETTING_SCOPE.world,
       config: false
     },

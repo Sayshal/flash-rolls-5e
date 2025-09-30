@@ -77,6 +77,7 @@ export class SettingsUtil {
     SettingsUtil.updateColorScheme();
     SettingsUtil.validateAndUpdateIconLayout();
     SettingsUtil.checkMidiQol();
+    SettingsUtil.initializeMaxIconsPerRow();
   }
 
   /**
@@ -193,6 +194,9 @@ export class SettingsUtil {
       case SETTINGS.menuIconsLayout.tag:
         SettingsUtil.applyMenuIconsLayout(newValue);
         break;
+      case SETTINGS.maxIconsPerRow.tag:
+        SettingsUtil.applyMaxIconsPerRow(newValue);
+        break;
       case SETTINGS.autoBlockMovementInCombat.tag:
         SettingsUtil.applyAutoBlockMovementInCombat(newValue);
         break;
@@ -240,6 +244,33 @@ export class SettingsUtil {
 
     LogUtil.log('applyMenuIconsLayout', [menuIconsLayout]);
 
+    RollRequestsMenu.refreshIfOpen();
+  }
+
+  static initializeMaxIconsPerRow(){
+    const SETTINGS = getSettings();
+    const maxIconsPerRow = SettingsUtil.get(SETTINGS.maxIconsPerRow.tag) || 5;
+    GeneralUtil.addCSSVars('--fr5e-menu-icons-limit', maxIconsPerRow);
+    LogUtil.log('initializeMaxIconsPerRow', [maxIconsPerRow]);
+  }
+
+  static applyMaxIconsPerRow(newValue){
+    const SETTINGS = getSettings();
+    let maxIconsPerRow = newValue || SettingsUtil.get(SETTINGS.maxIconsPerRow.tag) || 5;
+
+    const IconLayoutUtil = game.modules.get(MODULE_ID)?.api?.IconLayoutUtil;
+    if (IconLayoutUtil) {
+      const enabledActorIcons = IconLayoutUtil.getEnabledIcons('actorActions');
+      if (enabledActorIcons && maxIconsPerRow > enabledActorIcons.length) {
+        maxIconsPerRow = enabledActorIcons.length;
+      }
+    }
+
+    if (maxIconsPerRow < 1) maxIconsPerRow = 1;
+
+    LogUtil.log('applyMaxIconsPerRow', [maxIconsPerRow, newValue]);
+
+    GeneralUtil.addCSSVars('--fr5e-menu-icons-limit', maxIconsPerRow);
     RollRequestsMenu.refreshIfOpen();
   }
 

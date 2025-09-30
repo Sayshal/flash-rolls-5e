@@ -28,7 +28,7 @@
             <div class="actor actor-group drag-wrapper{{#if group.isExpanded}} expanded non-selectable{{/if}}" draggable="true" 
                 data-id="{{group.uniqueId}}" data-actor-id="{{group.id}}" 
                 data-group-selected="{{group.selected}}" {{#if group.isExpanded}}data-non-selectable="true"{{/if}} 
-                data-tooltip="{{group.name}}" data-tooltip-direction="UP">
+                data-tooltip="{{group.name}}" data-tooltip-direction="DOWN">
               {{#unless group.isExpanded}}
               <div class="actor-img group-{{group.memberImages.length}}">
                 {{#each group.memberImages as |img|}}
@@ -215,29 +215,43 @@
       {{/if}}
 
       {{!-- Actor Action Icons --}}
-      {{#each enabledActorIcons as |icon|}}
-        {{#with (lookup ../iconConfigs.actorActions id)}}
-          <li data-icon-id="{{../id}}" class="bulk-action">
-            {{#if (eq type "button")}}
-              <button id="{{element}}"
-                      data-tooltip="{{localize tooltipKey}}"
-                      data-tooltip-direction="{{#if (eq ../../menuLayout 'horizontal')}}UP{{else}}RIGHT{{/if}}"
-                      data-tooltip-delay="500">
-                <i class="icon-label fas {{this.icon}}"></i>
-              </button>
-            {{else if (eq type "checkbox")}}
-              <label for="{{this.element}}">
-                <input type="checkbox" name="{{this.element}}" id="{{this.element}}"
-                       {{#if (eq ../id "select-all")}}{{#if ../../selectAllOn}}checked{{/if}}{{/if}} />
-                <span class="icon-label fas {{this.icon}}"
-                      data-tooltip="{{localize tooltipKey}}"
-                      data-tooltip-direction="{{#if (eq ../../menuLayout 'horizontal')}}UP{{else}}RIGHT{{/if}}"
-                      data-tooltip-delay="500"></span>
-              </label>
-            {{/if}}
-          </li>
-        {{/with}}
-      {{/each}}
+      <div class="actor-actions-container{{#unless (gt enabledActorIcons.length maxIconsPerRow)}} no-scroll{{/unless}}">
+        {{#if (gt enabledActorIcons.length maxIconsPerRow)}}
+          <button class="actor-actions-nav {{#if (eq menuLayout 'horizontal')}}actor-actions-nav-left{{else}}actor-actions-nav-up{{/if}}" data-direction="{{#if (eq menuLayout 'horizontal')}}left{{else}}up{{/if}}" aria-label="{{#if (eq menuLayout 'horizontal')}}Scroll left{{else}}Scroll up{{/if}}">
+            <i class="fas {{#if (eq menuLayout 'horizontal')}}fa-chevron-left{{else}}fa-chevron-up{{/if}}"></i>
+          </button>
+        {{/if}}
+        <div class="actor-actions-scrollable">
+          {{#each enabledActorIcons as |icon|}}
+            {{#with (lookup ../iconConfigs.actorActions id)}}
+              <li data-icon-id="{{../id}}" class="bulk-action">
+                {{#if (eq type "button")}}
+                  <button id="{{element}}"
+                          data-tooltip="{{localize tooltipKey}}"
+                          data-tooltip-direction="{{#if (eq ../../menuLayout 'horizontal')}}UP{{else}}RIGHT{{/if}}"
+                          data-tooltip-delay="500">
+                    <i class="icon-label fas {{this.icon}}"></i>
+                  </button>
+                {{else if (eq type "checkbox")}}
+                  <label for="{{this.element}}">
+                    <input type="checkbox" name="{{this.element}}" id="{{this.element}}"
+                           {{#if (eq ../id "select-all")}}{{#if ../../selectAllOn}}checked{{/if}}{{/if}} />
+                    <span class="icon-label fas {{this.icon}}"
+                          data-tooltip="{{localize tooltipKey}}"
+                          data-tooltip-direction="{{#if (eq ../../menuLayout 'horizontal')}}UP{{else}}RIGHT{{/if}}"
+                          data-tooltip-delay="500"></span>
+                  </label>
+                {{/if}}
+              </li>
+            {{/with}}
+          {{/each}}
+        </div>
+        {{#if (gt enabledActorIcons.length maxIconsPerRow)}}
+          <button class="actor-actions-nav {{#if (eq menuLayout 'horizontal')}}actor-actions-nav-right{{else}}actor-actions-nav-down{{/if}}" data-direction="{{#if (eq menuLayout 'horizontal')}}right{{else}}down{{/if}}" aria-label="{{#if (eq menuLayout 'horizontal')}}Scroll right{{else}}Scroll down{{/if}}">
+            <i class="fas {{#if (eq menuLayout 'horizontal')}}fa-chevron-right{{else}}fa-chevron-down{{/if}}"></i>
+          </button>
+        {{/if}}
+      </div>
     </ul>
   </div>
 

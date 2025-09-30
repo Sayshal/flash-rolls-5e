@@ -201,6 +201,10 @@
           "horizontal": "Horizontal"
         }
       },
+      "maxIconsPerRow": {
+        "label": "Max Action Icons Visible",
+        "hint": "Maximum number of actor action icons to show at once. When more icons are enabled, navigation arrows will appear to scroll through them."
+      },
       "addMacrosToFolder": {
         "label": "Place new macros on 'Flash Rolls' Folder",
         "hint": "Check this option to always add new macros inside the 'Flash Rolls' folder. When unchecked, macros will be added to the root of macros directory."

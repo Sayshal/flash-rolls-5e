@@ -95,23 +95,23 @@ export class RollMenuEventManager {
     html.querySelector('#flash5e-targets')?.addEventListener('click', () => {
       this.toggleTargetsForSelected(menu);
     });
-    
+
     html.querySelector('#flash5e-heal-selected')?.addEventListener('click', () => {
       this.healSelectedActors(menu);
     });
-    
+
     html.querySelector('#flash5e-kill-selected')?.addEventListener('click', () => {
       this.killSelectedActors(menu);
     });
-    
+
     html.querySelector('#flash5e-sheets')?.addEventListener('click', () => {
       this.openSheetsForSelected(menu);
     });
-    
+
     html.querySelector('#flash5e-toggle-list')?.addEventListener('change', () => {
       this.toggleOptionsListOnHover(menu);
     });
-    
+
     html.querySelector('#flash5e-remove-effects')?.addEventListener('click', () => {
       this.removeAllStatusEffectsFromSelected(menu);
     });
@@ -123,6 +123,148 @@ export class RollMenuEventManager {
     html.querySelector('#flash5e-lock-movement')?.addEventListener('click', () => {
       this.toggleMovementForSelected(menu);
     });
+
+    const navButtons = html.querySelectorAll('.actor-actions-nav');
+    navButtons.forEach(button => {
+      button.addEventListener('click', (event) => {
+        this.scrollActorActions(event.currentTarget, html);
+      });
+    });
+
+    const scrollContainer = html.querySelector('.actor-actions-scrollable');
+    if (scrollContainer) {
+      this.updateActorActionsContainerHeight(html);
+      this.updateActorActionsNavState(html);
+      scrollContainer.addEventListener('scroll', () => {
+        this.updateActorActionsNavState(html);
+      });
+    }
+  }
+
+  /**
+   * Update the actor actions container max-height/max-width based on actual item dimensions
+   * @param {HTMLElement} html - The menu HTML element
+   */
+  static updateActorActionsContainerHeight(html) {
+    const scrollContainer = html.querySelector('.actor-actions-scrollable');
+    if (!scrollContainer) return;
+
+    const container = scrollContainer.closest('.actor-actions-container');
+    if (!container || container.classList.contains('no-scroll')) return;
+
+    const firstItem = scrollContainer.querySelector('li.bulk-action');
+    if (!firstItem) return;
+
+    const SETTINGS = getSettings();
+    const menuLayout = SettingsUtil.get(SETTINGS.menuLayout.tag) || 'vertical';
+    const maxIconsPerRow = SettingsUtil.get(SETTINGS.maxIconsPerRow.tag) || 5;
+
+    if (menuLayout === 'horizontal') {
+      const itemWidth = firstItem.offsetWidth;
+      const maxWidth = itemWidth * maxIconsPerRow;
+      scrollContainer.style.maxWidth = `${maxWidth}px`;
+      scrollContainer.style.maxHeight = '';
+    } else {
+      const itemHeight = firstItem.offsetHeight;
+      const maxHeight = itemHeight * maxIconsPerRow;
+      scrollContainer.style.maxHeight = `${maxHeight}px`;
+      scrollContainer.style.maxWidth = '';
+    }
+  }
+
+  /**
+   * Scroll actor actions container in the appropriate direction
+   * @param {HTMLElement} button - The navigation button that was clicked
+   * @param {HTMLElement} html - The menu HTML element
+   */
+  static scrollActorActions(button, html) {
+    const direction = button.dataset.direction;
+    const scrollContainer = html.querySelector('.actor-actions-scrollable');
+    if (!scrollContainer) return;
+
+    const firstItem = scrollContainer.querySelector('li.bulk-action');
+    if (!firstItem) return;
+
+    const SETTINGS = getSettings();
+    const menuLayout = SettingsUtil.get(SETTINGS.menuLayout.tag) || 'vertical';
+    const maxIconsPerRow = SettingsUtil.get(SETTINGS.maxIconsPerRow.tag) || 5;
+    const itemsToScroll = Math.max(1, maxIconsPerRow - 1);
+
+    if (menuLayout === 'horizontal') {
+      const itemWidth = firstItem.offsetWidth;
+      const scrollAmount = direction === 'left' ? -(itemWidth * itemsToScroll) : (itemWidth * itemsToScroll);
+      scrollContainer.scrollBy({
+        left: scrollAmount,
+        behavior: 'smooth'
+      });
+    } else {
+      const itemHeight = firstItem.offsetHeight;
+      const scrollAmount = direction === 'up' ? -(itemHeight * itemsToScroll) : (itemHeight * itemsToScroll);
+      scrollContainer.scrollBy({
+        top: scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+
+    setTimeout(() => {
+      this.updateActorActionsNavState(html);
+    }, 300);
+  }
+
+  /**
+   * Update the enabled/disabled state of actor actions navigation arrows
+   * @param {HTMLElement} html - The menu HTML element
+   */
+  static updateActorActionsNavState(html) {
+    const scrollContainer = html.querySelector('.actor-actions-scrollable');
+    if (!scrollContainer) return;
+
+    const SETTINGS = getSettings();
+    const menuLayout = SettingsUtil.get(SETTINGS.menuLayout.tag) || 'vertical';
+
+    let firstButton, secondButton, isAtStart, isAtEnd;
+
+    if (menuLayout === 'horizontal') {
+      firstButton = html.querySelector('.actor-actions-nav-left');
+      secondButton = html.querySelector('.actor-actions-nav-right');
+
+      if (!firstButton || !secondButton) return;
+
+      const scrollLeft = scrollContainer.scrollLeft;
+      const scrollWidth = scrollContainer.scrollWidth;
+      const clientWidth = scrollContainer.clientWidth;
+
+      isAtStart = scrollLeft <= 1;
+      isAtEnd = scrollLeft + clientWidth >= scrollWidth - 1;
+    } else {
+      firstButton = html.querySelector('.actor-actions-nav-up');
+      secondButton = html.querySelector('.actor-actions-nav-down');
+
+      if (!firstButton || !secondButton) return;
+
+      const scrollTop = scrollContainer.scrollTop;
+      const scrollHeight = scrollContainer.scrollHeight;
+      const clientHeight = scrollContainer.clientHeight;
+
+      isAtStart = scrollTop <= 1;
+      isAtEnd = scrollTop + clientHeight >= scrollHeight - 1;
+    }
+
+    if (isAtStart) {
+      firstButton.classList.add('disabled');
+      firstButton.setAttribute('disabled', 'true');
+    } else {
+      firstButton.classList.remove('disabled');
+      firstButton.removeAttribute('disabled');
+    }
+
+    if (isAtEnd) {
+      secondButton.classList.add('disabled');
+      secondButton.setAttribute('disabled', 'true');
+    } else {
+      secondButton.classList.remove('disabled');
+      secondButton.removeAttribute('disabled');
+    }
   }
 
   /**
