@@ -285,6 +285,7 @@
     flex-direction: column;
     gap: 0.125rem;
     flex: 1;
+    width: calc(75% - 5.5rem);
 
     .actor-name {
       font-weight: 600;
@@ -293,6 +294,11 @@
     .roll-type {
       font-size: 0.8em;
       opacity: 0.5;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      display: block;
+      overflow: hidden;
+      max-width: 100%;
     }
   }
 

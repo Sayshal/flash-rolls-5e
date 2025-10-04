@@ -177,12 +177,9 @@ export class GroupTokenTracker {
       isPlacing: true  // Flag to track active placement phase
     });
 
-    // Initialize associations cache for this placement operation
     const currentFlag = groupActor.getFlag(MODULE_ID, 'tokenAssociationsByScene') || {};
     this.activeAssociations.set(groupActor.id, JSON.parse(JSON.stringify(currentFlag)));
 
-    // Monitor for when token placement UI starts (when tokens start being placed)
-    // After a short delay, set isPlacing to true to capture the placement operation
     setTimeout(() => {
       const placement = this.pendingPlacements.get(groupActor.id);
       if (placement) {
@@ -190,8 +187,7 @@ export class GroupTokenTracker {
         LogUtil.log(`GroupTokenTracker: Token placement phase active for group ${groupActor.name}`);
       }
     }, 100);
-
-    // Set a longer timeout for cleanup in case user takes time placing tokens
+    
     setTimeout(() => {
       const placement = this.pendingPlacements.get(groupActor.id);
       if (placement && placement.timestamp === this.pendingPlacements.get(groupActor.id)?.timestamp) {
@@ -233,12 +229,8 @@ export class GroupTokenTracker {
     const actorId = tokenDoc.actorId;
     const sceneId = tokenDoc.parent.id;
     const tokenUuid = tokenDoc.uuid;
-
-
-    // Use cached associations to avoid race conditions between simultaneous token creations
     const currentAssociations = this.activeAssociations.get(groupId) || {};
 
-    // Initialize scene associations if not exists
     if (!currentAssociations[sceneId]) {
       currentAssociations[sceneId] = {};
     }
@@ -247,31 +239,18 @@ export class GroupTokenTracker {
       currentAssociations[sceneId][actorId] = [];
     }
 
-    // Use UUID instead of just token ID for better cross-scene tracking
     const existingUuids = [...currentAssociations[sceneId][actorId]]; // Create a copy to avoid race conditions
 
     if (!existingUuids.includes(tokenUuid)) {
       existingUuids.push(tokenUuid);
-      // Update the associations object with the new array
       currentAssociations[sceneId][actorId] = existingUuids;
 
-
-      // Update both the cache and the flag
       this.activeAssociations.set(groupId, currentAssociations);
       await placement.groupActor.setFlag(MODULE_ID, 'tokenAssociationsByScene', currentAssociations);
-
-      // Remove the temporary fromGroupPlacement flag, keep only groupId
       await tokenDoc.unsetFlag(MODULE_ID, 'fromGroupPlacement');
 
       placement.placedTokenCount++;
-
-      LogUtil.log(`GroupTokenTracker: Updated tokenAssociationsByScene for group ${placement.groupActor.name}`, {
-        associations: currentAssociations,
-        placedCount: placement.placedTokenCount,
-        expectedCount: placement.expectedTokenCount
-      });
-
-      // Check if all expected tokens have been placed
+      
       if (placement.placedTokenCount >= placement.expectedTokenCount) {
         placement.isPlacing = false;  // Stop marking new tokens as from this placement
         LogUtil.log(`GroupTokenTracker: All tokens placed for group ${placement.groupActor.name}, cleaning up`);
@@ -281,7 +260,6 @@ export class GroupTokenTracker {
     } else {
     }
 
-    // Clean up any dangling associations after successful placement
     await this.cleanupDanglingAssociations();
   }
 

@@ -617,30 +617,39 @@ export class ChatMessageManager {
    * @returns {Object} Template data
    */
   static buildGroupRollData(actorEntries, rollType, rollKey, config) {
-    
+
     const validEntries = actorEntries.filter(entry => entry && entry.actor);
     if (validEntries.length === 0) {
       LogUtil.error('buildGroupRollData - No valid actor entries found', [actorEntries]);
       return null;
     }
-    
+
     let flavor = this._buildFlavorText(rollType, rollKey, config);
     const dc = config?.dc || config?.target;
-    const results = validEntries.map(entry => ({
-      actorId: entry.actor.id,
-      uniqueId: entry.uniqueId,
-      tokenId: entry.tokenId,
-      actorImg: entry.actor.img || entry.actor.prototypeToken?.texture?.src || 'icons/svg/mystery-man.svg',
-      actorName: entry.tokenId ? 
-        (canvas.tokens?.get(entry.tokenId)?.name || entry.actor.name) : 
-        entry.actor.name,
-      isNPC: !entry.actor.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER),
-      rolled: false,
-      showDice: true,
-      total: null,
-      success: false,
-      failure: false
-    }));
+    const results = validEntries.map(entry => {
+      const entryRollType = entry.rollType || rollType;
+      const entryRollKey = entry.rollKey || rollKey;
+      const entryFlavor = config?.isContestedRoll
+        ? this._buildFlavorText(entryRollType, entryRollKey, config)
+        : flavor;
+
+      return {
+        actorId: entry.actor.id,
+        uniqueId: entry.uniqueId,
+        tokenId: entry.tokenId,
+        actorImg: entry.actor.img || entry.actor.prototypeToken?.texture?.src || 'icons/svg/mystery-man.svg',
+        actorName: entry.tokenId ?
+          (canvas.tokens?.get(entry.tokenId)?.name || entry.actor.name) :
+          entry.actor.name,
+        isNPC: !entry.actor.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER),
+        rolled: false,
+        showDice: true,
+        total: null,
+        success: false,
+        failure: false,
+        rollTypeFlavor: entryFlavor
+      };
+    });
     
     const supportsDC = RollHelpers.shouldShowDC(rollType);
     const SETTINGS = getSettings();

@@ -16,19 +16,15 @@ export class SidebarController {
     LogUtil.log("addSidebarControls",[app, html]);
     if (!game.user.isGM || !app || app.id !== "sidebar") return;
     
-    // Find the chat controls container
     const chatControls = document.querySelector("#roll-privacy");
-    LogUtil.log("addSidebarControls",[chatControls]);
 
     if (!chatControls || chatControls.querySelector('.flash-rolls-icon')) {
       return;
     }
     
-    // Get current settings to determine initial state
     const SETTINGS = getSettings();
     const rollRequestsEnabled = SettingsUtil.get(SETTINGS.rollRequestsEnabled.tag);
     
-    // Create the roll request icon
     const rollRequestIcon = document.createElement('button');
     rollRequestIcon.id = "flash-rolls-icon"; 
     rollRequestIcon.setAttribute("data-tooltip-direction", "RIGHT");
@@ -36,7 +32,6 @@ export class SidebarController {
     rollRequestIcon.title = game.i18n.localize('FLASH_ROLLS.ui.menus.rollRequestsTitle');
     rollRequestIcon.innerHTML = `<i class="fas fa-bolt${rollRequestsEnabled ? '' : '-slash'}"></i>`;
     
-    // Insert before the d20 dice icon
     const firstChatControlIcon = chatControls.firstChild;
     if (firstChatControlIcon) {
       firstChatControlIcon.parentNode.insertBefore(rollRequestIcon, firstChatControlIcon);

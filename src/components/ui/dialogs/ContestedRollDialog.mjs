@@ -182,15 +182,20 @@ export class ContestedRollDialog extends HandlebarsApplicationMixin(ApplicationV
         const actor = actorConfig.actor;
         const uniqueId = actorConfig.uniqueId || actor.id;
         const tokenId = actorConfig.tokenId || null;
+        const [type, key] = actorConfig.rollType.split(':');
+        const rollType = type;
+
         return {
           actor: actor,
           uniqueId: uniqueId,
-          tokenId: tokenId
+          tokenId: tokenId,
+          rollType: rollType,
+          rollKey: key
         };
       });
 
       const firstRollType = config.actors[0].rollType.split(':');
-      const rollType = firstRollType[0] === 'ability' ? 'abilitycheck' : firstRollType[0];
+      const rollType = firstRollType[0];
       const rollKey = firstRollType[1];
 
       await ChatMessageManager.createGroupRollMessage(
