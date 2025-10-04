@@ -152,18 +152,8 @@ export class ActivityManager {
           autoRollDamage: 'none'
         }
       }
-      // const damageRoll = await workflow.activity.rollDamage({
-      //   ...damageConfig,
-      //   workflow: workflow
-      // }, {
-      //   ...config.dialog,
-      //   configure: true
-      // }, {});
-    
-      // return;
     } 
 
-    // Trigger damage roll for save activities (only when sending to players, not for local MIDI rolls)
     if (activity.type === ACTIVITY_TYPES.SAVE && activity.damage?.parts?.length > 0 && !isMidiOn) {
       LogUtil.log("ActivityManager.onPostUseActivityGM - triggering save damage roll", [activity, config]);
 
@@ -210,26 +200,6 @@ export class ActivityManager {
 
     config.consume = getConsumptionConfig(config.consume || {}, true);
     config.create = getCreateConfig(config.create || {}, true);
-
-    // // Configure Midi-QOL options for Flash Rolls compatibility
-    // if (isMidiActive && config.midiOptions &&
-    //   (activity.type === ACTIVITY_TYPES.DAMAGE || activity.type === ACTIVITY_TYPES.SAVE)) {
-
-    //   const existingWorkflowOptions = config.midiOptions.workflowOptions || {};
-    //   config.midiOptions = {
-    //     ...config.midiOptions,
-    //     fastForwardDamage: false,
-    //     workflowOptions: {
-    //       ...existingWorkflowOptions,
-    //       fastForwardDamage: false,
-    //       autoRollAttack: false,
-    //       autoRollDamage: false,
-    //       forceCompletion: false
-    //     }
-    //   }
-
-    //   LogUtil.log("ActivityManager.onPreUseActivityPlayer - configured midiOptions for Flash Rolls compatibility", [config.midiOptions]);
-    // }
   }
 
   /**
@@ -377,11 +347,6 @@ export class ActivityManager {
           break;
         case ROLL_TYPES.DAMAGE:
           LogUtil.log('executeActivityRoll - damage roll #0', [activity, config]);
-          // if(!isMidiActive) {
-          //   config.message.create = true;
-          // }else{
-          //   config.dialog.configure = !game.user.isGM;
-          // }
           damageConfig = {
             critical: config.usage.critical || {},
             situational: config.usage.rolls[0].data.situational || "",
@@ -421,67 +386,6 @@ export class ActivityManager {
               break;
           }
 
-          /*
-          if(isMidiActive && isDamageOnlyActivity){
-            await this.midiActivityRoll(activity, config.usage);
-          } else if(!game.user.isGM && isDamageOnlyActivity){
-            LogUtil.log('executeActivityRoll - calling damage use', [activity, config]);
-            await activity.use(config.usage, config.dialog, config.message);
-          }
-          
-          try {
-            if(isMidiActive) {
-              const MidiQOL = ModuleHelpers.getMidiQOL();
-              if (MidiQOL) {
-                const workflow = MidiQOL.Workflow?.getWorkflow(activity.uuid);
-                workflow.midiOptions = {
-                  fastForward: false,
-                  autoFastDamage: false,
-                  autoRollDamage: false
-                }
-                
-                if(workflow && isSaveActivity){ 
-                  const damageRoll = await workflow.activity.rollDamage({
-                    ...damageConfig,
-                    workflow: workflow
-                  }, {
-                    ...config.dialog,
-                    configure: true
-                  }, {});
-                }
-                
-                // await activity.rollDamage(damageConfig, config.dialog, config.message);
-                return;
-              }
-            }else{
-              LogUtil.log('executeActivityRoll - isDamageOnlyActivity', [isDamageOnlyActivity, activity, damageConfig, config]);
-              if(isDamageOnlyActivity && config.usage.skipRollDialog){
-                await activity.use(config.usage, {
-                  ...config.dialog,
-                  configure: !config.usage.skipRollDialog,
-                }, config.message);
-              }
-              if((isDamageOnlyActivity && !isSaveActivity) || isAttackActivity){
-                config.usage.consume = getConsumptionConfig(config.usage.consume || {}, true);
-                config.usage.create = getCreateConfig(config.usage.create || {});
-
-                if(activity.type !== ACTIVITY_TYPES.DAMAGE && activity.type !== ACTIVITY_TYPES.HEAL){
-                  // Only call rollDamage if it wasn't already handled by use() on player side
-                  await activity.rollDamage(damageConfig, config.dialog, config.message);
-                }
-              }
-            }
-          } catch (error) {
-            LogUtil.error("executeActivityRoll - damage roll error",[error]);
-          } finally {
-            await activity.item.unsetFlag(MODULE_ID, 'tempDamageConfig');
-          }
-          return;
-        default:
-          LogUtil.log('executeActivityRoll - unknown roll type', [normalizedRollType]);
-          await activity.use(config.usage, config.dialog, config.message);
-          return;
-          */
       }
       return;
     }
@@ -535,23 +439,6 @@ export class ActivityManager {
       if(isMidiActive){
         config.usage.consume = getConsumptionConfig(config.usage.consume || {}, true);
         await this.midiActivityRoll(activity, config.usage);
-
-        // const MidiQOL = ModuleHelpers.getMidiQOL();
-        // const workflow = MidiQOL.Workflow?.getWorkflow(activity.uuid);
-        // if (!MidiQOL || !workflow) return;
-        // workflow.midiOptions = {
-        //   fastForward: false,
-        //   autoFastDamage: false,
-        //   autoRollDamage: false
-        // }
-        
-        // const damageRoll = await workflow.activity.rollDamage({
-        //   ...damageConfig,
-        //   workflow: workflow
-        // }, {
-        //   ...config.dialog,
-        //   configure: true
-        // }, {});
       }else{
         LogUtil.log('executeSaveActivity - calling activity use', [activity, config]);
         await activity.use(config.usage, config.dialog, config.message);
@@ -630,7 +517,6 @@ export class ActivityManager {
     LogUtil.log('getDamageFormula', [activity]);
     if (!activity?.damage?.parts?.length) return null;
     
-    // Extract all damage formulas and combine them
     const formulas = activity.damage.parts.map(part => part.formula).filter(f => f);
     return formulas.length > 0 ? formulas.join(' + ') : null;
   }
@@ -664,9 +550,7 @@ export class ActivityManager {
         fastForwardAttack: false,
         fastForwardDamage: false
       },
-      // targetUuids: targets.map(i => i.document.uuid),
       configureDialog: true,
-      // ignoreUserTargets: true,
       midiOptions: {
         autoRollAttack: false,
         autoFastAttack: false,
@@ -675,7 +559,6 @@ export class ActivityManager {
         fastForward: false,
         fastForwardAttack: false,
         fastForwardDamage: false,
-        // autoConsumeResource: "none"
       }
     };
     activity.midiProperties = {
@@ -683,14 +566,11 @@ export class ActivityManager {
       forceDamageDialog: "always"
     }
 
-    // options = genericUtils.mergeObject(defaultOptions, options);
     config = {...defaultOptions, ...config};
 
     LogUtil.log('midiActivityRoll - config', [config]);
 
-    //defaultOptions
     return await MidiQOL.completeActivityUse(activity, config, {});
-    // return await MidiQOL.completeItemUse(item, config, defaultOptions);
   }
 
 }

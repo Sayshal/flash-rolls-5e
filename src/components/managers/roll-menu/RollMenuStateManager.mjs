@@ -53,11 +53,9 @@ export class RollMenuStateManager {
     menu._ignoreTokenControl = true;
     
     const context = menu._lastPreparedContext || {};
-    // In Groups tab, data is in context.groups, otherwise in context.actors
     const currentActors = menu.currentTab === 'group' ? (context.groups || []) : (context.actors || []);
     
     currentActors.forEach(actorData => {
-      // Handle group actors by selecting/deselecting their members (always, regardless of tab)
       if (actorData.isGroup && actorData.members) {
         actorData.members.forEach(member => {
           const memberUniqueId = member.uniqueId;
@@ -78,7 +76,6 @@ export class RollMenuStateManager {
           }
         });
       } else {
-        // Handle regular actors
         const uniqueId = actorData.uniqueId;
         if (selectAll) {
           menu.selectedActors.add(uniqueId);
@@ -102,17 +99,13 @@ export class RollMenuStateManager {
       menu._ignoreTokenControl = false;
     }, 200);
     
-    // Update group selection visual state
     menu._updateGroupSelectionUI();
-    
-    // Update select all state before rendering
     this.updateSelectAllState(menu);
     
     menu.render();
     this.updateRequestTypesVisibility(menu);
     const showOptionsListOnHover = SettingsUtil.get(SETTINGS.showOptionsListOnHover.tag);
     
-    // Show/hide request types accordion based on selection
     const accordion = menu.element.querySelector('.request-types-accordion');
     if (accordion) {
       if (menu.selectedActors.size > 0 && showOptionsListOnHover) {
@@ -156,18 +149,14 @@ export class RollMenuStateManager {
 
     const tooltip = await RollMenuStateManager.createActorFilterTooltip(menu);
 
-    // Position tooltip relative to the menu element, not the button
     menu.element.appendChild(tooltip);
 
-    // Get positions after tooltip is in DOM
     const buttonRect = button.getBoundingClientRect();
     const menuRect = menu.element.getBoundingClientRect();
     const menuLayout = menu.element.dataset.layout;
 
-    // Force layout calculation
     const tooltipRect = tooltip.getBoundingClientRect();
 
-    // Calculate position relative to menu - center tooltip above button
     const relativeTop = buttonRect.top - menuRect.top;
     const buttonCenterX = buttonRect.left - menuRect.left + (buttonRect.width / 2);
     const tooltipLeft = buttonCenterX - (tooltipRect.width / 2);
@@ -176,19 +165,15 @@ export class RollMenuStateManager {
       tooltip.style.top = `${relativeTop - tooltipRect.height - 8}px`;
       tooltip.style.left = `${tooltipLeft}px`;
     } else {
-      // Vertical layout - position tooltip to the left or right of the button
       const isLeftEdge = menu.element.classList.contains('left-edge');
       const relativeLeft = buttonRect.left - menuRect.left;
-      // Align bottom of tooltip with bottom of button
       const buttonBottom = relativeTop + buttonRect.height;
       const tooltipTop = buttonBottom - tooltipRect.height;
 
       if (isLeftEdge) {
-        // Left edge - tooltip appears to the right of the button
         tooltip.style.top = `${tooltipTop}px`;
         tooltip.style.left = `${relativeLeft + buttonRect.width + 20}px`;
       } else {
-        // Normal vertical - tooltip appears to the left of the button
         tooltip.style.top = `${tooltipTop}px`;
         tooltip.style.left = `${relativeLeft - tooltipRect.width - 20}px`;
       }
@@ -254,7 +239,6 @@ export class RollMenuStateManager {
     this.updateRequestTypesVisibilityNoRender(menu);
     const showOptionsListOnHover = SettingsUtil.get(SETTINGS.showOptionsListOnHover.tag);
     
-    // Show request types accordion if we have selected actors
     const accordion = menu.element.querySelector('.request-types-accordion');
     if (accordion) {
       if (menu.selectedActors.size > 0 && showOptionsListOnHover) {
@@ -305,7 +289,6 @@ export class RollMenuStateManager {
     const requestTypesContainer = menu.element.querySelector('.request-types');
     
     if (requestTypesContainer) {
-      // Only disable individual request items, not the container
       const requestItems = requestTypesContainer.querySelectorAll('.request-type-item');
       requestItems.forEach(item => {
         item.classList.toggle('disabled', !hasSelection);
@@ -333,7 +316,6 @@ export class RollMenuStateManager {
     let totalCount = 0;
     
     if (menu.currentTab === 'group') {
-      // For groups tab, count selected group members using the same logic as template preparation
       const context = menu._lastPreparedContext || {};
       const currentActors = context.groups || [];
       const allMembers = [];
@@ -347,7 +329,6 @@ export class RollMenuStateManager {
         menu.selectedActors.has(member.uniqueId)
       ).length;
     } else {
-      // For PC/NPC tabs, use the existing checkbox logic
       const currentActors = menu.currentTab === 'pc' ? 'pc' : 'npc';
       const checkboxes = menu.element.querySelectorAll(`.${currentActors}-actors .actor-item input[type="checkbox"]`);
       totalCount = checkboxes.length;
@@ -364,28 +345,23 @@ export class RollMenuStateManager {
    * @returns {HTMLElement} Tooltip element
    */
   static async createActorFilterTooltip(menu) {
-    // Load saved filter state from user flags
     const savedFilters = game.user.getFlag(MODULE.ID, 'actorFilters') || {
       inCombat: false,
       visible: false,
       removeDead: false
     };
 
-    // Apply saved filters to menu
     menu.actorFilters = savedFilters;
 
-    // Render template with filter data
     const templatePath = 'modules/flash-rolls-5e/templates/actor-filter-tooltip.hbs';
     const html = await renderTemplate(templatePath, {
       filters: savedFilters
     });
 
-    // Create tooltip element
     const tooltipContainer = document.createElement('div');
     tooltipContainer.innerHTML = html;
     const tooltip = tooltipContainer.firstElementChild;
 
-    // Add event listeners for filter changes
     tooltip.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
       checkbox.addEventListener('change', (event) => {
         RollMenuStateManager.applyActorFilters(menu);
@@ -424,12 +400,10 @@ export class RollMenuStateManager {
    * @returns {boolean} True if actor meets all active filter criteria
    */
   static doesActorPassFilters(actor, filters, token = null) {
-    // If no filters are active, show all actors
     if (!filters.inCombat && !filters.visible && !filters.removeDead) {
       return true;
     }
 
-    // Check each active filter - ALL must pass for actor to be included
     if (filters.inCombat) {
       const inCombat = token ? token.inCombat : actor.inCombat;
       if (!inCombat) return false;
@@ -446,7 +420,6 @@ export class RollMenuStateManager {
     }
 
     if (filters.removeDead) {
-      // The actor passed in is already the correct one (token actor if available)
       const hasDead = actor.appliedEffects.some(effect =>
         effect.statuses?.has('dead') ||
         effect.flags?.core?.statusId === 'dead'

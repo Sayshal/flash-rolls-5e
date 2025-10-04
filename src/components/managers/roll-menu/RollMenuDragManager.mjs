@@ -132,7 +132,6 @@ export class RollMenuDragManager {
       menu.element.classList.remove('left-edge');
     }
     
-    // Handle top-edge for horizontal layout
     const isHorizontalLayout = menu.element.hasAttribute('data-layout') && 
                               menu.element.getAttribute('data-layout') === 'horizontal';
     if (isHorizontalLayout) {
@@ -142,7 +141,6 @@ export class RollMenuDragManager {
         menu.element.classList.remove('top-edge');
       }
     } else {
-      // Remove top-edge class if not in horizontal layout
       menu.element.classList.remove('top-edge');
     }
     
@@ -150,16 +148,13 @@ export class RollMenuDragManager {
 
     const snapInfo = this.calculateSnapDistance(menu);
     
-    // Only update classes if the snap type has changed
     const currentSnapType = menu.element.classList.contains('near-snap-both') ? 'both-edges' :
                            menu.element.classList.contains('near-snap-right') ? 'right-edge' :
                            menu.element.classList.contains('near-snap-bottom') ? 'bottom-edge' : 'none';
     
     if (currentSnapType !== snapInfo.type) {
-      // Remove all near-snap classes first
       menu.element.classList.remove('near-snap', 'near-snap-right', 'near-snap-bottom', 'near-snap-both');
       
-      // Add specific near-snap class based on snap type
       if (snapInfo.type === 'both-edges') {
         menu.element.classList.add('near-snap', 'near-snap-both');
       } else if (snapInfo.type === 'right-edge') {
@@ -258,7 +253,6 @@ export class RollMenuDragManager {
 
     const menuRect = menu.element.getBoundingClientRect();
     
-    // Check for bottom dock (priority over right dock)
     if (hotbar) {
       const hotbarRect = hotbar.getBoundingClientRect();
       const bottomDistance = Math.abs(hotbarRect.top - menuRect.bottom);
@@ -267,7 +261,6 @@ export class RollMenuDragManager {
       const hotbarLeft = hotbarRect.left;
       const hotbarRight = hotbarRect.right;
       
-      // Check if menu overlaps horizontally with hotbar and is within snap distance vertically
       const horizontalOverlap = (menuLeft < hotbarRight && menuRight > hotbarLeft);
       
       if (horizontalOverlap && bottomDistance <= this.SNAP_DISTANCE) {
@@ -275,7 +268,6 @@ export class RollMenuDragManager {
       }
     }
     
-    // Check for right dock (existing logic)
     if (lightningBolt) {
       const boltRect = lightningBolt.getBoundingClientRect();
       const horizontalDistance = Math.abs(boltRect.left - menuRect.right);
@@ -315,7 +307,6 @@ export class RollMenuDragManager {
     menu.element.classList.remove('custom-position', 'left-edge', 'top-edge', 'docked-bottom', 'faded-ui', 'offset');
     menu.element.classList.add('docked-right', 'snapping');
     
-    // Handle top-edge for horizontal layout in docked position
     const isHorizontalLayout = menu.element.hasAttribute('data-layout') && 
                               menu.element.getAttribute('data-layout') === 'horizontal';
     if (isHorizontalLayout && currentTop < 400) {
@@ -362,21 +353,16 @@ export class RollMenuDragManager {
     menu.element.classList.remove('custom-position', 'left-edge', 'top-edge', 'docked-right', 'offset');
     menu.element.classList.add('docked-bottom', 'snapping');
 
-    // Move to #ui-bottom container
     const uiBottom = document.querySelector('#ui-bottom');
     if (uiBottom && menu.element && !uiBottom.contains(menu.element)) {
       uiBottom.prepend(menu.element);
     }
     
-    // Check if hotbar has faded-ui class and apply to menu
     const hotbar = document.querySelector('#ui-bottom #hotbar');
     if (hotbar && hotbar.classList.contains('faded-ui')) {
       menu.element.classList.add('faded-ui');
     }
-    
-    // Check if hotbar has offset class and apply to menu
-    this.syncOffsetClass(menu);
-    
+    this.syncOffsetClass(menu); 
     adjustMenuOffset();
     
     await this.saveCustomPosition(menu.customPosition);
@@ -394,7 +380,6 @@ export class RollMenuDragManager {
     const hotbar = document.querySelector('#hotbar');
     if (hotbar && hotbar.classList.contains('offset')) {
       menu.element.classList.add('offset');
-      // Also copy the --offset CSS variable if it exists
       const offsetValue = hotbar.style.getPropertyValue('--offset');
       if (offsetValue) {
         menu.element.style.setProperty('--offset', offsetValue);
@@ -410,9 +395,7 @@ export class RollMenuDragManager {
    * @param {RollRequestsMenu|Object} menu - Menu instance or proxy object with element property
    */
   static syncFadedUIClass(menu) {
-    // Only sync if menu is docked to bottom
     if (!menu.element.classList.contains('docked-bottom')) {
-      // If not docked to bottom, ensure faded-ui is removed
       menu.element.classList.remove('faded-ui');
       return;
     }
@@ -506,7 +489,6 @@ export class RollMenuDragManager {
       menu.element.classList.add('docked-right');
       menu.element.classList.remove('custom-position', 'left-edge', 'faded-ui', 'offset');
       
-      // Handle top-edge for horizontal layout in docked position
       const isHorizontalLayout = menu.element.hasAttribute('data-layout') && 
                                 menu.element.getAttribute('data-layout') === 'horizontal';
       if (isHorizontalLayout && position.y < 400) {
@@ -517,7 +499,6 @@ export class RollMenuDragManager {
       
       adjustMenuOffset();
     } else if (position.dockedBottom) {
-      // Move to hotbar container
       const uiBottom = document.querySelector('#ui-bottom');
       if (uiBottom && !uiBottom.contains(menu.element)) {
         uiBottom.prepend(menu.element);
@@ -526,13 +507,11 @@ export class RollMenuDragManager {
       menu.element.classList.add('docked-bottom');
       menu.element.classList.remove('custom-position', 'left-edge', 'top-edge', 'docked-right', 'faded-ui', 'offset');
       
-      // Check if hotbar has faded-ui class and apply to menu
       const hotbar = document.querySelector('#ui-bottom #hotbar');
       if (hotbar && hotbar.classList.contains('faded-ui')) {
         menu.element.classList.add('faded-ui');
       }
       
-      // Check if hotbar has offset class and apply to menu
       this.syncOffsetClass(menu);
       
       adjustMenuOffset();
@@ -557,7 +536,6 @@ export class RollMenuDragManager {
         menu.element.classList.add('left-edge');
       }
       
-      // Handle top-edge for horizontal layout
       const isHorizontalLayout = menu.element.hasAttribute('data-layout') && 
                                 menu.element.getAttribute('data-layout') === 'horizontal';
       if (isHorizontalLayout && position.y < 400) {

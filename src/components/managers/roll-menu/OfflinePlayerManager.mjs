@@ -34,7 +34,6 @@ export class OfflinePlayerManager {
         }));
       }
       
-      // Execute the roll locally using the RollInterceptor's static method
       const RollInterceptorClass = RollInterceptor;
       await RollInterceptorClass._executeInterceptedRoll(actor, rollType, originalConfig, dialogResult || {
         ...originalConfig,
@@ -45,7 +44,7 @@ export class OfflinePlayerManager {
       return true; // Player was offline and roll was handled
     }
     
-    return false; // Player is online, continue normal processing
+    return false; // Player is online, continue
   }
   
   /**
@@ -57,7 +56,6 @@ export class OfflinePlayerManager {
     const onlinePlayerActors = [];
     const offlinePlayerActors = [];
     
-    // Group actors by ID to check all owners per actor
     const actorMap = new Map();
     for (const { actor, owner } of pcActors) {
       if (!actorMap.has(actor.id)) {
@@ -66,7 +64,6 @@ export class OfflinePlayerManager {
       actorMap.get(actor.id).owners.push(owner);
     }
     
-    // Check each actor's owners
     for (const { actor, owners } of actorMap.values()) {
       const onlineNonGMOwner = owners.find(owner => owner.active && !owner.isGM);
       
@@ -88,10 +85,7 @@ export class OfflinePlayerManager {
    * @param {Object} config - Roll configuration
    */
   static async processOfflineActors(offlineActors, rollMethodName, rollKey, config) {
-    LogUtil.log('OfflinePlayerManager.processOfflineActors', [
-      offlineActors.map(a => a.name), rollMethodName, rollKey
-    ]);
-    
+
     for (const actor of offlineActors) {
       const ownership = actor.ownership || {};
       let owner = null;
@@ -111,13 +105,11 @@ export class OfflinePlayerManager {
         continue;
       }
       
-      // Prepare parameters for RollHandlers
       const requestData = {
         rollKey: rollKey,
-        groupRollId: config.groupRollId, // Add groupRollId at top level
+        groupRollId: config.groupRollId,
         config: {
           ...config,
-          // Only set ability for ability checks and saving throws (where rollKey is the ability)
           ...(rollMethodName === 'ability' || rollMethodName === 'abilitycheck' || 
               rollMethodName === 'save' || rollMethodName === 'savingthrow' ? { ability: rollKey } : {}),
           sendRequest: false,
@@ -132,7 +124,7 @@ export class OfflinePlayerManager {
       };
       
       const dialogConfig = {
-        configure: false, // Skip dialog for offline rolls
+        configure: false,
         isRollRequest: true
       };
       
@@ -143,12 +135,10 @@ export class OfflinePlayerManager {
         groupRollId: config.groupRollId
       };
       
-      // Execute the roll
       const handler = RollHandlers[rollMethodName.toLowerCase()];
       if (handler) {
         await handler(actor, requestData, rollConfig, dialogConfig, messageConfig);
       }
-      // Add delay between rolls to prevent overwhelming
       await new Promise(resolve => setTimeout(resolve, 200));
     }
   }

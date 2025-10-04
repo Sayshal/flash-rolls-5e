@@ -71,7 +71,6 @@ export class RollMenuExecutor {
     try {
       await this.initiateRoll(actor, requestType, rollKey, rollProcessConfig);
     } finally {
-      // Restore original control state
       if (!wasControlled) {
         token.release();
       }
@@ -123,15 +122,12 @@ export class RollMenuExecutor {
         isRollRequest: true
       };
       
-      // Determine roll mode based on actor ownership and settings
       let finalRollMode = rollProcessConfig.rollMode || game.settings.get("core", "rollMode");
       
-      // Check if we should use public roll mode for player-owned actors
       const SETTINGS = getSettings();
       const isPublicRollsOn = SettingsUtil.get(SETTINGS.publicPlayerRolls.tag) === true;
       const groupRollsMsgEnabled = SettingsUtil.get(SETTINGS.groupRollsMsgEnabled.tag) === true;
       
-      // Only adjust roll mode for individual messages (not group rolls)
       if ((!groupRollsMsgEnabled || !rollProcessConfig.groupRollId) && !rollProcessConfig.rollMode) {
         if (isPublicRollsOn && actor && RollHelpers.isPlayerOwned(actor)) {
           finalRollMode = CONST.DICE_ROLL_MODES.PUBLIC;
@@ -141,7 +137,7 @@ export class RollMenuExecutor {
       const messageConfig = {
         rollMode: finalRollMode,
         create: rollProcessConfig.chatMessage !== false,
-        isRollRequest: true  // Mark this as a roll request to prevent re-interception
+        isRollRequest: true 
       };
       
       const rollConfig = rollProcessConfig.rolls?.[0] || {};

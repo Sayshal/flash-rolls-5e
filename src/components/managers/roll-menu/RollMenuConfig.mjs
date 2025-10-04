@@ -46,13 +46,11 @@ export class RollMenuConfig {
         config.isContestedRoll = configOverrides.isContestedRoll || false;
       }
 
-      return config; // Will be null if cancelled
+      return config;
     } else {
-      // Use default BasicRollProcessConfiguration when skipping dialogs
       const config = {
         rolls: [{
           parts: [],
-          // parts: configOverrides.situationalBonus ? ["@situational"] : [],
           data: configOverrides.situationalBonus ? { situational: configOverrides.situationalBonus } : {},
           options: configOverrides.dc ? { target: configOverrides.dc } : {}
         }],
@@ -65,7 +63,6 @@ export class RollMenuConfig {
         sendRequest: configOverrides.hasOwnProperty('sendAsRequest') ? configOverrides.sendAsRequest : (rollRequestsEnabled && pcActors.length > 0)
       };
 
-      // Death saves always have DC 10
       if (rollMethodName === ROLL_TYPES.DEATH_SAVE) {
         config.target = 10;
       }

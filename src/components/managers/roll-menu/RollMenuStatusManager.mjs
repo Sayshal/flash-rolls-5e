@@ -71,7 +71,6 @@ export class RollMenuStatusManager {
         return false;
       }
       
-      // Fallback to manual creation for older versions
       const effectData = {
         name: statusEffect.name || statusEffect.label || statusEffect.id,
         icon: statusEffect.icon || statusEffect.img,
@@ -83,7 +82,6 @@ export class RollMenuStatusManager {
         }
       };
 
-      // Apply additional effect properties if they exist
       if (statusEffect.changes) {
         effectData.changes = statusEffect.changes;
       }
@@ -141,7 +139,6 @@ export class RollMenuStatusManager {
    */
   static async removeStatusFromActor(statusEffect, actor) {
     try {
-      // Use the actor's toggleStatusEffect method if available (Foundry v10+)
       if (actor.toggleStatusEffect) {
         const hasEffect = actor.appliedEffects.some(e => e.statuses?.has(statusEffect.id));
         if (hasEffect) {
@@ -152,7 +149,6 @@ export class RollMenuStatusManager {
         return false;
       }
       
-      // Fallback to manual deletion for older versions
       const existingEffect = actor.appliedEffects.find(effect => 
         effect.statuses?.has(statusEffect.id) || 
         effect.flags?.core?.statusId === statusEffect.id
@@ -190,7 +186,6 @@ export class RollMenuStatusManager {
       return;
     }
 
-    // Check if any selected actor has the status effect
     let hasEffect = false;
     for (const uniqueId of menu.selectedActors) {
       const actor = getActorData(uniqueId);
@@ -207,7 +202,6 @@ export class RollMenuStatusManager {
       }
     }
 
-    // If any actor has the effect, remove it from all. Otherwise, add it to all.
     if (hasEffect) {
       await this.removeStatusFromSelected(statusEffectId, menu);
     } else {

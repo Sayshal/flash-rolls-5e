@@ -147,10 +147,44 @@ export class RollMenuEventManager {
     if (scrollContainer) {
       this.updateActorActionsContainerHeight(html);
       this.updateActorActionsNavState(html);
+      this.restoreActorActionsScrollPosition(scrollContainer);
       scrollContainer.addEventListener('scroll', () => {
         this.updateActorActionsNavState(html);
+        this.saveActorActionsScrollPosition(scrollContainer);
       });
     }
+  }
+
+  /**
+   * Save the current scroll position of the actor actions list to a flag
+   * @param {HTMLElement} scrollContainer - The scrollable container element
+   */
+  static saveActorActionsScrollPosition(scrollContainer) {
+    if (!scrollContainer) return;
+
+    const SETTINGS = getSettings();
+    const menuLayout = SettingsUtil.get(SETTINGS.menuLayout.tag) || 'vertical';
+
+    const scrollPosition = {
+      left: scrollContainer.scrollLeft,
+      top: scrollContainer.scrollTop
+    };
+
+    game.user.setFlag(MODULE_ID, 'actorActionsScrollPosition', scrollPosition);
+  }
+
+  /**
+   * Restore the scroll position of the actor actions list from a flag
+   * @param {HTMLElement} scrollContainer - The scrollable container element
+   */
+  static restoreActorActionsScrollPosition(scrollContainer) {
+    if (!scrollContainer) return;
+
+    const scrollPosition = game.user.getFlag(MODULE_ID, 'actorActionsScrollPosition');
+    if (!scrollPosition) return;
+
+    scrollContainer.scrollLeft = scrollPosition.left || 0;
+    scrollContainer.scrollTop = scrollPosition.top || 0;
   }
 
   /**
@@ -285,14 +319,12 @@ export class RollMenuEventManager {
   static attachActorHandlers(menu, html) {
     html.querySelectorAll('.actor.drag-wrapper').forEach(wrapper => {
       wrapper.addEventListener('click', (event) => {
-        // Check if this actor is non-selectable (expanded group)
         if (wrapper.hasAttribute('data-non-selectable')) {
-          return; // Skip selection for expanded groups
+          return;
         }
         menu._onActorClick.call(menu, event);
       });
 
-      // Add click handler for character sheet icon (works for both individual and group actors)
       const sheetIcon = wrapper.querySelector('.icon-sheet');
       if (sheetIcon) {
         sheetIcon.addEventListener('click', (event) => {
@@ -306,7 +338,6 @@ export class RollMenuEventManager {
         });
       }
 
-      // Add click handler for target icon
       const targetIcon = wrapper.querySelector('.icon-target');
       if (targetIcon) {
         targetIcon.addEventListener('click', (event) => {
@@ -320,7 +351,6 @@ export class RollMenuEventManager {
         });
       }
 
-      // Add right-click handler for actor image to center token on screen
       const actorImg = wrapper.querySelector('.actor-img');
       if (actorImg) {
         actorImg.addEventListener('contextmenu', (event) => {
@@ -364,7 +394,6 @@ export class RollMenuEventManager {
    * Attach tooltip handlers for compact mode
    */
   static attachCompactTooltipHandlers(menu, html) {
-    // Always clean up existing tooltips first
     this.cleanupActorTooltips();
     
     if (!html.classList.contains('compact')) return;
@@ -392,11 +421,9 @@ export class RollMenuEventManager {
         const isHorizontalLayout = html.hasAttribute('data-layout') && html.getAttribute('data-layout') === 'horizontal';
         
         if (isHorizontalLayout) {
-          // Position above and centered on the actor image in horizontal layout
           const actorImg = actor.querySelector('.actor-img');
           const imgRect = actorImg ? actorImg.getBoundingClientRect() : actorRect;
           
-          // Calculate the center of the image relative to the menu
           const imgCenterX = imgRect.left + (imgRect.width / 2) - menuRect.left - 16;
           
           tooltipCopy.style.left = `${imgCenterX}px`;
@@ -405,7 +432,6 @@ export class RollMenuEventManager {
           tooltipCopy.style.top = 'auto';
           tooltipCopy.style.right = 'auto';
         } else {
-          // Original vertical layout positioning
           if (isLeftEdge) {
             tooltipCopy.style.left = `${actorRect.right - menuRect.left - 8}px`;
           } else {
@@ -432,7 +458,6 @@ export class RollMenuEventManager {
       actor.addEventListener('mouseenter', showTooltip);
       actor.addEventListener('mouseleave', hideTooltip);
       
-      // Clean up on scroll to prevent misaligned tooltips
       const scrollContainer = actor.closest('ul');
       if (scrollContainer) {
         scrollContainer.addEventListener('scroll', hideTooltip);
@@ -448,19 +473,16 @@ export class RollMenuEventManager {
     if (searchInput) {
       searchInput.addEventListener('input', menu._onSearchInput.bind(menu));
       
-      // Select all text on click for quick deletion
       searchInput.addEventListener('click', (event) => {
         event.target.select();
       });
       
-      // Also select all on focus (useful for keyboard navigation)
       searchInput.addEventListener('focus', (event) => {
         event.target.select();
         menu.isSearchFocused = true;
         game.user.setFlag(MODULE_ID, 'searchFocused', true);
       });
       
-      // Hide accordion when search loses focus (if not hovering over menu)
       searchInput.addEventListener('blur', () => {
         menu.isSearchFocused = false;
         game.user.setFlag(MODULE_ID, 'searchFocused', false);
@@ -481,7 +503,6 @@ export class RollMenuEventManager {
     
     const accordion = html.querySelector('.request-types-accordion');
     if (accordion) {
-      // Always create the handlers but store them so we can add/remove them dynamically
       const mouseEnterHandler = () => {
         const showOptionsListOnHover = SettingsUtil.get(SETTINGS.showOptionsListOnHover.tag);
         LogUtil.log('Accordion mouseEnter', [menu.isSearchFocused]);
@@ -497,11 +518,9 @@ export class RollMenuEventManager {
         }
       };
       
-      // Store handlers on the menu for dynamic management
       menu._accordionMouseEnter = mouseEnterHandler;
       menu._accordionMouseLeave = mouseLeaveHandler;
       
-      // Only attach if setting is enabled
       if (showOnHover) {
         html.addEventListener('mouseenter', mouseEnterHandler);
         html.addEventListener('mouseleave', mouseLeaveHandler);
@@ -515,15 +534,11 @@ export class RollMenuEventManager {
     LogUtil.log('RollMenuEventManager.attachAccordionHandlers', [requestTypesContainer]);
     if (requestTypesContainer) {
       requestTypesContainer.addEventListener('click', (event) => {
-        // Handle macro button clicks FIRST - check target directly
-
-        LogUtil.log('requestTypes click', [event.target]);
         if (event.target.classList.contains('btn-macro')) {
           event.preventDefault();
           event.stopPropagation();
           event.stopImmediatePropagation();
 
-          
           const parentItem = event.target.closest('.sub-item') || event.target.closest('.request-type-item');
           if (parentItem) {
             const customEvent = {
@@ -535,7 +550,6 @@ export class RollMenuEventManager {
           return;
         }
         
-        // Also check if clicked element is inside a macro button
         const macroBtn = event.target.closest('.btn-macro');
         if (macroBtn) {
           event.preventDefault();
@@ -591,7 +605,6 @@ export class RollMenuEventManager {
   static attachSubmenuHandlers(menu, html) {
     try {
       const submenuTabs = html.querySelectorAll('.submenu-tabs li[data-tab]');
-      LogUtil.log('RollMenuEventManager.attachSubmenuHandlers - found tabs:', [submenuTabs.length]);
       submenuTabs.forEach(tab => {
         tab.addEventListener('click', menu._onSubmenuTabClick.bind(menu));
       });
@@ -606,9 +619,7 @@ export class RollMenuEventManager {
   static attachStatusEffectHandlers(menu, html) {
     try {
       const statusEffects = html.querySelectorAll('.status-effects .status-effect');
-      LogUtil.log('RollMenuEventManager.attachStatusEffectHandlers - found effects:', [statusEffects.length]);
       statusEffects.forEach(statusElement => {
-        // Check if listener already attached to prevent duplicates
         if (!statusElement.dataset.listenerAttached) {
           statusElement.dataset.listenerAttached = 'true';
           statusElement.addEventListener('click', menu._onStatusEffectClick.bind(menu));
@@ -669,11 +680,9 @@ export class RollMenuEventManager {
    * @param {RollRequestsMenu} menu - The menu instance
    */
   static openSheetsForSelected(menu) {
-    // If we're on the Groups tab, open group sheets instead of individual member sheets
     if (menu.currentTab === 'group') {
       this.openGroupSheetsForSelected(menu);
     } else {
-      // Regular behavior for PC/NPC tabs
       menu.selectedActors.forEach(uniqueId => {
         const actor = getActorData(uniqueId);
         if (!actor) return;
@@ -695,16 +704,13 @@ export class RollMenuEventManager {
     const groupActors = context.actors || [];
     const openedGroups = new Set();
     
-    // Find which groups contain selected members
     groupActors.forEach(groupData => {
       if (groupData.isGroup && groupData.members) {
-        // Check if any members of this group are selected
         const hasSelectedMembers = groupData.members.some(member => 
           menu.selectedActors.has(member.uniqueId)
         );
         
         if (hasSelectedMembers && !openedGroups.has(groupData.id)) {
-          // Open the group sheet
           this.openActorSheetById(groupData.id, groupData.tokenId);
           openedGroups.add(groupData.id);
         }
@@ -762,14 +768,11 @@ export class RollMenuEventManager {
       if (!actor) continue;
       
       totalActors++;
-      
-      // Get all status effects on the actor
       const statusEffects = actor.appliedEffects.filter(effect =>
         effect.statuses?.size > 0 || effect.flags?.core?.statusId
       );
       
       if (statusEffects.length > 0) {
-        // Remove all status effects
         for (const effect of statusEffects) {
           try {
             await effect.delete();
@@ -993,7 +996,6 @@ export class RollMenuEventManager {
    * @param {boolean} showOnHover - Whether to show accordion on hover
    */
   static updateAccordionHoverBehavior(menu, showOnHover) {
-    // Re-render the menu to update event listeners based on new setting
     menu.render();
   }
 
@@ -1009,14 +1011,11 @@ export class RollMenuEventManager {
 
     html.removeEventListener('mouseenter', menu._accordionMouseEnter);
     html.removeEventListener('mouseleave', menu._accordionMouseLeave);
-    // menu._accordionListenersAttached = false;
     accordion.classList.remove('hover-visible');
 
     if(showOnHover) {
-      // Add the stored handlers
       html.addEventListener('mouseenter', menu._accordionMouseEnter);
       html.addEventListener('mouseleave', menu._accordionMouseLeave);
-      // menu._accordionListenersAttached = true;
     }
   }
 
@@ -1051,9 +1050,9 @@ export class RollMenuEventManager {
       return;
     }
 
-    // Get actor data and group by base actor while tracking token associations
-    const actorGroups = new Map(); // Map of base actor ID to { actor, count, tokenUuids }
-    const tokenAssociations = {}; // Map of base actor ID to array of token UUIDs
+    const actorGroups = new Map(); 
+    const tokenAssociationsByScene = {}; 
+    const currentSceneId = game.scenes.current?.id;
     let playerOwnedCount = 0;
     let totalSelectedCount = 0;
 
@@ -1062,26 +1061,21 @@ export class RollMenuEventManager {
       if (!actor) continue;
 
       totalSelectedCount++;
-
-      // Get the base actor ID
       const baseActorId = actor.id;
 
       if (actorGroups.has(baseActorId)) {
-        // Increment quantity and add token ID for existing actor
         const group = actorGroups.get(baseActorId);
         group.count++;
         if (actor.tokenId) {
           group.tokenIds.push(actor.tokenId);
         }
       } else {
-        // Add new actor to the map
         actorGroups.set(baseActorId, {
           actor: actor,
           count: 1,
           tokenIds: actor.tokenId ? [actor.tokenId] : []
         });
 
-        // Check ownership only once per unique actor
         const hasPlayerOwnership = Object.entries(actor.ownership || {}).some(([userId, level]) => {
           if (userId === 'default') return false;
           const user = game.users.get(userId);
@@ -1093,15 +1087,18 @@ export class RollMenuEventManager {
         }
       }
 
-      // Build token associations for flags (store only token IDs)
-      if (!tokenAssociations[baseActorId]) {
-        tokenAssociations[baseActorId] = [];
-      }
+      if (uniqueId !== actor.id && currentSceneId) {
+        const tokenUuid = `Scene.${currentSceneId}.Token.${uniqueId}`;
 
-      // If uniqueId is different from actor.id, it means this is a token selection
-      if (uniqueId !== actor.id) {
-        // uniqueId is the token ID
-        tokenAssociations[baseActorId].push(uniqueId);
+        if (!tokenAssociationsByScene[currentSceneId]) {
+          tokenAssociationsByScene[currentSceneId] = {};
+        }
+
+        if (!tokenAssociationsByScene[currentSceneId][baseActorId]) {
+          tokenAssociationsByScene[currentSceneId][baseActorId] = [];
+        }
+
+        tokenAssociationsByScene[currentSceneId][baseActorId].push(tokenUuid);
       }
     }
 
@@ -1110,29 +1107,22 @@ export class RollMenuEventManager {
       return;
     }
 
-    // Determine actor type based on player ownership ratio
     const playerOwnedRatio = playerOwnedCount / actorGroups.size;
     const actorType = playerOwnedRatio >= 0.5 ? "group" : "encounter";
-
-    // Generate a default name
     const defaultName = actorType === "group" ? "New Group" : "New Encounter";
 
-    // Prepare members array based on actor type
     const members = [];
     if (actorType === "group") {
-      // Group type: store direct actor references with quantities
       for (const [baseActorId, { actor, count }] of actorGroups) {
-        // Get the base actor (not the token actor)
         const baseActor = game.actors.get(baseActorId);
         if (baseActor) {
           members.push({
-            actor: baseActor, // Direct base actor reference for group type
+            actor: baseActor, 
             quantity: count
           });
         }
       }
     } else {
-      // Encounter type: store base actor UUIDs with proper quantity structure
       for (const [baseActorId, { actor, count }] of actorGroups) {
         members.push({
           uuid: `Actor.${baseActorId}`, // Base actor UUID
@@ -1144,7 +1134,6 @@ export class RollMenuEventManager {
       }
     }
 
-    // Create the new actor with members and token associations flag
     try {
       const newActor = await Actor.create({
         name: defaultName,
@@ -1155,7 +1144,7 @@ export class RollMenuEventManager {
         },
         flags: {
           "flash-rolls-5e": {
-            tokenAssociations: tokenAssociations
+            tokenAssociationsByScene: tokenAssociationsByScene
           }
         },
         ownership: {
@@ -1165,10 +1154,8 @@ export class RollMenuEventManager {
       });
 
       if (newActor) {
-        // Open the newly created actor sheet
         newActor.sheet.render(true);
 
-        // Show success notification
         const memberSummary = Array.from(actorGroups.values()).map(({ actor, count }) =>
           count > 1 ? `${actor.name} (x${count})` : actor.name
         ).join(", ");
@@ -1180,7 +1167,7 @@ export class RollMenuEventManager {
           uniqueActorCount: actorGroups.size,
           playerOwnedCount,
           playerOwnedRatio,
-          tokenAssociations,
+          tokenAssociationsByScene,
           members: Array.from(actorGroups.entries()).map(([id, { actor, count, tokenUuids }]) => ({
             id,
             name: actor.name,

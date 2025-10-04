@@ -63,7 +63,6 @@ export class RollMenuActorProcessor {
 
       const filteredNPCActors = npcActors.filter(actorData => {
         const token = actorData.tokenId ? currentScene?.tokens.get(actorData.tokenId) : null;
-        // Use token actor if available, otherwise base actor
         const actor = token?.actor || game.actors.get(actorData.id);
         if (!actor) return false;
 
@@ -74,26 +73,22 @@ export class RollMenuActorProcessor {
 
       const filteredGroupActors = groupActors.filter(groupData => {
         if (groupData.isGroup) {
-          // Status-based filters (like removeDead) don't apply to group containers
           const groupActor = game.actors.get(groupData.id);
           const groupToken = groupData.tokenId ? currentScene?.tokens.get(groupData.tokenId) : null;
 
-          // Create a filter object without status-based filters for the group container
           const groupFilters = {
             inCombat: actorFilters.inCombat,
             visible: actorFilters.visible,
-            removeDead: false // Groups don't have death status
+            removeDead: false
           };
 
           const groupPasses = groupActor && RollMenuStateManager.doesActorPassFilters(groupActor, groupFilters, groupToken);
 
           return groupPasses || (groupData.members && groupData.members.length > 0);
         } else {
-          // Regular actor processing for non-group entries
           const actor = game.actors.get(groupData.id);
           if (!actor) return false;
 
-          // Get token document if this is a token-based entry
           const token = groupData.tokenId ? currentScene?.tokens.get(groupData.tokenId) : null;
           return RollMenuStateManager.doesActorPassFilters(actor, actorFilters, token);
         }
@@ -115,7 +110,6 @@ export class RollMenuActorProcessor {
     let selectAllOn = false;
     if (currentActors.length > 0) {
       if (menu.currentTab === 'group') {
-        // For groups tab, check if all visible group members are selected
         const allMembers = [];
         currentActors.forEach(groupActor => {
           if (groupActor.isGroup && groupActor.members) {
@@ -125,7 +119,6 @@ export class RollMenuActorProcessor {
         selectAllOn = allMembers.length > 0 && 
           allMembers.every(member => menu.selectedActors.has(member.uniqueId));
       } else {
-        // For PC/NPC tabs, use the original logic
         selectAllOn = currentActors.every(actor => menu.selectedActors.has(actor.uniqueId));
       }
     }
@@ -415,7 +408,6 @@ export class RollMenuActorProcessor {
             const associatedTokenIds = tokenAssociations[memberActorId] || [];
 
             if (associatedTokenIds.length > 0) {
-              // Use specific tokens from associations by finding them in current scene
               for (const tokenUuid of associatedTokenIds) {
                 try {
                   const tokenDoc = fromUuidSync(tokenUuid);
@@ -434,37 +426,6 @@ export class RollMenuActorProcessor {
                 } catch (error) {
                 }
               }
-            } else {
-              // COMMENTED OUT: No token associations, fall back to original behavior
-              // const memberTokens = currentScene?.tokens.filter(token => token.actorId === memberActor.id) || [];
-
-              // if (memberTokens.length > 0) {
-              //   hasAnyMemberTokens = true;
-              //   // Create entries for each token
-              //   memberTokens.forEach(tokenDoc => {
-              //     // Apply filters if active
-              //     if (hasActiveFilters) {
-              //       const actorToCheck = tokenDoc.actor || memberActor;
-              //       if (!RollMenuStateManager.doesActorPassFilters(actorToCheck, actorFilters, tokenDoc)) {
-              //         return; // Skip this member if it doesn't pass filters
-              //       }
-              //     }
-              //     const memberData = this.createActorData(memberActor, tokenDoc, menu);
-              //     memberData.quantity = member.quantity?.value || 1;
-              //     members.push(memberData);
-              //   });
-              // } else {
-              //   // No tokens, create base actor entry
-              //   // Apply filters if active
-              //   if (hasActiveFilters) {
-              //     if (!RollMenuStateManager.doesActorPassFilters(memberActor, actorFilters, null)) {
-              //       continue; // Skip this member if it doesn't pass filters
-              //     }
-              //   }
-              //   const memberData = this.createActorData(memberActor, null, menu);
-              //   memberData.quantity = member.quantity?.value || 1;
-              //   members.push(memberData);
-              // }
             }
           }
         } catch (error) {
@@ -473,7 +434,6 @@ export class RollMenuActorProcessor {
       }
     }
     
-    // Check if group should be filtered out based on showOnlyPCsWithToken setting
     if (showOnlyPCsWithToken) {
       const groupHasTokens = tokensInScene.length > 0;
       if (!groupHasTokens && !hasAnyMemberTokens) {
@@ -487,7 +447,6 @@ export class RollMenuActorProcessor {
       return [];
     }
 
-    // Process group similar to regular actors - create entries for tokens if they exist
     if (tokensInScene.length > 0) {
       tokensInScene.forEach(tokenDoc => {
         const groupData = this.createActorData(actor, tokenDoc, menu);
@@ -496,7 +455,6 @@ export class RollMenuActorProcessor {
         groupData.isExpanded = menu.groupExpansionStates?.[actor.id] ?? false;
         groupData.memberImages = members.slice(0, 4).map(m => m.img);
         
-        // Calculate group selection state: true (all), false (none), partial (some)
         const selectedMembers = members.filter(member => menu.selectedActors.has(member.uniqueId));
         if (selectedMembers.length === 0) {
           groupData.selected = 'false';
@@ -509,14 +467,12 @@ export class RollMenuActorProcessor {
         groupEntries.push(groupData);
       });
     } else {
-      // No tokens in scene, create base group entry
       const groupData = this.createActorData(actor, null, menu);
       groupData.members = members;
       groupData.isGroup = true;
       groupData.isExpanded = menu.groupExpansionStates?.[actor.id] ?? false;
       groupData.memberImages = members.slice(0, 4).map(m => m.img);
       
-      // Calculate group selection state: true (all), false (none), partial (some)
       const selectedMembers = members.filter(member => menu.selectedActors.has(member.uniqueId));
       if (selectedMembers.length === 0) {
         groupData.selected = 'false';

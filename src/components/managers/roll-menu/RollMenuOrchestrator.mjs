@@ -277,7 +277,7 @@ export class RollMenuOrchestrator {
     const originalRollKey = rollKey;
     rollKey = await this.handleSpecialRollTypes(rollMethodName, rollKey, selectedUniqueIds, actorsData, actors, menu);
     if (rollKey === null && originalRollKey !== null) {
-      return; // Operation cancelled or failed
+      return;
     }
     
     if (!actors.length) {
