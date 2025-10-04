@@ -952,33 +952,16 @@ export class RollMenuEventManager {
   static showTokenSelectionPreview(wrapper, menu) {
     const tokenId = wrapper.dataset.tokenId;
     const actorId = wrapper.dataset.actorId;
-    const uniqueId = wrapper.dataset.id;
-    
+
     let token = tokenId ? canvas.tokens.get(tokenId) : null;
     if (!token && actorId) {
       token = canvas.tokens.placeables.find(t => t.actor?.id === actorId);
     }
-    
-    if (token) {
-      const wasAlreadySelected = menu.selectedActors.has(uniqueId);
-      const wasAlreadyControlled = token._controlled;
-      
-      // Only control if not already controlled
-      if (!wasAlreadyControlled) {
-        // Temporarily ignore token control changes to prevent menu selection updates
-        menu._ignoreTokenControl = true;
-        
-        token.control({ releaseOthers: false });
-        
-        // Restore token control listening after a brief delay
-        setTimeout(() => {
-          menu._ignoreTokenControl = false;
-        }, 50);
-        
-        // Track this token as temporarily controlled by hover
-        this._hoveredTokens.add(token);
-        token._flashRollsWasSelected = wasAlreadySelected;
-      }
+
+    if (token && !token.hover) {
+      token.hover = true;
+      token.renderFlags.set({refreshState: true});
+      this._hoveredTokens.add(token);
     }
   }
 
@@ -1045,33 +1028,16 @@ export class RollMenuEventManager {
   static hideTokenSelectionPreview(wrapper, menu) {
     const tokenId = wrapper.dataset.tokenId;
     const actorId = wrapper.dataset.actorId;
-    const uniqueId = wrapper.dataset.id;
-    
+
     let token = tokenId ? canvas.tokens.get(tokenId) : null;
     if (!token && actorId) {
       token = canvas.tokens.placeables.find(t => t.actor?.id === actorId);
     }
-    
+
     if (token && this._hoveredTokens.has(token)) {
-      const isActuallySelected = menu.selectedActors.has(uniqueId);
-      const wasSelected = token._flashRollsWasSelected;
-      
-      // Only release if the actor is not actually selected in the menu
-      if (!isActuallySelected && !wasSelected) {
-        // Temporarily ignore token control changes to prevent menu selection updates
-        menu._ignoreTokenControl = true;
-        
-        token.release();
-        
-        // Restore token control listening after a brief delay
-        setTimeout(() => {
-          menu._ignoreTokenControl = false;
-        }, 50);
-      }
-      
-      // Clean up tracking
+      token.hover = false;
+      token.renderFlags.set({refreshState: true});
       this._hoveredTokens.delete(token);
-      delete token._flashRollsWasSelected;
     }
   }
 
