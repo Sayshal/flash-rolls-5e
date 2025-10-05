@@ -1,4 +1,4 @@
-# Flash Token Actions 5e
+# Flash Token Bar 5e
 
 [![alt-text](https://img.shields.io/badge/-Discord-%235662f6?style=for-the-badge)](https://discord.gg/cAuTaTYda3) 
 ![GitHub Downloads (specific asset, all releases)](https://img.shields.io/github/downloads/crlngn/flash-rolls-5e/module.zip?color=2b82fc&label=DOWNLOADS&style=for-the-badge)
@@ -50,7 +50,7 @@ You can calculate group roll results via API as well, see below.
 
 ### Macros
 
-You can turn a request from Flash Token Actions menu into a macro, so you can reuse frequent requests and trigger via keyboard or macro toolbar.
+You can turn a request from Flash Token Bar menu into a macro, so you can reuse frequent requests and trigger via keyboard or macro toolbar.
 
 #### Creating Macros
 
@@ -64,7 +64,7 @@ You can turn a request from Flash Token Actions menu into a macro, so you can re
 Use the `createMacro()` method to programmatically create macros with specific configurations (see above).
 
 **Via Manual Creation:**
-Create a script macro manually using the Flash Token Actions API:
+Create a script macro manually using the Flash Token Bar API:
 
 ```javascript
 // Example macro: Request Stealth checks from selected tokens
@@ -90,7 +90,7 @@ FlashRolls5e.requestRoll({
 Generated macros have the following structure:
 
 ```javascript
-// Flash Token Actions: Acrobatics
+// Flash Token Bar: Acrobatics
 try {
   FlashRolls5e.requestRoll({
     "requestType": "skill",
@@ -104,7 +104,7 @@ try {
     "sendAsRequest": true
   });
 } catch (error) {
-  ui.notifications.error("Flash Token Actions: Macro execution failed. The macro data may be malformed.");
+  ui.notifications.error("Flash Token Bar: Macro execution failed. The macro data may be malformed.");
 }
 ```
 
@@ -159,7 +159,7 @@ setTimeout(() => {
 
 ## API
 
-Flash Token Actions 5e provides an API that users and other modules can use to interact with its roll request system and group roll calculations.
+Flash Token Bar 5e provides an API that users and other modules can use to interact with its roll request system and group roll calculations.
 
 ### Accessing the API
 
@@ -177,7 +177,7 @@ game.modules.get('flash-rolls-5e').api.requestRoll(options);
 
 #### `requestRoll(options)`
 
-Triggers roll requests for the provided actors using Flash Token Actions 5e's roll orchestration flow.
+Triggers roll requests for the provided actors using Flash Token Bar 5e's roll orchestration flow.
 
 **Parameters:**
 - `options.requestType` (string) - Type of roll: `'skill'`, `'ability'`, `'savingthrow'`, `'tool'`, `'initiative'`, `'deathsave'`, `'hitdie'`, `'custom'`
@@ -216,7 +216,7 @@ FlashRolls5e.requestRoll({
 
 #### `calculateGroupRoll(options)`
 
-Calculate group roll results using Flash Token Actions 5e's group calculation methods.
+Calculate group roll results using Flash Token Bar 5e's group calculation methods.
 
 **Parameters:**
 - `options.method` (number|string) - Calculation method:
@@ -307,19 +307,19 @@ console.log(rollTypes);
 
 #### `getSelectedActors()`
 
-Get currently selected actors from the Flash Token Actions menu.
+Get currently selected actors from the Flash Token Bar menu.
 
 **Returns:** `string[]` - Array of selected actor/token IDs
 
 #### `isMenuOpen()`
 
-Check if the Flash Token Actions menu is currently open.
+Check if the Flash Token Bar menu is currently open.
 
 **Returns:** `boolean` - True if menu is rendered and visible
 
 #### `createMacro(macroData)`
 
-Creates a macro that executes Flash Token Actions requests with pre-configured settings. This is the same functionality used by the "Create Macro" button in GM roll configuration dialog or in the menu items. The macro is saved to Flash Token Actions folder, unless this setting is turned off by the user - in which case it is saved to the root.
+Creates a macro that executes Flash Token Bar requests with pre-configured settings. This is the same functionality used by the "Create Macro" button in GM roll configuration dialog or in the menu items. The macro is saved to Flash Token Bar folder, unless this setting is turned off by the user - in which case it is saved to the root.
 
 **Parameters:**
 - `macroData.requestType` (string) - Type of roll request (e.g., `'skill'`, `'savingthrow'`, `'tool'`, `'initiative'`, `'deathsave'`, `'hitdie'`, `'custom'`)
@@ -343,7 +343,7 @@ FlashRolls5e.createMacro({
 
 ## Actor Ownership for Roll Requests
 
-Flash Token Actions 5e follows specific rules for determining if a roll request should be sent to a player or rolled by the GM.
+Flash Token Bar 5e follows specific rules for determining if a roll request should be sent to a player or rolled by the GM.
 
 - **Player Characters (PCs)**: Only players who **explicitly own** an actor will receive roll requests for them. If GM gives ownership to all players by default, this is not considered as ownership for receiving roll requests, as it would be impossible to determine which player should receive the request. 
 - **Offline Players**: If a player who owns a character is offline, the GM will automatically roll for that character locally
@@ -367,7 +367,7 @@ And of course, GMs don't receive requests for actors they own - they just roll l
 
 ## Dependencies
 
-Flash Token Actions 5e requires the [socketlib](https://github.com/manuelVo/foundryvtt-socketlib) module to be installed and active.
+Flash Token Bar 5e requires the [socketlib](https://github.com/manuelVo/foundryvtt-socketlib) module to be installed and active.
 
 ## Compatibility
 

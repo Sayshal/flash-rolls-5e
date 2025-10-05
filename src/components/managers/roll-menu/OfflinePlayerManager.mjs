@@ -22,7 +22,7 @@ export class OfflinePlayerManager {
     LogUtil.log('OfflinePlayerManager.handleOfflinePlayer', [owner?.name, actor?.name, rollType]);
 
     if (!owner || !originalConfig) {
-      ui.notifications.warn('Flash Token Actions: No owner found for actor ' + actor.name);
+      ui.notifications.warn('Flash Token Bar: No owner found for actor ' + actor.name);
       return true;
     }
     

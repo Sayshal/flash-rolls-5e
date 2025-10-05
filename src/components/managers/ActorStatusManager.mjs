@@ -63,13 +63,13 @@ export class ActorStatusManager {
       
       // ui.notifications.info(game.i18n.format("FLASH_ROLLS.notifications.actorAddedToFavorites", {
       //   actor: actorDoc.name
-      // }) || `${actorDoc.name} added to Flash Token Actions favorites`);
+      // }) || `${actorDoc.name} added to Flash Token Bar favorites`);
     } else {
       await actorDoc.unsetFlag(MODULE_ID, this.FLAGS.FAVORITE);
       
       // ui.notifications.info(game.i18n.format("FLASH_ROLLS.notifications.actorRemovedFromFavorites", {
       //   actor: actorDoc.name
-      // }) || `${actorDoc.name} removed from Flash Token Actions favorites`);
+      // }) || `${actorDoc.name} removed from Flash Token Bar favorites`);
     }
 
     this._refreshMenu();

@@ -6,7 +6,7 @@ import { getSettings } from '../../constants/Settings.mjs';
 import RollRequestsMenu from '../ui/RollRequestsMenu.mjs';
 
 /**
- * Manages token movement restrictions for Flash Token Actions 5e
+ * Manages token movement restrictions for Flash Token Bar 5e
  * Provides player-only movement blocking while preserving GM override capabilities
  */
 export class TokenMovementManager {

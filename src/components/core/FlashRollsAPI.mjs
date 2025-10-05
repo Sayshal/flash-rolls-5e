@@ -9,7 +9,7 @@ import { RollHelpers } from "../helpers/RollHelpers.mjs";
 import { ChatMessageManager } from "../managers/ChatMessageManager.mjs";
 
 /**
- * Public API for Flash Token Actions 5e that can be used by other modules
+ * Public API for Flash Token Bar 5e that can be used by other modules
  * Accessible via FlashRolls5e.requestRoll() or game.modules.get('flash-rolls-5e').api
  */
 export class FlashRollsAPI {
@@ -219,7 +219,7 @@ export class FlashRollsAPI {
     if (requestOptions.advantage === undefined) requestOptions.advantage = false;
     if (requestOptions.disadvantage === undefined) requestOptions.disadvantage = false;
     
-    const command = `// Flash Token Actions: ${macroName} - ${rollKey || ''}
+    const command = `// Flash Token Bar: ${macroName} - ${rollKey || ''}
     try {
       FlashRolls5e.requestRoll(${JSON.stringify(requestOptions, null, 2)});
     } catch (error) {
@@ -232,7 +232,7 @@ export class FlashRollsAPI {
 
     // Create the macro
     const macroDocumentData = {
-      name: `Flash Token Actions: ${macroName}`,
+      name: `Flash Token Bar: ${macroName}`,
       type: "script",
       command: command,
       img: "modules/flash-rolls-5e/assets/bolt-circle.svg",
@@ -259,12 +259,12 @@ export class FlashRollsAPI {
   }
   
   /**
-   * Ensure 'Flash Token Actions' folder exists, creating it if necessary
+   * Ensure 'Flash Token Bar' folder exists, creating it if necessary
    * @returns {Promise<string|null>} The folder ID or null if creation failed
    * @private
    */
   static async _ensureFlashRollsFolder() {
-    const folderName = 'Flash Token Actions';
+    const folderName = 'Flash Token Bar';
     let folder = game.folders.find(f => f.type === 'Macro' && f.name === folderName);
     
     if (!folder) {
@@ -275,10 +275,10 @@ export class FlashRollsAPI {
           color: '#302437',
           sort: 0
         });
-        LogUtil.log('Created Flash Token Actions macro folder', [folder]);
+        LogUtil.log('Created Flash Token Bar macro folder', [folder]);
       } catch (error) {
-        LogUtil.error('Failed to create Flash Token Actions macro folder:', [error]);
-        ui.notifications.warn('Failed to create Flash Token Actions macro folder. Macro will be created without folder organization.');
+        LogUtil.error('Failed to create Flash Token Bar macro folder:', [error]);
+        ui.notifications.warn('Failed to create Flash Token Bar macro folder. Macro will be created without folder organization.');
         return null;
       }
     }
@@ -287,7 +287,7 @@ export class FlashRollsAPI {
   }
   
   /**
-   * Calculate group roll results using Flash Token Actions 5e calculation methods
+   * Calculate group roll results using Flash Token Bar 5e calculation methods
    * @param {Object} options - Group roll calculation options
    * @param {number|string} options.method - Calculation method: 1/"Standard Rule", 2/"Group Average", 3/"Leader with Help", 4/"Weakest Link"
    * @param {Object[]} options.rollResults - Array of roll results with { actorId, total, actorName? }

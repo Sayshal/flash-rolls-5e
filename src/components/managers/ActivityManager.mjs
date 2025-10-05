@@ -171,7 +171,7 @@ export class ActivityManager {
 
   /**
    * Handle pre-use activity hook on player side
-   * Configures Midi-QOL options for Flash Token Actions compatibility
+   * Configures Midi-QOL options for Flash Token Bar compatibility
    * @param {Activity} activity - The activity being used
    * @param {ActivityUseConfiguration} config - Configuration for the activity use
    * @param {Object} dialog - Dialog configuration
@@ -204,7 +204,7 @@ export class ActivityManager {
 
   /**
    * Handle post-use activity hook on player side
-   * Also configures Midi-QOL options for Flash Token Actions compatibility
+   * Also configures Midi-QOL options for Flash Token Bar compatibility
    * @param {Activity} activity - Activity that was used
    * @param {ActivityUseConfiguration} config - Configuration that was used
    * @param {Object} results - Results of the activity use
@@ -212,7 +212,7 @@ export class ActivityManager {
   static onPostUseActivityPlayer(activity, config, results) {
     const isMidiActive = GeneralUtil.isModuleOn('midi-qol');
 
-    // Configure Midi-QOL options for Flash Token Actions compatibility
+    // Configure Midi-QOL options for Flash Token Bar compatibility
     if (activity.midiOptions) {
       activity.midiOptions = {
         ...activity.midiOptions,

@@ -165,7 +165,7 @@ export const HOOKS_DND5E = {
 }
 
 /**
- * Flash Token Actions 5e Hooks
+ * Flash Token Bar 5e Hooks
  * @constant
  * @type {Object}
  */

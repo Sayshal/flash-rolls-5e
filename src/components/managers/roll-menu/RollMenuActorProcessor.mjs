@@ -303,10 +303,10 @@ export class RollMenuActorProcessor {
   }
 
   /**
-   * Process a group or encounter actor for display in the Flash Token Actions menu.
+   * Process a group or encounter actor for display in the Flash Token Bar menu.
    *
-   * This method converts a D&D 5e group/encounter actor into Flash Token Actions menu data.
-   * The result is an array of group data objects that can be displayed in the Flash Token Actions menu,
+   * This method converts a D&D 5e group/encounter actor into Flash Token Bar menu data.
+   * The result is an array of group data objects that can be displayed in the Flash Token Bar menu,
    * with each group containing its member actors properly associated with specific tokens.
    *
    * @param {Actor} actor - The group/encounter actor to process

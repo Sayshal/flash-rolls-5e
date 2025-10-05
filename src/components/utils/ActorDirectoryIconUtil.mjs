@@ -3,7 +3,7 @@ import { LogUtil } from './LogUtil.mjs';
 import { HOOKS_CORE } from '../../constants/Hooks.mjs';
 
 /**
- * Utility class for managing Flash Token Actions status icons in the Actor Directory
+ * Utility class for managing Flash Token Bar status icons in the Actor Directory
  */
 export class ActorDirectoryIconUtil {
   /**
@@ -59,13 +59,13 @@ export class ActorDirectoryIconUtil {
   static onUpdateActor(actor, changes) {
     const flagChanges = changes.flags?.['flash-rolls-5e'];
     if (flagChanges) {
-      LogUtil.log('ActorDirectoryIconUtil.onUpdateActor - Flash Token Actions flags changed', [actor.name, flagChanges]);
+      LogUtil.log('ActorDirectoryIconUtil.onUpdateActor - Flash Token Bar flags changed', [actor.name, flagChanges]);
       this.refreshActorIcon(actor.id);
     }
   }
 
   /**
-   * Update the Flash Token Actions status icon for a specific actor element
+   * Update the Flash Token Bar status icon for a specific actor element
    * @param {HTMLElement} actorElement - The actor directory item element
    * @param {string} actorId - The actor ID
    */

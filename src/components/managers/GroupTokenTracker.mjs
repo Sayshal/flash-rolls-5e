@@ -588,7 +588,7 @@ export class GroupTokenTracker {
   }
 
   /**
-   * Validate and clean up Flash Token Actions 5e module flags from tokens that shouldn't have them.
+   * Validate and clean up Flash Token Bar 5e module flags from tokens that shouldn't have them.
    * This handles cases where tokens have inherited flags but aren't properly associated,
    * including copy-pasted tokens and orphaned associations.
    *

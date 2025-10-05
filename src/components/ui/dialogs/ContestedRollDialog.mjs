@@ -357,7 +357,7 @@ export class ContestedRollDialog extends HandlebarsApplicationMixin(ApplicationV
       tokenId: null
     }`).join(',\n');
 
-    return `// Flash Token Actions: Contested Roll
+    return `// Flash Token Bar: Contested Roll
 // Roll Mode: ${this.rollMode}
 ${this.flavor ? `// Flavor: ${this.flavor}` : ''}
 
@@ -426,10 +426,10 @@ ${rollCommands}
   }
 
   /**
-   * Ensure Flash Token Actions folder exists for macro organization
+   * Ensure Flash Token Bar folder exists for macro organization
    */
   async _ensureFlashRollsFolder() {
-    const folderName = "Flash Token Actions";
+    const folderName = "Flash Token Bar";
     let folder = game.folders.find(f => f.type === "Macro" && f.name === folderName);
 
     if (!folder) {
@@ -440,10 +440,10 @@ ${rollCommands}
           color: "#302437",
           sort: 0
         });
-        LogUtil.log('Created Flash Token Actions macro folder', [folder]);
+        LogUtil.log('Created Flash Token Bar macro folder', [folder]);
       } catch (error) {
-        LogUtil.error('Failed to create Flash Token Actions macro folder:', [error]);
-        ui.notifications.warn("Failed to create Flash Token Actions macro folder. Macro will be created without folder organization.");
+        LogUtil.error('Failed to create Flash Token Bar macro folder:', [error]);
+        ui.notifications.warn("Failed to create Flash Token Bar macro folder. Macro will be created without folder organization.");
         return null;
       }
     }

@@ -11,7 +11,7 @@ export const MODULE_ID = "flash-rolls-5e";
  * @type {Array}
  */
 export const DEBUG_TAG = [
-  `%cFlash Token Actions 5e`,
+  `%cFlash Token Bar 5e`,
   `color:rgb(47, 151, 161); font-weight: bold;`,
   `|`,
 ];
