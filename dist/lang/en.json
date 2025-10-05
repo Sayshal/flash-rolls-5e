@@ -24,15 +24,15 @@
       "macroDataMalformed": "Macro execution failed. The macro data may be malformed.",
       "unknownRequestType": "Unknown request type '{requestType}'. Please check the macro configuration.",
       "macroCreated": "Macro \"{macroName}\" created successfully",
-      "actorAddedToFavorites": "{actor} was added to Flash Rolls favorites",
-      "actorRemovedFromFavorites": "{actor} was removed from Flash Rolls favorites",
-      "actorBlocked": "{actor} was blocked from Flash Rolls menu",
-      "actorUnblocked": "{actor} was unblocked from Flash Rolls menu",
+      "actorAddedToFavorites": "{actor} was added to Flash Token Actions favorites",
+      "actorRemovedFromFavorites": "{actor} was removed from Flash Token Actions favorites",
+      "actorBlocked": "{actor} was blocked from Flash Token Actions menu",
+      "actorUnblocked": "{actor} was unblocked from Flash Token Actions menu",
       "actorsSkippedInitiative": "No tokens found for {actors}. Initiative not rolled.",
       "noTokensForInitiative": "The selected actors do not have tokens on the scene. Initiative not rolled.",
       "noCharactersForHitDie": "Hit dice can only be rolled for player characters, not NPCs.",
       "noValidActorsSelected": "No valid actors selected.",
-      "actorAdded": "{actor} added to Flash Rolls menu",
+      "actorAdded": "{actor} added to Flash Token Actions menu",
       "actorAlreadyAdded": "{actor} is already in the menu",
       "actorNotFound": "Actor not found",
       "dropError": "Error adding actor to menu",
@@ -50,8 +50,8 @@
       "twoActorsRequired": "Two actors must be selected for a contested roll"
     },
     "contextMenu": {
-      "addToFavorites": "Add to Flash Rolls Menu",
-      "removeFromFavorites": "Remove from Flash Rolls Menu",
+      "addToFavorites": "Add to Flash Token Actions Menu",
+      "removeFromFavorites": "Remove from Flash Token Actions Menu",
       "toggleFavorite": "Toggle on Flash Menu",
       "blockFromMenu": "Remove from Favorites",
       "unblockFromMenu": "Unblock from Menu",
@@ -192,7 +192,7 @@
       "supportPatreon": {
         "label": "Support the developer",
         "buttonLabel": "Patreon support",
-        "hint": "If you like Flash Rolls 5e and my other modules, consider giving your support to the development on Patreon."
+        "hint": "If you like Flash Token Actions 5e and my other modules, consider giving your support to the development on Patreon."
       },
       "compactMode": {
         "label": "Use Compact Mode",
@@ -211,8 +211,8 @@
         "hint": "Maximum number of actor action icons to show at once. When more icons are enabled, navigation arrows will appear to scroll through them."
       },
       "addMacrosToFolder": {
-        "label": "Place new macros on 'Flash Rolls' Folder",
-        "hint": "Check this option to always add new macros inside the 'Flash Rolls' folder. When unchecked, macros will be added to the root of macros directory."
+        "label": "Place new macros on 'Flash Token Actions' Folder",
+        "hint": "Check this option to always add new macros inside the 'Flash Token Actions' folder. When unchecked, macros will be added to the root of macros directory."
       },
       "showOptionsListOnHover": {
         "label": "Show Roll Options on Hover",
@@ -295,7 +295,14 @@
         "filterActors": "Filter Actors",
         "groupSelected": "Create Group",
         "toggleMovement": "Toggle Movement",
-        "contestedRoll": "Contested Roll"
+        "contestedRoll": "Contested Roll",
+        "selectTokens": "Select",
+        "removeAssociations": "Remove Associations"
+      },
+      "tokenAssociations": {
+        "associatedTokens": "{count} associated token(s) in this scene",
+        "noTokensInScene": "No associated tokens in this scene",
+        "associationsRemoved": "Token associations removed for {actor}"
       },
       "filters": {
         "title": "Filter Actors",
@@ -343,7 +350,7 @@
         },
         "midiQOLSettings": {
           "title": "Adjust MidiQOL Settings?",
-          "description": "Some of your current settings on MidiQOL won't work well with Flash Rolls 5e. Would you like to adjust them? This preference will be saved so you don't see this message again.",
+          "description": "Some of your current settings on MidiQOL won't work well with Flash Token Actions 5e. Would you like to adjust them? This preference will be saved so you don't see this message again.",
           "changes": "The following settings from MidiQOL will be disabled if you confirm: <ul><li>Auto Fast Forward Ability Checks</li><li>Auto Roll Attack (Player)</li><li>Auto Roll Damage (Player)</li></ul>"
         },
         "contestedRoll": {

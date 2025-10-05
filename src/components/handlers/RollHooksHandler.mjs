@@ -165,7 +165,7 @@ export class RollHooksHandler {
         }
       }
 
-      LogUtil.log("RollHooksHandler.onPreRollDamageV2 - configured midiOptions for Flash Rolls compatibility", [config.midiOptions]);
+      LogUtil.log("RollHooksHandler.onPreRollDamageV2 - configured midiOptions for Flash Token Actions compatibility", [config.midiOptions]);
     }
 
     if (stored) {

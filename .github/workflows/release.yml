@@ -105,7 +105,7 @@ jobs:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         with:
           args: |
-            **New Release for Flash Rolls 5e**
+            **New Release for Flash Token Actions 5e**
             
             **Repository:** ${{ github.repository }}
             **Version:** ${{ github.ref_name }}

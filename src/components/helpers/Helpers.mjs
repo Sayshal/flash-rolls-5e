@@ -1,5 +1,5 @@
 /**
- * Helper functions for the Flash Rolls 5e module
+ * Helper functions for the Flash Token Actions 5e module
  */
 import { MODULE, ROLL_TYPES } from '../../constants/General.mjs';
 import { LogUtil } from '../utils/LogUtil.mjs';

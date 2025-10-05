@@ -28,7 +28,7 @@
             <div class="actor actor-group drag-wrapper{{#if group.isExpanded}} expanded non-selectable{{/if}}" draggable="true" 
                 data-id="{{group.uniqueId}}" data-actor-id="{{group.id}}" 
                 data-group-selected="{{group.selected}}" {{#if group.isExpanded}}data-non-selectable="true"{{/if}} 
-                data-tooltip="{{group.name}}" data-tooltip-direction="DOWN">
+                data-tooltip="{{group.name}}" data-tooltip-direction="DOWN" data-tooltip-delay="1000">
               {{#unless group.isExpanded}}
               <div class="actor-img group-{{group.memberImages.length}}">
                 {{#each group.memberImages as |img|}}
@@ -37,7 +37,7 @@
                   {{/if}}
                 {{/each}}
                 <span class="icons">
-                  <i class="fas fa-square-user icon-sheet" data-tooltip="Character sheet" data-tooltip-direction="UP"></i>
+                  <i class="fas fa-square-user icon-sheet" data-tooltip="Character sheet" data-tooltip-direction="UP" data-tooltip-delay="1000"></i>
                 </span>
               </div>
               {{/unless}}
@@ -66,12 +66,12 @@
                       <div class="actor-img">
                         <span class="icons">
                           {{#if member.isFavorite}}
-                            <i class="fas fa-bolt favorite" data-tooltip="{{localize 'FLASH_ROLLS.ui.tooltips.dragOutToRemove'}}" data-tooltip-direction="UP"></i>
+                            <i class="fas fa-bolt favorite" data-tooltip="{{localize 'FLASH_ROLLS.ui.tooltips.dragOutToRemove'}}" data-tooltip-direction="UP" data-tooltip-delay="1000"></i>
                           {{/if}}
                           {{#if member.movementRestricted}}
-                            <i class="fas fa-ban movement-restricted" data-tooltip="{{localize 'FLASH_ROLLS.ui.tooltips.movementLocked'}}" data-tooltip-direction="UP"></i>
+                            <i class="fas fa-ban movement-restricted" data-tooltip="{{localize 'FLASH_ROLLS.ui.tooltips.movementLocked'}}" data-tooltip-direction="UP" data-tooltip-delay="1000"></i>
                           {{/if}}
-                          <i class="fas fa-square-user icon-sheet" data-tooltip="{{localize 'FLASH_ROLLS.ui.tooltips.characterSheet'}}" data-tooltip-direction="UP"></i>
+                          <i class="fas fa-square-user icon-sheet" data-tooltip="{{localize 'FLASH_ROLLS.ui.tooltips.characterSheet'}}" data-tooltip-direction="UP" data-tooltip-delay="1000"></i>
                           {{!-- <i class="fas fa-crosshairs icon-target" data-tooltip="Target character" data-tooltip-direction="UP"></i> --}}
                         </span>
                         <img src="{{ member.img }}" alt="{{ member.name }}" />
@@ -136,12 +136,12 @@
                 <div class="actor-img">
                   <span class="icons">
                     {{#if actor.isFavorite}}
-                      <i class="fas fa-bolt favorite" data-tooltip="{{localize 'FLASH_ROLLS.ui.tooltips.dragOutToRemove'}}" data-tooltip-direction="UP"></i>
+                      <i class="fas fa-bolt favorite" data-tooltip="{{localize 'FLASH_ROLLS.ui.tooltips.dragOutToRemove'}}" data-tooltip-direction="UP" data-tooltip-delay="1000"></i>
                     {{/if}}
                     {{#if actor.movementRestricted}}
-                      <i class="fas fa-ban movement-restricted" data-tooltip="{{localize 'FLASH_ROLLS.ui.tooltips.movementLocked'}}" data-tooltip-direction="UP"></i>
+                      <i class="fas fa-ban movement-restricted" data-tooltip="{{localize 'FLASH_ROLLS.ui.tooltips.movementLocked'}}" data-tooltip-direction="UP" data-tooltip-delay="1000"></i>
                     {{/if}}
-                    <i class="fas fa-square-user icon-sheet" data-tooltip="{{localize 'FLASH_ROLLS.ui.tooltips.characterSheet'}}" data-tooltip-direction="UP"></i>
+                    <i class="fas fa-square-user icon-sheet" data-tooltip="{{localize 'FLASH_ROLLS.ui.tooltips.characterSheet'}}" data-tooltip-direction="UP" data-tooltip-delay="1000"></i>
                     {{!-- <i class="fas fa-crosshairs icon-target" data-tooltip="Target character" data-tooltip-direction="UP"></i> --}}
                   </span>
                   <img src="{{ actor.img }}" alt="{{ actor.name }}" />
@@ -158,16 +158,16 @@
 
       {{!-- {{#if isCompact}} --}}
       <li class="actors-tabs">
-        <button class="actor-tab npc-tab{{#if (eq selectedTab "npc")}} active{{/if}}" data-tab="npc" 
-          data-tooltip="{{localize 'FLASH_ROLLS.ui.menus.npcs'}}" data-tooltip-direction="UP">
+        <button class="actor-tab npc-tab{{#if (eq selectedTab "npc")}} active{{/if}}" data-tab="npc"
+          data-tooltip="{{localize 'FLASH_ROLLS.ui.menus.npcs'}}" data-tooltip-direction="UP" data-tooltip-delay="1000">
           <i class="fas fa-skull-cow"></i>
         </button>
-        <button class="actor-tab pc-tab{{#if (eq selectedTab "pc")}} active{{/if}}" data-tab="pc" 
-          data-tooltip="{{localize 'FLASH_ROLLS.ui.menus.pcs'}}" data-tooltip-direction="UP">
+        <button class="actor-tab pc-tab{{#if (eq selectedTab "pc")}} active{{/if}}" data-tab="pc"
+          data-tooltip="{{localize 'FLASH_ROLLS.ui.menus.pcs'}}" data-tooltip-direction="UP" data-tooltip-delay="1000">
           <i class="fas fa-circle-user"></i>
         </button>
         <button class="actor-tab group-tab{{#if (eq selectedTab "group")}} active{{/if}}" data-tab="group"
-          data-tooltip="{{localize 'FLASH_ROLLS.ui.menus.groups'}}" data-tooltip-direction="UP">
+          data-tooltip="{{localize 'FLASH_ROLLS.ui.menus.groups'}}" data-tooltip-direction="UP" data-tooltip-delay="1000">
           <i class="fa-solid fa-users-medical"></i>
         </button>
       </li>
@@ -184,12 +184,12 @@
                    id="{{element}}"
                    data-tooltip="{{localize tooltipKey}}"
                    data-tooltip-direction="{{#if (eq ../../menuLayout 'horizontal')}}UP{{else}}RIGHT{{/if}}"
-                   data-tooltip-delay="500"></i>
+                   data-tooltip-delay="1000"></i>
               {{else}}
                 <button id="{{element}}"
                         data-tooltip="{{localize tooltipKey}}"
                         data-tooltip-direction="{{#if (eq ../../menuLayout 'horizontal')}}UP{{else}}RIGHT{{/if}}"
-                        data-tooltip-delay="500">
+                        data-tooltip-delay="1000">
                   <i class="icon-label fas {{this.icon}}"></i>
                 </button>
               {{/if}}
@@ -203,7 +203,7 @@
                 <span class="icon-label fas {{this.icon}}"
                       data-tooltip="{{localize tooltipKey}}"
                       data-tooltip-direction="{{#if (eq ../../menuLayout 'horizontal')}}UP{{else}}RIGHT{{/if}}"
-                      data-tooltip-delay="500"></span>
+                      data-tooltip-delay="1000"></span>
               </label>
             {{/if}}
           </li>
@@ -229,7 +229,7 @@
                   <button id="{{element}}"
                           data-tooltip="{{localize tooltipKey}}"
                           data-tooltip-direction="{{#if (eq ../../menuLayout 'horizontal')}}UP{{else}}RIGHT{{/if}}"
-                          data-tooltip-delay="500">
+                          data-tooltip-delay="1000">
                     <i class="icon-label fas {{this.icon}}"></i>
                   </button>
                 {{else if (eq type "checkbox")}}
@@ -239,7 +239,7 @@
                     <span class="icon-label fas {{this.icon}}"
                           data-tooltip="{{localize tooltipKey}}"
                           data-tooltip-direction="{{#if (eq ../../menuLayout 'horizontal')}}UP{{else}}RIGHT{{/if}}"
-                          data-tooltip-delay="500"></span>
+                          data-tooltip-delay="1000"></span>
                   </label>
                 {{/if}}
               </li>
@@ -282,7 +282,7 @@
               <i class="icon fas fa-dice-d20"></i>
             {{/if}}
             <span class="request-type-name">{{ requestType.name }}</span>
-            {{#unless requestType.hasSubList}}<i class="btn-macro fas fa-code" data-tooltip="{{localize 'FLASH_ROLLS.ui.buttons.createMacro'}}" data-tooltip-direction="UP"></i>{{/unless}}
+            {{#unless requestType.hasSubList}}<i class="btn-macro fas fa-code" data-tooltip="{{localize 'FLASH_ROLLS.ui.buttons.createMacro'}}" data-tooltip-direction="UP" data-tooltip-delay="1000"></i>{{/unless}}
           </div>
           
           {{#if requestType.hasSubList}}
@@ -291,7 +291,7 @@
                 <li data-id="{{ subItem.id }}" data-parent="{{ ../id }}" class="rollable sub-item">
                   <i class="icon fas fa-dice-d20"></i>
                   <span class="sub-item-name">{{ subItem.name }}</span>
-                  <i class="btn-macro fas fa-code" data-tooltip="{{localize 'FLASH_ROLLS.ui.buttons.createMacro'}}" data-tooltip-direction="UP"></i>
+                  <i class="btn-macro fas fa-code" data-tooltip="{{localize 'FLASH_ROLLS.ui.buttons.createMacro'}}" data-tooltip-direction="UP" data-tooltip-delay="1000"></i>
                 </li>
               {{/each}}
             </ul>

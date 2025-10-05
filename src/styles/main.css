@@ -1,4 +1,4 @@
-/* Flash Rolls Styles */
+/* Flash Token Actions Styles */
 @import './menu/flash-rolls-base.css';
 @import './menu/flash-rolls-layout-vertical.css';
 @import './menu/flash-rolls-layout-horizontal.css';
@@ -9,6 +9,7 @@
 @import './settings.css';
 @import './settings-interface.css';
 @import './contested-roll-dialog.css';
+@import './token-associations.css';
 
 body{
   --current-sidebar-width: 0px;

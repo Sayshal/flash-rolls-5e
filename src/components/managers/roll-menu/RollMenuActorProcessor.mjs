@@ -303,10 +303,10 @@ export class RollMenuActorProcessor {
   }
 
   /**
-   * Process a group or encounter actor for display in the Flash Rolls menu.
+   * Process a group or encounter actor for display in the Flash Token Actions menu.
    *
-   * This method converts a D&D 5e group/encounter actor into Flash Rolls menu data.
-   * The result is an array of group data objects that can be displayed in the Flash Rolls menu,
+   * This method converts a D&D 5e group/encounter actor into Flash Token Actions menu data.
+   * The result is an array of group data objects that can be displayed in the Flash Token Actions menu,
    * with each group containing its member actors properly associated with specific tokens.
    *
    * @param {Actor} actor - The group/encounter actor to process
@@ -344,53 +344,60 @@ export class RollMenuActorProcessor {
 
 
           if (associatedTokenIds.length > 0) {
-            // Use specific tokens from associations by finding them in current scene
+            let foundValidToken = false;
             for (const tokenUuid of associatedTokenIds) {
               try {
                 const tokenDoc = fromUuidSync(tokenUuid);
                 if (tokenDoc && tokenDoc.actorId === member.actor.id && tokenDoc.parent === currentScene) {
-                  // Apply filters if active
                   if (hasActiveFilters) {
                     const actorToCheck = tokenDoc.actor || member.actor;
                     if (!RollMenuStateManager.doesActorPassFilters(actorToCheck, actorFilters, tokenDoc)) {
-                      continue; // Skip this member if it doesn't pass filters
+                      continue;
                     }
                   }
                   hasAnyMemberTokens = true;
+                  foundValidToken = true;
                   const memberData = this.createActorData(member.actor, tokenDoc, menu);
                   members.push(memberData);
-                } else {
                 }
               } catch (error) {
               }
             }
-          } else {
-            // COMMENTED OUT: No token associations, fall back to original behavior
-            // const memberTokens = currentScene?.tokens.filter(token => token.actorId === member.actor.id) || [];
 
-            // if (memberTokens.length > 0) {
-            //   hasAnyMemberTokens = true;
-            //   memberTokens.forEach(tokenDoc => {
-            //     // Apply filters if active
-            //     if (hasActiveFilters) {
-            //       const actorToCheck = tokenDoc.actor || member.actor;
-            //       if (!RollMenuStateManager.doesActorPassFilters(actorToCheck, actorFilters, tokenDoc)) {
-            //         return; // Skip this member if it doesn't pass filters
-            //       }
-            //     }
-            //     const memberData = this.createActorData(member.actor, tokenDoc, menu);
-            //     members.push(memberData);
-            //   });
-            // } else {
-            //   // Apply filters if active
-            //   if (hasActiveFilters) {
-            //     if (!RollMenuStateManager.doesActorPassFilters(member.actor, actorFilters, null)) {
-            //       continue; // Skip this member if it doesn't pass filters
-            //     }
-            //   }
-            //   const memberData = this.createActorData(member.actor, null, menu);
-            //   members.push(memberData);
-            // }
+            // If we have associations but all tokens are invalid/deleted, fall back to showing the actor
+            if (!foundValidToken && !showOnlyPCsWithToken) {
+              if (hasActiveFilters) {
+                if (!RollMenuStateManager.doesActorPassFilters(member.actor, actorFilters, null)) {
+                  continue;
+                }
+              }
+              const memberData = this.createActorData(member.actor, null, menu);
+              members.push(memberData);
+            }
+          } else {
+            const memberTokens = currentScene?.tokens.filter(token => token.actorId === member.actor.id) || [];
+
+            if (memberTokens.length > 0) {
+              hasAnyMemberTokens = true;
+              memberTokens.forEach(tokenDoc => {
+                if (hasActiveFilters) {
+                  const actorToCheck = tokenDoc.actor || member.actor;
+                  if (!RollMenuStateManager.doesActorPassFilters(actorToCheck, actorFilters, tokenDoc)) {
+                    return;
+                  }
+                }
+                const memberData = this.createActorData(member.actor, tokenDoc, menu);
+                members.push(memberData);
+              });
+            } else if (!showOnlyPCsWithToken) {
+              if (hasActiveFilters) {
+                if (!RollMenuStateManager.doesActorPassFilters(member.actor, actorFilters, null)) {
+                  continue;
+                }
+              }
+              const memberData = this.createActorData(member.actor, null, menu);
+              members.push(memberData);
+            }
           }
         }
       }
@@ -420,11 +427,37 @@ export class RollMenuActorProcessor {
                     }
                     hasAnyMemberTokens = true;
                     const memberData = this.createActorData(memberActor, tokenDoc, menu);
-                    memberData.quantity = 1; // Each specific token has quantity 1
+                    memberData.quantity = 1;
                     members.push(memberData);
                   }
                 } catch (error) {
                 }
+              }
+            } else {
+              const memberTokens = currentScene?.tokens.filter(token => token.actorId === memberActor.id) || [];
+
+              if (memberTokens.length > 0) {
+                hasAnyMemberTokens = true;
+                memberTokens.forEach(tokenDoc => {
+                  if (hasActiveFilters) {
+                    const actorToCheck = tokenDoc.actor || memberActor;
+                    if (!RollMenuStateManager.doesActorPassFilters(actorToCheck, actorFilters, tokenDoc)) {
+                      return;
+                    }
+                  }
+                  const memberData = this.createActorData(memberActor, tokenDoc, menu);
+                  memberData.quantity = 1;
+                  members.push(memberData);
+                });
+              } else if (!showOnlyPCsWithToken) {
+                if (hasActiveFilters) {
+                  if (!RollMenuStateManager.doesActorPassFilters(memberActor, actorFilters, null)) {
+                    continue;
+                  }
+                }
+                const memberData = this.createActorData(memberActor, null, menu);
+                memberData.quantity = member.quantity || 1;
+                members.push(memberData);
               }
             }
           }
@@ -433,7 +466,8 @@ export class RollMenuActorProcessor {
         }
       }
     }
-    
+
+    // If showOnlyPCsWithToken is enabled, filter out groups without tokens
     if (showOnlyPCsWithToken) {
       const groupHasTokens = tokensInScene.length > 0;
       if (!groupHasTokens && !hasAnyMemberTokens) {
@@ -441,8 +475,38 @@ export class RollMenuActorProcessor {
         return [];
       }
     }
-    
-    // Don't show groups with no members (no token associations)
+
+    // If no members with tokens but showOnlyPCsWithToken is disabled, still show the group with actor members
+    // (this handles the case where the group exists but has no tokens in this scene)
+    if (members.length === 0 && !showOnlyPCsWithToken) {
+      // Show the actor members themselves without tokens
+      const memberActors = actor.type === 'group'
+        ? (actor.system.members || []).map(m => m.actor).filter(a => a)
+        : [];
+
+      const memberDataList = memberActors.map(memberActor => {
+        if (!ActorStatusManager.isBlocked(memberActor)) {
+          if (hasActiveFilters) {
+            if (!RollMenuStateManager.doesActorPassFilters(memberActor, actorFilters, null)) {
+              return null;
+            }
+          }
+          return this.createActorData(memberActor, null, menu);
+        }
+        return null;
+      }).filter(m => m !== null);
+
+      const groupData = this.createActorData(actor, null, menu);
+      groupData.members = memberDataList;
+      groupData.isGroup = true;
+      groupData.isExpanded = menu.groupExpansionStates?.[actor.id] ?? false;
+      groupData.memberImages = memberDataList.slice(0, 4).map(m => m.img);
+      groupData.selected = false;
+      groupEntries.push(groupData);
+      return groupEntries;
+    }
+
+    // Don't show groups with no members if showOnlyPCsWithToken is enabled
     if (members.length === 0) {
       return [];
     }

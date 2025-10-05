@@ -3,7 +3,7 @@ import { isPlayerOwned } from '../helpers/Helpers.mjs';
 import { ActorStatusManager } from '../managers/ActorStatusManager.mjs';
 
 /**
- * Handles drag and drop of actors from the directory into the Flash Rolls menu
+ * Handles drag and drop of actors from the directory into the Flash Token Actions menu
  */
 export class ActorDropUtil {
   /**
@@ -119,7 +119,7 @@ export class ActorDropUtil {
 
       // ui.notifications.info(game.i18n.format("FLASH_ROLLS.notifications.actorAdded", { 
       //   actor: actor.name 
-      // }) || `Added ${actor.name} to Flash Rolls menu`);
+      // }) || `Added ${actor.name} to Flash Token Actions menu`);
 
     } catch (error) {
       LogUtil.error('ActorDropUtil.handleDrop - Error processing drop', [error]);

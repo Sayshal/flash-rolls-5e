@@ -153,15 +153,19 @@ export const HOOKS_DND5E = {
   POST_BUILD_ROLL_CONFIG: "dnd5e.postBuildRollConfig",
   POST_ROLL_CONFIG: "dnd5e.postRollConfiguration",
 
-  // Rendering 
+  // Rendering
   RENDER_ROLL_CONFIGURATION_DIALOG: "renderRollConfigurationDialog",
   RENDER_SKILL_TOOL_ROLL_DIALOG: "renderSkillToolRollConfigurationDialog",
   RENDER_FORMULA_ROLL_DIALOG: "renderFormulaRollConfigurationDialog",
   RENDER_CHAT_MESSAGE: "renderChatMessageHTML",
+
+  // Actor Sheets
+  RENDER_GROUP_ACTOR_SHEET: "renderGroupActorSheet",
+  RENDER_ENCOUNTER_ACTOR_SHEET: "renderEncounterActorSheet",
 }
 
 /**
- * Flash Rolls 5e Hooks
+ * Flash Token Actions 5e Hooks
  * @constant
  * @type {Object}
  */

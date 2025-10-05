@@ -1,0 +1,42 @@
+.flash5e-token-associations {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 1rem 1rem 1rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.flash5e-token-associations > div:first-child {
+  flex: 1 1 auto;
+  font-size: 0.875rem;
+  color: var(--color-text-primary);
+}
+
+.flash5e-token-associations:before {
+  content: '';
+  display: block;
+  width: 100%;
+  flex: 0 0 100%;
+  margin-bottom: 0.5rem;
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--dnd5e-color-gold), transparent);
+
+}
+
+.flash5e-token-associations .button-group {
+  display: flex;
+  gap: 0.5rem;
+  flex: 0 0 auto;
+}
+
+.flash5e-token-associations.no-tokens .button-group {
+  display: none;
+}
+
+.flash5e-select-tokens,
+.flash5e-remove-associations {
+  flex: 0 0 auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
