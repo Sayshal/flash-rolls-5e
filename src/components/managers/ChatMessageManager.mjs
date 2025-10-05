@@ -368,6 +368,89 @@ export class ChatMessageManager {
   
 
   /**
+   * Token that was temporarily controlled for vision preview
+   * @type {Token|null}
+   */
+  static _previewToken = null;
+
+  /**
+   * Previously controlled tokens before vision preview
+   * @type {Token[]}
+   */
+  static _previouslyControlled = [];
+
+  /**
+   * Original controlled property descriptor for restoring
+   * @type {PropertyDescriptor|null}
+   */
+  static _originalControlledGetter = null;
+
+  /**
+   * Show token vision for a chat message actor result
+   * @param {HTMLElement} actorElement - The actor result element
+   */
+  static _showTokenVision(actorElement) {
+    if (!canvas?.tokens || !canvas.scene?.tokenVision || !game.user.isGM) return;
+
+    const tokenId = actorElement.dataset.tokenId;
+    const actorId = actorElement.dataset.actorId;
+
+    let token = tokenId ? canvas.tokens.get(tokenId) : null;
+    if (!token && actorId) {
+      token = canvas.tokens.placeables.find(t => t.actor?.id === actorId);
+    }
+
+    if (!token || !token.document.sight?.enabled) return;
+
+    this._previouslyControlled = [...canvas.tokens.controlled];
+    this._previewToken = token;
+
+    this._originalControlledGetter = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(token), 'controlled');
+
+    Object.defineProperty(token, 'controlled', {
+      get: () => true,
+      configurable: true
+    });
+
+    token.initializeVisionSource();
+    canvas.perception.update({
+      initializeVision: true,
+      refreshVision: true
+    });
+  }
+
+  /**
+   * Hide token vision for a chat message actor result
+   * @param {HTMLElement} actorElement - The actor result element
+   */
+  static _hideTokenVision(actorElement) {
+    if (!this._previewToken || !game.user.isGM) return;
+
+    delete this._previewToken.controlled;
+
+    if (this._originalControlledGetter) {
+      Object.defineProperty(this._previewToken, 'controlled', this._originalControlledGetter);
+      this._originalControlledGetter = null;
+    }
+
+    this._previewToken.initializeVisionSource();
+
+    this._previouslyControlled.forEach(t => {
+      if (t.scene === canvas.scene) {
+        t.initializeVisionSource();
+      }
+    });
+
+    canvas.perception.update({
+      initializeVision: true,
+      refreshVision: true
+    });
+
+    this._previewToken = null;
+    this._previouslyControlled = [];
+  }
+
+  /**
    * Static method to attach group roll listeners to HTML elements
    * @param {HTMLElement} html - The HTML element containing group roll elements
    * @param {ChatMessage} message - The chat message instance
@@ -395,6 +478,19 @@ export class ChatMessageManager {
           actorResult.classList.add('expanded');
         }
       });
+
+      const actorImg = element.querySelector('.actor-image');
+      if (actorImg) {
+        actorImg.addEventListener('mouseenter', (event) => {
+          event.stopPropagation();
+          this._showTokenVision(element);
+        });
+
+        actorImg.addEventListener('mouseleave', (event) => {
+          event.stopPropagation();
+          this._hideTokenVision(element);
+        });
+      }
     });
     
     html.querySelectorAll('.dice-btn.rollable').forEach(diceBtn => {

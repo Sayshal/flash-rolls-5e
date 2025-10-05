@@ -18,6 +18,24 @@ export class RollMenuEventManager {
   static _hoveredTokens = new Set();
 
   /**
+   * Token that was temporarily controlled for vision preview
+   * @type {Token|null}
+   */
+  static _previewControlToken = null;
+
+  /**
+   * Previously controlled tokens before vision preview
+   * @type {Token[]}
+   */
+  static _previouslyControlledTokens = [];
+
+  /**
+   * Original controlled property descriptor for restoring
+   * @type {PropertyDescriptor|null}
+   */
+  static _originalControlledGetter = null;
+
+  /**
    * Reference to the active menu instance
    * @type {RollRequestsMenu|null}
    */
@@ -965,6 +983,24 @@ export class RollMenuEventManager {
       token.hover = true;
       token.renderFlags.set({refreshState: true});
       this._hoveredTokens.add(token);
+
+      if (canvas.scene?.tokenVision && token.document.sight?.enabled && game.user.isGM) {
+        this._previouslyControlledTokens = [...canvas.tokens.controlled];
+        this._previewControlToken = token;
+
+        this._originalControlledGetter = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(token), 'controlled');
+
+        Object.defineProperty(token, 'controlled', {
+          get: () => true,
+          configurable: true
+        });
+
+        token.initializeVisionSource();
+        canvas.perception.update({
+          initializeVision: true,
+          refreshVision: true
+        });
+      }
     }
   }
 
@@ -1037,6 +1073,31 @@ export class RollMenuEventManager {
       token.hover = false;
       token.renderFlags.set({refreshState: true});
       this._hoveredTokens.delete(token);
+
+      if (this._previewControlToken === token && game.user.isGM) {
+        delete token.controlled;
+
+        if (this._originalControlledGetter) {
+          Object.defineProperty(token, 'controlled', this._originalControlledGetter);
+          this._originalControlledGetter = null;
+        }
+
+        token.initializeVisionSource();
+
+        this._previouslyControlledTokens.forEach(t => {
+          if (t.scene === canvas.scene) {
+            t.initializeVisionSource();
+          }
+        });
+
+        canvas.perception.update({
+          initializeVision: true,
+          refreshVision: true
+        });
+
+        this._previewControlToken = null;
+        this._previouslyControlledTokens = [];
+      }
     }
   }
 
