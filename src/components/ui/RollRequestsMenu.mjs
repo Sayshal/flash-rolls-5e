@@ -244,30 +244,83 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
    */
   _onTokenControlChange(token, controlled) {
     if (!this.rendered) return;
-    
+
     if (this._ignoreTokenControl) return;
     if (this._tokenUpdateTimeout) {
       clearTimeout(this._tokenUpdateTimeout);
     }
-    
+
     this._tokenUpdateTimeout = setTimeout(() => {
       const previousSelection = new Set(this.selectedActors);
-      
+
       this._initializeFromSelectedTokens();
-      
+
       const allActorIds = new Set([...previousSelection, ...this.selectedActors]);
       for (const actorId of allActorIds) {
         this._updateActorSelectionUI(actorId);
       }
-      
-      // Update group selection UI when token selection changes
+
       this._updateGroupSelectionUI();
-      
+
       this._updateSelectAllState();
       this._updateRequestTypesVisibilityNoRender();
-      
+
+      if (controlled && token?.id) {
+        this._scrollToActor(token.id);
+      }
+
       this._tokenUpdateTimeout = null;
     }, 100);
+  }
+
+  _scrollToActor(uniqueId) {
+    if (!this.element) return;
+
+    const token = canvas.tokens?.get(uniqueId);
+    if (!token) return;
+
+    const groupId = token.document.getFlag(MODULE_ID, 'groupId');
+
+    if (groupId && this.currentTab === 'group') {
+      const groupElement = this.element.querySelector(`.actor.actor-group[data-actor-id="${groupId}"]`);
+      if (groupElement) {
+        this._scrollElementIntoView(groupElement);
+      }
+      return;
+    }
+
+    let actorElement = this.element.querySelector(`.actor.drag-wrapper[data-id="${uniqueId}"]`);
+    if (!actorElement) return;
+
+    const isGroupMember = actorElement.closest('.group-members');
+    if (isGroupMember) {
+      const groupElement = actorElement.closest('.actor.actor-group');
+      if (groupElement) {
+        actorElement = groupElement;
+      }
+    }
+
+    this._scrollElementIntoView(actorElement);
+  }
+
+  _scrollElementIntoView(element) {
+    if (!element || !this.element) return;
+
+    const scrollContainer = this.element.querySelector('.main-content ul.actors > li.actor-list');
+    if (!scrollContainer) return;
+
+    const containerRect = scrollContainer.getBoundingClientRect();
+    const elementRect = element.getBoundingClientRect();
+
+    const isHorizontal = this.element.dataset.layout === 'horizontal';
+
+    const isOutOfView = isHorizontal
+      ? elementRect.left < containerRect.left || elementRect.right > containerRect.right
+      : elementRect.top < containerRect.top || elementRect.bottom > containerRect.bottom;
+
+    if (isOutOfView) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+    }
   }
   
   /**
@@ -606,16 +659,14 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
               }
             }
           } else if (!hasAssociationsOnCurrentScene) {
-            // COMMENTED OUT: Fallback mode
-            // const memberTokens = currentScene?.tokens.filter(token => token.actorId === member.actor.id) || [];
-            // if (memberTokens.length > 0) {
-            //   memberTokens.forEach(tokenDoc => {
-            //     members.push({ actor: member.actor, uniqueId: tokenDoc.id });
-            //   });
-            // } else {
-            //   members.push({ actor: member.actor, uniqueId: member.actor.id });
-            // }
-          } else {
+            const memberTokens = currentScene?.tokens.filter(token => token.actorId === member.actor.id) || [];
+            if (memberTokens.length > 0) {
+              memberTokens.forEach(tokenDoc => {
+                members.push({ actor: member.actor, uniqueId: tokenDoc.id });
+              });
+            } else {
+              members.push({ actor: member.actor, uniqueId: member.actor.id });
+            }
           }
         }
       }

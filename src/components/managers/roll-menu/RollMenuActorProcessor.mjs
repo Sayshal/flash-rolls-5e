@@ -97,6 +97,23 @@ export class RollMenuActorProcessor {
       groupActors.push(...filteredGroupActors);
     }
 
+    groupActors.sort((a, b) => {
+      const aActor = game.actors.get(a.id);
+      const bActor = game.actors.get(b.id);
+      if (!aActor || !bActor) return 0;
+
+      const primaryParty = game.settings.get("dnd5e", "primaryParty")?.actor;
+      const aIsPrimary = primaryParty?.id === aActor.id;
+      const bIsPrimary = primaryParty?.id === bActor.id;
+
+      if (aIsPrimary && !bIsPrimary) return -1;
+      if (!aIsPrimary && bIsPrimary) return 1;
+
+      if (aActor.type === 'group' && bActor.type === 'encounter') return -1;
+      if (aActor.type === 'encounter' && bActor.type === 'group') return 1;
+      return 0;
+    });
+
     const rollRequestsEnabled = SettingsUtil.get(SETTINGS.rollRequestsEnabled.tag);
     const skipRollDialog = SettingsUtil.get(SETTINGS.skipRollDialog.tag);
     const groupRollsMsgEnabled = SettingsUtil.get(SETTINGS.groupRollsMsgEnabled.tag);
@@ -479,10 +496,21 @@ export class RollMenuActorProcessor {
     // If no members with tokens but showOnlyPCsWithToken is disabled, still show the group with actor members
     // (this handles the case where the group exists but has no tokens in this scene)
     if (members.length === 0 && !showOnlyPCsWithToken) {
-      // Show the actor members themselves without tokens
-      const memberActors = actor.type === 'group'
-        ? (actor.system.members || []).map(m => m.actor).filter(a => a)
-        : [];
+      let memberActors = [];
+      if (actor.type === 'group') {
+        memberActors = (actor.system.members || []).map(m => m.actor).filter(a => a);
+      } else if (actor.type === 'encounter') {
+        const resolved = await Promise.all(
+          (actor.system.members || []).map(async m => {
+            try {
+              return await fromUuid(m.uuid);
+            } catch (error) {
+              return null;
+            }
+          })
+        );
+        memberActors = resolved.filter(a => a);
+      }
 
       const memberDataList = memberActors.map(memberActor => {
         if (!ActorStatusManager.isBlocked(memberActor)) {

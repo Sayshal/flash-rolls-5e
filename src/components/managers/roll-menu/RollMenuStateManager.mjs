@@ -412,10 +412,6 @@ export class RollMenuStateManager {
     if (filters.visible) {
       if (token) {
         if (token.hidden) return false;
-      } else {
-        const tokens = actor.getActiveTokens();
-        const hasVisibleToken = tokens.some(token => !token.document.hidden);
-        if (!hasVisibleToken) return false;
       }
     }
 

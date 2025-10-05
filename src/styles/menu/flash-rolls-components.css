@@ -806,7 +806,7 @@
   border-radius: 4px;
   padding: 0.75rem;
   z-index: 10000;
-  min-width: 11rem;
+  min-width: 12rem;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
   color: var(--fr5e-text-color);
   pointer-events: auto;

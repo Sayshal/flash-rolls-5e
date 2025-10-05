@@ -294,6 +294,8 @@
     border-radius: 4px;
     z-index: 1;
     font-size: 0.85rem;
+    max-height: 16px;
+    min-height: 16px;
   }
 
   div.main-content > ul.actors > li .actor.actor-group.expanded ul.group-members {

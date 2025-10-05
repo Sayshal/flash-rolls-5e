@@ -701,8 +701,6 @@ export class GroupTokenTracker {
    * Check if associations need syncing and sync if there's a mismatch
    */
   static async checkAndSyncAssociations(groupActor, scene) {
-    LogUtil.log(`GroupTokenTracker.checkAndSyncAssociations: Starting for ${groupActor.name}`);
-
     const members = groupActor.type === 'group'
       ? (groupActor.system.members || []).map(m => ({ actor: m.actor, quantity: 1 }))
       : await Promise.all((groupActor.system.members || []).map(async m => {
@@ -711,12 +709,8 @@ export class GroupTokenTracker {
           return { actor, quantity };
         }));
 
-    LogUtil.log(`GroupTokenTracker.checkAndSyncAssociations: Found ${members.length} members`);
-
     const associations = groupActor.getFlag(MODULE_ID, 'tokenAssociationsByScene') || {};
     const sceneAssociations = associations[scene.id] || {};
-
-    LogUtil.log(`GroupTokenTracker.checkAndSyncAssociations: Existing scene associations:`, sceneAssociations);
 
     let needsSync = false;
 
@@ -744,27 +738,16 @@ export class GroupTokenTracker {
       const currentCount = validExisting.length;
       const availableCount = tokensInScene.length;
 
-      LogUtil.log(`GroupTokenTracker.checkAndSyncAssociations: ${memberActor.name}`, {
-        neededCount,
-        currentCount,
-        availableCount,
-        existingAssociations: existingAssociations.length
-      });
-
       if (currentCount !== neededCount && availableCount >= neededCount) {
-        LogUtil.log(`GroupTokenTracker.checkAndSyncAssociations: Needs sync - count mismatch`);
         needsSync = true;
         break;
       }
 
       if (validExisting.length !== existingAssociations.length) {
-        LogUtil.log(`GroupTokenTracker.checkAndSyncAssociations: Needs sync - invalid associations`);
         needsSync = true;
         break;
       }
     }
-
-    LogUtil.log(`GroupTokenTracker.checkAndSyncAssociations: needsSync = ${needsSync}`);
 
     if (needsSync) {
       await this.autoSyncTokens(groupActor, scene);
@@ -775,23 +758,17 @@ export class GroupTokenTracker {
    * Handle actor sheet rendering to inject token association UI
    */
   static async onRenderActorSheet(app, element, options) {
-    LogUtil.log(`GroupTokenTracker.onRenderActorSheet called for ${app.document?.name} (type: ${app.document?.type})`);
-
     if (!app.document || (app.document.type !== 'group' && app.document.type !== 'encounter')) {
-      LogUtil.log('GroupTokenTracker.onRenderActorSheet: Not a group/encounter, returning');
       return;
     }
     if (!game.user.isGM) {
-      LogUtil.log('GroupTokenTracker.onRenderActorSheet: Not GM, returning');
       return;
     }
 
     const mainContent = element.querySelector('[data-container-id="main"]');
     if (!mainContent) {
-      LogUtil.log('GroupTokenTracker.onRenderActorSheet: No main content container found');
       return;
     }
-    LogUtil.log('GroupTokenTracker.onRenderActorSheet: Found main content container');
 
     let container = mainContent.querySelector('.flash5e-token-associations');
     if (container) {
@@ -800,10 +777,8 @@ export class GroupTokenTracker {
 
     const currentScene = game.scenes.current;
     if (!currentScene) {
-      LogUtil.log('GroupTokenTracker.onRenderActorSheet: No current scene');
       return;
     }
-    LogUtil.log('GroupTokenTracker.onRenderActorSheet: Current scene:', currentScene.name);
 
     // Clean up associations for deleted scenes and invalid tokens
     const associations = app.document.getFlag(MODULE_ID, 'tokenAssociationsByScene') || {};
@@ -813,14 +788,11 @@ export class GroupTokenTracker {
       const scene = game.scenes.get(sceneId);
 
       if (!scene) {
-        // Scene no longer exists, remove all associations
-        LogUtil.log(`GroupTokenTracker.onRenderActorSheet: Scene ${sceneId} no longer exists, removing associations`);
         delete associations[sceneId];
         hasChanges = true;
         continue;
       }
 
-      // Clean up invalid token UUIDs for this scene
       const sceneAssociations = associations[sceneId];
       for (const [actorId, tokenUuids] of Object.entries(sceneAssociations)) {
         const validTokens = tokenUuids.filter(uuid => {
@@ -833,7 +805,6 @@ export class GroupTokenTracker {
         });
 
         if (validTokens.length !== tokenUuids.length) {
-          LogUtil.log(`GroupTokenTracker.onRenderActorSheet: Removed ${tokenUuids.length - validTokens.length} invalid token(s) for actor ${actorId} in scene ${scene.name}`);
           hasChanges = true;
         }
 
@@ -857,19 +828,13 @@ export class GroupTokenTracker {
       } else {
         await app.document.setFlag(MODULE_ID, 'tokenAssociationsByScene', associations);
       }
-      LogUtil.log('GroupTokenTracker.onRenderActorSheet: Cleaned up invalid associations, refreshing menu');
-
-      // Refresh the Roll Requests Menu to update group member display
       RollRequestsMenu.refreshIfOpen();
     }
 
     await this.checkAndSyncAssociations(app.document, currentScene);
-    LogUtil.log('GroupTokenTracker.onRenderActorSheet: checkAndSyncAssociations completed');
 
     const updatedAssociations = app.document.getFlag(MODULE_ID, 'tokenAssociationsByScene') || {};
     const sceneAssociations = updatedAssociations[currentScene.id] || {};
-
-    LogUtil.log('GroupTokenTracker.onRenderActorSheet: Scene associations:', sceneAssociations);
 
     // Count only valid tokens (that still exist)
     let totalTokens = 0;
@@ -879,16 +844,11 @@ export class GroupTokenTracker {
           const token = fromUuidSync(uuid);
           if (token && token.parent.id === currentScene.id) {
             totalTokens++;
-          } else {
-            LogUtil.log(`GroupTokenTracker.onRenderActorSheet: Invalid token ${uuid}, will be cleaned up on next sync`);
           }
         } catch {
-          LogUtil.log(`GroupTokenTracker.onRenderActorSheet: Failed to resolve token ${uuid}`);
         }
       }
     }
-
-    LogUtil.log(`GroupTokenTracker.onRenderActorSheet: Total valid tokens: ${totalTokens}`);
 
     container = document.createElement('div');
     container.className = 'flash5e-token-associations';
@@ -920,11 +880,6 @@ export class GroupTokenTracker {
     container.appendChild(textDiv);
     container.appendChild(buttonGroup);
     mainContent.appendChild(container);
-
-    LogUtil.log('GroupTokenTracker.onRenderActorSheet: UI injected successfully', {
-      totalTokens,
-      hasNoTokens: totalTokens === 0
-    });
   }
 
   /**
@@ -1014,23 +969,18 @@ export class GroupTokenTracker {
     const currentScene = game.scenes.current;
     if (!currentScene) return;
 
-    LogUtil.log('GroupTokenTracker: Auto-syncing', [currentScene.name, ui]);
-
     const groupActors = game.actors.filter(actor =>
       actor.type === 'group' || actor.type === 'encounter'
     );
 
     await Promise.all(groupActors.map(groupActor => this.autoSyncTokens(groupActor, currentScene)));
 
-    LogUtil.log('GroupTokenTracker: Auto-sync complete, refreshing menu and checking for open sheets');
     RollRequestsMenu.refreshIfOpen();
 
     setTimeout(() => {
       if (foundry.applications.instances) {
-        LogUtil.log('GroupTokenTracker: Checking foundry.applications.instances', [foundry.applications.instances.size]);
         for (const app of foundry.applications.instances.values()) {
           if (app.document?.type === 'group' || app.document?.type === 'encounter') {
-            LogUtil.log('GroupTokenTracker: Re-rendering group/encounter sheet', [app.document.name]);
             app.render(false);
           }
         }
@@ -1046,8 +996,6 @@ export class GroupTokenTracker {
    * @param {Scene} scene - The scene to sync tokens in
    */
   static async autoSyncTokens(groupActor, scene) {
-    LogUtil.log(`GroupTokenTracker: autoSyncTokens called for ${groupActor.name} (type: ${groupActor.type})`);
-
     const associations = groupActor.getFlag(MODULE_ID, 'tokenAssociationsByScene') || {};
     const sceneAssociations = associations[scene.id] || {};
 
@@ -1059,19 +1007,15 @@ export class GroupTokenTracker {
           return { actor, quantity };
         }));
 
-    LogUtil.log(`GroupTokenTracker: Found ${members.length} members:`, members.map(m => `${m.actor?.name} (qty: ${m.quantity})`));
-
     let hasChanges = false;
 
     for (const { actor: memberActor, quantity } of members) {
       if (!memberActor) {
-        LogUtil.log(`GroupTokenTracker: Skipping null member actor`);
         continue;
       }
 
       const memberActorId = memberActor.id;
       const existingAssociations = sceneAssociations[memberActorId] || [];
-      LogUtil.log(`GroupTokenTracker: Processing ${memberActor.name} (${memberActorId}), existing: ${existingAssociations.length}`);
 
       const validExisting = existingAssociations.filter(uuid => {
         try {
@@ -1085,23 +1029,13 @@ export class GroupTokenTracker {
       const tokensInScene = scene.tokens.filter(t => {
         const isLinkedMatch = t.actorId === memberActorId;
         const isUnlinkedMatch = !t.actorLink && t.actor?.prototypeToken?.actorId === memberActorId;
-        LogUtil.log(`GroupTokenTracker: Checking token ${t.name} (${t.id})`, {
-          actorId: t.actorId,
-          memberActorId,
-          actorLink: t.actorLink,
-          prototypeActorId: t.actor?.prototypeToken?.actorId,
-          isLinkedMatch,
-          isUnlinkedMatch
-        });
         return isLinkedMatch || isUnlinkedMatch;
       });
-      LogUtil.log(`GroupTokenTracker: ${memberActor.name} - tokens in scene: ${tokensInScene.length}, needed: ${quantity}`);
 
       const neededCount = quantity;
       const currentCount = validExisting.length;
 
       if (currentCount >= neededCount) {
-        LogUtil.log(`GroupTokenTracker: ${memberActor.name} already has enough associations (${currentCount}/${neededCount})`);
         if (validExisting.length !== existingAssociations.length) {
           sceneAssociations[memberActorId] = validExisting;
           hasChanges = true;
@@ -1113,15 +1047,6 @@ export class GroupTokenTracker {
       for (const token of tokensInScene) {
         const hasGroupFlag = token.getFlag(MODULE_ID, 'groupId');
         const isAlreadyAssociated = validExisting.includes(token.uuid);
-
-        LogUtil.log(`GroupTokenTracker: Filtering token ${token.name}`, {
-          hasGroupFlag,
-          groupActorId: groupActor.id,
-          isWrongGroup: hasGroupFlag && hasGroupFlag !== groupActor.id,
-          isAlreadyAssociated,
-        });
-
-        // If token has a groupId from a different group, check if that group still exists
         if (hasGroupFlag && hasGroupFlag !== groupActor.id) {
           const oldGroup = game.actors.get(hasGroupFlag);
           if (!oldGroup) {
@@ -1139,12 +1064,10 @@ export class GroupTokenTracker {
           unassociatedTokens.push(token);
         }
       }
-      LogUtil.log(`GroupTokenTracker: ${memberActor.name} - unassociated tokens: ${unassociatedTokens.length}`);
 
       const tokensToAssociate = unassociatedTokens.slice(0, neededCount - currentCount);
 
       if (tokensToAssociate.length > 0) {
-        LogUtil.log(`GroupTokenTracker: Associating ${tokensToAssociate.length} tokens for ${memberActor.name}`);
         const newAssociations = [...validExisting, ...tokensToAssociate.map(t => t.uuid)];
         sceneAssociations[memberActorId] = newAssociations;
         hasChanges = true;
@@ -1153,9 +1076,7 @@ export class GroupTokenTracker {
           await token.setFlag(MODULE_ID, 'groupId', groupActor.id);
         }
 
-        LogUtil.log(`GroupTokenTracker: Auto-associated ${tokensToAssociate.length} tokens for ${memberActor.name} in group ${groupActor.name}`);
       } else {
-        LogUtil.log(`GroupTokenTracker: No tokens to associate for ${memberActor.name}`);
       }
     }
 
