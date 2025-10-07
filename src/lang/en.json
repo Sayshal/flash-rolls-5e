@@ -226,6 +226,14 @@
         "label": "Auto Block Movement in Combat",
         "hint": "When enabled, players won't be able to move tokens when out of turn. The GM can still move tokens at all times, and can momentarily unblock them for players during combat via menu when needed."
       },
+      "tokenMovementSpeed": {
+        "label": "Token Movement Speed (sq/second)",
+        "hint": "Controls how fast tokens animate when dragged (grid spaces per second). Foundry default is 6. Higher = faster, lower = slower."
+      },
+      "tooltipAutoDismiss": {
+        "label": "Tooltip Auto-Dismiss (seconds)",
+        "hint": "Time in seconds before tooltips automatically disappear. Set to 0 to disable tooltips entirely. Default is 2 seconds."
+      },
       "legacyTokenAssociationsMigrated": {
         "label": "Legacy Token Associations Migration Status",
         "hint": "Internal flag tracking whether legacy token associations have been migrated to the new scene-based format."

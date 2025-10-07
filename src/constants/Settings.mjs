@@ -31,7 +31,9 @@ export const getSettings = () => {
         'templateAutoTarget',
         'removeTemplate',
         'templateRemovalTimeout',
-        'autoBlockMovementInCombat'
+        'tokenMovementSpeed',
+        'autoBlockMovementInCombat',
+        'tooltipAutoDismiss'
       ],
       default: {
         showMenuOnLoad: false,
@@ -41,6 +43,8 @@ export const getSettings = () => {
         addMacrosToFolder: true,
         templateAutoTarget: 1,
         removeTemplate: true,
+        tooltipAutoDismiss: 2,
+        tokenMovementSpeed: 6,
         templateRemovalTimeout: 5,
         autoBlockMovementInCombat: false
       },
@@ -456,6 +460,36 @@ export const getSettings = () => {
       default: false,
       scope: SETTING_SCOPE.world,
       config: false
+    },
+
+    tokenMovementSpeed: {
+      tag: "token-movement-speed",
+      label: game.i18n.localize("FLASH_ROLLS.settings.tokenMovementSpeed.label"),
+      hint: game.i18n.localize("FLASH_ROLLS.settings.tokenMovementSpeed.hint"),
+      propType: Number,
+      default: 6,
+      scope: SETTING_SCOPE.world,
+      config: false,
+      range: {
+        min: 1,
+        max: 20,
+        step: 1
+      }
+    },
+
+    tooltipAutoDismiss: {
+      tag: "tooltip-auto-dismiss",
+      label: game.i18n.localize("FLASH_ROLLS.settings.tooltipAutoDismiss.label"),
+      hint: game.i18n.localize("FLASH_ROLLS.settings.tooltipAutoDismiss.hint"),
+      propType: Number,
+      default: 2,
+      scope: SETTING_SCOPE.world,
+      config: false,
+      range: {
+        min: 0,
+        max: 10,
+        step: 1
+      }
     },
 
     legacyTokenAssociationsMigrated: {

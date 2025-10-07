@@ -19,6 +19,8 @@ import { RollHooksHandler } from "../handlers/RollHooksHandler.mjs";
 import { ActivityManager } from "../managers/ActivityManager.mjs";
 import { GroupTokenTracker } from "../managers/GroupTokenTracker.mjs";
 import { TokenMovementManager } from "../utils/TokenMovementManager.mjs";
+import { TokenAnimationManager } from "../managers/TokenAnimationManager.mjs";
+import { TooltipUtil } from "../utils/TooltipUtil.mjs";
 
 /**
  * Utility class for managing all module hooks in one place
@@ -223,6 +225,9 @@ export class HooksManager {
 
     // Register all hooks after determining user role
     this._registerHooks();
+
+    TokenAnimationManager.initialize();
+    TooltipUtil.initialize();
 
     if (game.user.isGM) {
       RollInterceptor.initialize();

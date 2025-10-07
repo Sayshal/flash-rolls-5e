@@ -54,6 +54,13 @@
     <p class="hint">{{{fields.templateAutoTarget.hint}}}</p>
   </div>
 
+  <div class="form-group range">
+    <label for="tokenMovementSpeed">{{fields.tokenMovementSpeed.label}}</label>
+    <input type="range" name="tokenMovementSpeed" id="tokenMovementSpeed" min="1" max="100" value="{{tokenMovementSpeed}}" />
+    <input type="number" name="tokenMovementSpeed_value" class="range-value-input" value="{{tokenMovementSpeed}}" />
+    <p class="hint">{{{fields.tokenMovementSpeed.hint}}}</p>
+  </div>
+
   <div class="form-group">
     <label for="autoBlockMovementInCombat">{{fields.autoBlockMovementInCombat.label}}</label>
     <input type="checkbox" name="autoBlockMovementInCombat" id="autoBlockMovementInCombat" {{#if autoBlockMovementInCombat}}checked{{/if}} />
@@ -64,6 +71,13 @@
     <label for="addMacrosToFolder">{{fields.addMacrosToFolder.label}}</label>
     <input type="checkbox" name="addMacrosToFolder" id="addMacrosToFolder" {{#if addMacrosToFolder}}checked{{/if}} />
     <p class="hint">{{{fields.addMacrosToFolder.hint}}}</p>
+  </div>
+
+  <div class="form-group range">
+    <label for="tooltipAutoDismiss">{{fields.tooltipAutoDismiss.label}}</label>
+    <input type="range" name="tooltipAutoDismiss" id="tooltipAutoDismiss" min="0" step="1" max="10" value="{{tooltipAutoDismiss}}" />
+    <input type="number" name="tooltipAutoDismiss_value" class="range-value-input" value="{{tooltipAutoDismiss}}" />
+    <p class="hint">{{{fields.tooltipAutoDismiss.hint}}}</p>
   </div>
   
 </section>
