@@ -673,13 +673,26 @@ export const RollHelpers = {
   /**
    * Consolidate data from multiple rolls into a single roll by merging their data
    * Uses the first roll as the base and merges data from subsequent rolls
+   * For damage rolls, only consolidates if all rolls have the same damage type
    * @param {Object[]} rolls - Array of roll configurations to consolidate
-   * @returns {Object[]} Array with single consolidated roll
+   * @returns {Object[]} Array with single consolidated roll or original array if damage types differ
    */
   consolidateRolls(rolls) {
+    LogUtil.log('RollHelpers.consolidateRolls - BEFORE', [rolls]);
     if (!rolls || rolls.length === 0) return rolls;
     if (rolls.length === 1) return rolls;
     if (rolls._consolidated) return rolls;
+
+    const firstDamageType = rolls[0]?.options?.type || rolls[0]?.data?.damageType;
+    if (firstDamageType) {
+      for (let i = 1; i < rolls.length; i++) {
+        const rollDamageType = rolls[i]?.options?.type || rolls[i]?.data?.damageType;
+        if (rollDamageType && rollDamageType !== firstDamageType) {
+          LogUtil.log('RollHelpers.consolidateRolls - Different damage types detected, skipping consolidation', [firstDamageType, rollDamageType]);
+          return rolls;
+        }
+      }
+    }
 
     const consolidatedRoll = rolls[0];
 
@@ -718,6 +731,9 @@ export const RollHelpers = {
 
     const result = [consolidatedRoll];
     result._consolidated = true;
+
+
+    LogUtil.log('RollHelpers.consolidateRolls - AFTER', [result]);
     return result;
   },
 
