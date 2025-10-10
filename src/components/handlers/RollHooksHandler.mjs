@@ -90,18 +90,18 @@ export class RollHooksHandler {
    * @param {Object} dialogOptions - Dialog display options
    * @param {Object} messageOptions - Chat message options
    */
-  static onPreRollAttackV2(config, dialogOptions, messageOptions, d, e) {
+  static onPreRollAttackV2(config, dialogOptions, messageOptions) {
     if (config._flashRollsProcessed) return;
     config._flashRollsProcessed = true;
 
-    LogUtil.log("RollHooksHandler.onPreRollAttackV2 triggered", [config, dialogOptions, messageOptions, d, e]);
+    LogUtil.log("RollHooksHandler.onPreRollAttackV2 triggered", [config, dialogOptions, messageOptions]);
     const areSkipKeysPressed = GeneralUtil.areSkipKeysPressed(config.event);
     const stored = config.subject?.item?.getFlag(MODULE_ID, 'tempAttackConfig');
     LogUtil.log("RollHooksHandler.onPreRollAttackV2 - flag", [stored, areSkipKeysPressed, config.event]);
 
-    if(stored?.skipRollDialog === true || areSkipKeysPressed){
+    if(areSkipKeysPressed || config.midiOptions?.fastForward===true){
       dialogOptions.configure = false;
-    }else{
+    }else if(stored){
       dialogOptions.configure = true;
     }
     if (!stored) return;
@@ -147,17 +147,19 @@ export class RollHooksHandler {
     const isMidiActive = GeneralUtil.isModuleOn('midi-qol');
     config.rolls = RollHelpers.consolidateRolls(config.rolls);
 
+    const areSkipKeysPressed = GeneralUtil.areSkipKeysPressed(config.event);
     const stored = config.subject?.item?.getFlag(MODULE_ID, 'tempDamageConfig');
 
-    if (stored) {
+    if(areSkipKeysPressed || config.midiOptions?.fastForward===true){
+      dialogOptions.configure = false;
+    }else if(stored){
       dialogOptions.configure = true;
-      LogUtil.log("RollHooksHandler.onPreRollDamageV2 - Player roll request, forcing dialog to show");
     }
+
+    if(!stored) return;
 
     if(config.midiOptions && !game.user.isGM && isMidiActive &&
       config.subject?.type === ACTIVITY_TYPES.DAMAGE){
-
-      dialogOptions.configure = true;
 
       const existingWorkflowOptions = config.midiOptions.workflowOptions || {};
       config.midiOptions = {
