@@ -613,12 +613,12 @@ export class GeneralUtil {
   }
 
   static areSkipKeysPressed(event){
-    if (!event) return false;
+    // if (!event) return false;
 
     // Use D&D 5e's areKeysPressed function to properly handle all platforms including Mac Cmd key
+    LogUtil.log("areSkipKeysPressed", [game.dnd5e.utils.areKeysPressed]);
     const { areKeysPressed } = game.dnd5e.utils || {};
     if (!areKeysPressed) {
-      // Fallback if function not available
       return event.shiftKey || event.altKey || event.ctrlKey || event.metaKey || false;
     }
 

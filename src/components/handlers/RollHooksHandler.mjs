@@ -59,14 +59,17 @@ export class RollHooksHandler {
     config._flashRollsProcessed = true;
 
     const actor = config.subject;
+    const areSkipKeysPressed = GeneralUtil.areSkipKeysPressed(config.event);
     const storedConfig = actor.getFlag(MODULE_ID, 'tempInitiativeConfig');
 
     LogUtil.log("RollHooksHandler.onPreRollInitiativeDialog triggered", [config, storedConfig, dialogOptions, messageOptions]);
 
     // For player-side roll requests, always show the dialog regardless of GM's skip setting
-    if (storedConfig) {
-      dialogOptions.configure = true;
+    if (storedConfig.skipRollDialog === true || areSkipKeysPressed) {
+      dialogOptions.configure = false;
       LogUtil.log("RollHooksHandler.onPreRollInitiativeDialog - Player roll request, always showing dialog");
+    }else{
+      dialogOptions.configure = true;
     }
 
     config.advantage = storedConfig?.advantage || config.advantage || false;
@@ -87,42 +90,45 @@ export class RollHooksHandler {
    * @param {Object} dialogOptions - Dialog display options
    * @param {Object} messageOptions - Chat message options
    */
-  static onPreRollAttackV2(config, dialogOptions, messageOptions) {
+  static onPreRollAttackV2(config, dialogOptions, messageOptions, d, e) {
     if (config._flashRollsProcessed) return;
     config._flashRollsProcessed = true;
 
-    LogUtil.log("RollHooksHandler.onPreRollAttackV2 triggered", [config, dialogOptions, messageOptions]);
-
+    LogUtil.log("RollHooksHandler.onPreRollAttackV2 triggered", [config, dialogOptions, messageOptions, d, e]);
+    const areSkipKeysPressed = GeneralUtil.areSkipKeysPressed(config.event);
     const stored = config.subject?.item?.getFlag(MODULE_ID, 'tempAttackConfig');
-    if (stored) {
-      LogUtil.log("RollHooksHandler.onPreRollAttackV2 - flag", [stored]);
+    LogUtil.log("RollHooksHandler.onPreRollAttackV2 - flag", [stored, areSkipKeysPressed, config.event]);
 
+    if(stored?.skipRollDialog === true || areSkipKeysPressed){
+      dialogOptions.configure = false;
+    }else{
       dialogOptions.configure = true;
-      LogUtil.log("RollHooksHandler.onPreRollAttackV2 - Player roll request, always showing dialog");
-
-      if (stored.attackMode) config.attackMode = stored.attackMode;
-      if (stored.ammunition) config.ammunition = stored.ammunition;
-      if (stored.mastery !== undefined) config.mastery = stored.mastery;
-      config.advantage = stored.advantage || false;
-      config.disadvantage = stored.disadvantage || false;
-      messageOptions.rollMode = stored.rollMode || messageOptions.rollMode || CONST.DICE_ROLL_MODES.PUBLIC;
-
-      if (stored.situational) {
-        if (!config.rolls || config.rolls.length === 0) {
-          config.rolls = [{
-            parts: [],
-            data: {},
-            options: {}
-          }];
-        }
-
-        if (!config.rolls[0].data) {
-          config.rolls[0].data = {};
-        }
-        config.rolls[0].data.situational = stored.situational;
-      }
-      LogUtil.log("RollHooksHandler.onPreRollAttackV2 - Applied stored configuration to attack roll", [config, messageOptions]);
     }
+    if (!stored) return;
+    LogUtil.log("RollHooksHandler.onPreRollAttackV2 - Player roll request, always showing dialog");
+
+    if (stored.attackMode) config.attackMode = stored.attackMode;
+    if (stored.ammunition) config.ammunition = stored.ammunition;
+    if (stored.mastery !== undefined) config.mastery = stored.mastery;
+    config.advantage = stored.advantage || false;
+    config.disadvantage = stored.disadvantage || false;
+    messageOptions.rollMode = stored.rollMode || messageOptions.rollMode || CONST.DICE_ROLL_MODES.PUBLIC;
+
+    if (stored.situational) {
+      if (!config.rolls || config.rolls.length === 0) {
+        config.rolls = [{
+          parts: [],
+          data: {},
+          options: {}
+          }];
+      }
+
+      if (!config.rolls[0].data) {
+        config.rolls[0].data = {};
+      }
+      config.rolls[0].data.situational = stored.situational;
+    }
+    LogUtil.log("RollHooksHandler.onPreRollAttackV2 - Applied stored configuration to attack roll", [config, messageOptions]);
   }
 
   /**
@@ -136,11 +142,12 @@ export class RollHooksHandler {
     if (config._flashRollsProcessed) return;
     config._flashRollsProcessed = true;
 
-    const stored = config.subject?.item?.getFlag(MODULE_ID, 'tempDamageConfig');
     LogUtil.log("RollHooksHandler.onPreRollDamageV2 triggered", [config, dialogOptions, messageOptions]);
-    const isMidiActive = GeneralUtil.isModuleOn('midi-qol');
 
+    const isMidiActive = GeneralUtil.isModuleOn('midi-qol');
     config.rolls = RollHelpers.consolidateRolls(config.rolls);
+
+    const stored = config.subject?.item?.getFlag(MODULE_ID, 'tempDamageConfig');
 
     if (stored) {
       dialogOptions.configure = true;
