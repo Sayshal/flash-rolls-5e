@@ -192,7 +192,6 @@ export class HooksManager {
     document.body.classList.add("flash5e");
     SettingsUtil.registerSettings();
     DiceConfigUtil.initialize();
-    UpdateNewsUtil.init();
     this._registerHook(HOOKS_CORE.RENDER_CHAT_MESSAGE, ChatMessageManager.onRenderChatMessage.bind(ChatMessageManager));
   }
   
@@ -203,7 +202,8 @@ export class HooksManager {
     SettingsUtil.registerSettingsMenu();
     ActorDirectoryIconUtil.initialize();
     SidebarController.addSidebarControls(ui.sidebar, ui.sidebar?.element);
-    
+    UpdateNewsUtil.init();
+
     // Listen for browser color scheme changes
     if (matchMedia) {
       matchMedia("(prefers-color-scheme: dark)").addEventListener("change", this._onBrowserColorSchemeChanged.bind(this));

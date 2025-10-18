@@ -500,6 +500,16 @@ export const getSettings = () => {
       default: false,
       scope: SETTING_SCOPE.world,
       config: false
+    },
+
+    lastUpdateId: {
+      tag: "last-update-id",
+      label: "Last Update ID",
+      hint: "Stores the ID of the last update news shown",
+      propType: String,
+      default: "",
+      scope: SETTING_SCOPE.client,
+      config: false
     }
   };
 };
