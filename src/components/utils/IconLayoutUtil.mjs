@@ -195,7 +195,7 @@ export class IconLayoutUtil {
    * Update icon order in the list and save to settings
    * @param {HTMLElement} list - The sortable list
    */
-  static updateIconOrder(list) {
+  static async updateIconOrder(list) {
     const iconType = list.dataset.iconType;
     const items = [...list.querySelectorAll('.icon-item')];
 
@@ -217,7 +217,7 @@ export class IconLayoutUtil {
     };
 
     // Save to settings
-    SettingsUtil.set(SETTINGS.menuIconsLayout.tag, updatedLayout);
+    await SettingsUtil.set(SETTINGS.menuIconsLayout.tag, updatedLayout);
 
     // Trigger menu refresh if needed
     if (game.flashRolls?.menu) {
@@ -279,7 +279,7 @@ export class IconLayoutUtil {
    * Reset icons to default layout
    * @param {string} iconType - Optional icon type to reset, or all if not specified
    */
-  static resetToDefault(iconType = null) {
+  static async resetToDefault(iconType = null) {
     const SETTINGS = getSettings();
     const defaultLayout = getDefaultIconLayout();
 
@@ -289,9 +289,9 @@ export class IconLayoutUtil {
         ...currentLayout,
         [iconType]: defaultLayout[iconType]
       };
-      SettingsUtil.set(SETTINGS.menuIconsLayout.tag, updatedLayout);
+      await SettingsUtil.set(SETTINGS.menuIconsLayout.tag, updatedLayout);
     } else {
-      SettingsUtil.set(SETTINGS.menuIconsLayout.tag, defaultLayout);
+      await SettingsUtil.set(SETTINGS.menuIconsLayout.tag, defaultLayout);
     }
   }
 }

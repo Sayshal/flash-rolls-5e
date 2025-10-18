@@ -120,6 +120,11 @@ export class ContestedRollDialog extends HandlebarsApplicationMixin(ApplicationV
 
     const actorRollSelects = htmlElement.querySelectorAll('.actor-roll-type');
     actorRollSelects.forEach(select => {
+      const actorId = select.dataset.actorId;
+      if (select.value) {
+        this.rollSelections.set(actorId, select.value);
+      }
+
       select.addEventListener('change', (event) => {
         const actorId = event.target.dataset.actorId;
         this.rollSelections.set(actorId, event.target.value);
@@ -313,12 +318,24 @@ export class ContestedRollDialog extends HandlebarsApplicationMixin(ApplicationV
    * Generate macro code for the current configuration
    */
   _generateMacroCode() {
-    const firstRoll = this.rollSelections.get(this.actors[0].id).split(':');
+    const firstActor = this.actors[0].actor || this.actors[0];
+    const firstSelection = this.rollSelections.get(firstActor.id);
+    if (!firstSelection) {
+      ui.notifications.warn("Please select a roll type for all actors before creating a macro.");
+      return null;
+    }
+
+    const firstRoll = firstSelection.split(':');
     const firstType = firstRoll[0] === 'ability' ? 'abilitycheck' : firstRoll[0];
     const firstKey = firstRoll[1];
 
-    const rollCommands = this.actors.map(a => {
-      const [type, key] = this.rollSelections.get(a.id).split(':');
+    const rollCommands = this.actors.map(actorEntry => {
+      const a = actorEntry.actor || actorEntry;
+      const selection = this.rollSelections.get(a.id);
+      if (!selection) {
+        return null;
+      }
+      const [type, key] = selection.split(':');
       const requestType = type === 'ability' ? 'abilitycheck' : type;
 
       if (type === 'dice') {
@@ -349,13 +366,22 @@ export class ContestedRollDialog extends HandlebarsApplicationMixin(ApplicationV
     isContestedRoll: true
   });`;
       }
-    }).join('\n\n');
+    });
 
-    const actorEntriesCode = this.actors.map(a => `    {
+    if (rollCommands.includes(null)) {
+      return null;
+    }
+
+    const joinedCommands = rollCommands.join('\n\n');
+
+    const actorEntriesCode = this.actors.map(actorEntry => {
+      const a = actorEntry.actor || actorEntry;
+      return `    {
       actor: game.actors.get("${a.id}"),
       uniqueId: "${a.id}",
       tokenId: null
-    }`).join(',\n');
+    }`;
+    }).join(',\n');
 
     return `// Flash Token Bar: Contested Roll
 // Roll Mode: ${this.rollMode}
@@ -377,7 +403,7 @@ ${actorEntriesCode}
       groupRollId
     );
 
-${rollCommands}
+${joinedCommands}
   } catch (error) {
     ui.notifications.error("Failed to execute contested roll: " + error.message);
   }
@@ -396,7 +422,10 @@ ${rollCommands}
       folderId = await this._ensureFlashRollsFolder();
     }
 
-    const actorNames = this.actors.map(a => a.name).join(' vs ');
+    const actorNames = this.actors.map(actorEntry => {
+      const a = actorEntry.actor || actorEntry;
+      return a.name;
+    }).join(' vs ');
     const macroName = `Contested Roll: ${actorNames}`;
 
     const macroDocumentData = {
@@ -408,7 +437,10 @@ ${rollCommands}
       flags: {
         "flash-rolls-5e": {
           type: "contested-roll",
-          actors: this.actors.map(a => a.id),
+          actors: this.actors.map(actorEntry => {
+            const a = actorEntry.actor || actorEntry;
+            return a.id;
+          }),
           rollSelections: Array.from(this.rollSelections.entries()),
           rollMode: this.rollMode,
           flavor: this.flavor

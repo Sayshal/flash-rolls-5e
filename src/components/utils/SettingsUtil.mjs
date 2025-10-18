@@ -153,9 +153,9 @@ export class SettingsUtil {
    * @param {string} settingName - Name of the setting to update
    * @param {*} newValue - New value to set
    * @param {string} [moduleName=MODULE_ID] - ID of the module the setting belongs to
-   * @returns {boolean} True if setting was updated successfully
+   * @returns {Promise<boolean>} True if setting was updated successfully
    */
-  static set(settingName, newValue, moduleName=MODULE_ID){ 
+  static async set(settingName, newValue, moduleName=MODULE_ID){
     if(!settingName){ return false; }
 
     let selectedSetting = game.settings.storage.get("client")[`${moduleName}.${settingName}`];
@@ -164,10 +164,10 @@ export class SettingsUtil {
       const world = game.settings.storage.get("world");
       selectedSetting = world.getSetting(`${moduleName}.${settingName}`);
       LogUtil.log('SettingsUtil.set - world Setting?', [selectedSetting]);
-    } 
+    }
 
     try{
-      game.settings.set(moduleName, settingName, newValue);
+      await game.settings.set(moduleName, settingName, newValue);
       LogUtil.log('SettingsUtil.set - success', [moduleName, settingName, newValue]);
     }catch(e){
       LogUtil.error('SettingsUtil.set - error', [e]);
@@ -279,7 +279,7 @@ export class SettingsUtil {
    * and remove any obsolete icons that no longer exist in IconMappings
    * @static
    */
-  static validateAndUpdateIconLayout() {
+  static async validateAndUpdateIconLayout() {
     const SETTINGS = getSettings();
     const currentLayout = SettingsUtil.get(SETTINGS.menuIconsLayout.tag);
     const defaultLayout = getDefaultIconLayout();
@@ -337,7 +337,7 @@ export class SettingsUtil {
 
     // Save the updated layout if changes were made
     if (updated) {
-      SettingsUtil.set(SETTINGS.menuIconsLayout.tag, updatedLayout);
+      await SettingsUtil.set(SETTINGS.menuIconsLayout.tag, updatedLayout);
       LogUtil.log('validateAndUpdateIconLayout - updated layout', updatedLayout);
     } else {
       LogUtil.log('validateAndUpdateIconLayout - no changes needed');

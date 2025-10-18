@@ -36,9 +36,9 @@ export class UpdateNewsUtil {
   }
 
   // call to clean up this setting from local storage
-  static cleanSetting(){
+  static async cleanSetting(){
     const SETTINGS = getSettings();
-    SettingsUtil.set(SETTINGS.lastUpdateId.tag, '');
+    await SettingsUtil.set(SETTINGS.lastUpdateId.tag, '');
   }
 
   /**
@@ -80,8 +80,8 @@ export class UpdateNewsUtil {
         await this.displayUpdateNews(updateData);
 
         // Save the current update ID
-        SettingsUtil.set(SETTINGS.lastUpdateId.tag, updateData.id);
-        LogUtil.log('checkForUpdates | SUCCESS', [updateData.id]);
+        await SettingsUtil.set(SETTINGS.lastUpdateId.tag, rawVersion);
+        LogUtil.log('checkForUpdates | SUCCESS', [rawVersion]);
       } catch (fetchError) {
         clearTimeout(timeoutId);
         // Handle fetch-specific errors
