@@ -93,7 +93,7 @@ export class SettingsUtil {
     
     // if(game.user?.isGM && isMidiActive && isRollInterceptionEnabled){
     //   // SettingsUtil.set(SETTINGS.rollInterceptionEnabled.tag, false);
-    //   // ui.notifications.info(game.i18n.localize("FLASH_ROLLS.notifications.midiQolActive"), {permanent: true});
+    //   // ui.notifications.info(game.i18n.localize("FLASH_ROLLS.notifications.interceptWarning"), {permanent: true});
     // }
   }
 

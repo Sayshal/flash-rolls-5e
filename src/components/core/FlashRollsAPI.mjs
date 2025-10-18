@@ -10,7 +10,8 @@ import { ChatMessageManager } from "../managers/ChatMessageManager.mjs";
 
 /**
  * Public API for Flash Token Bar 5e that can be used by other modules
- * Accessible via FlashRolls5e.requestRoll() or game.modules.get('flash-rolls-5e').api
+ * Accessible via FlashAPI or game.modules.get('flash-rolls-5e').api
+ * Legacy access: FlashRolls5e (deprecated, use FlashAPI instead)
  */
 export class FlashRollsAPI {
   
@@ -221,7 +222,7 @@ export class FlashRollsAPI {
     
     const command = `// Flash Token Bar: ${macroName} - ${rollKey || ''}
     try {
-      FlashRolls5e.requestRoll(${JSON.stringify(requestOptions, null, 2)});
+      FlashAPI.requestRoll(${JSON.stringify(requestOptions, null, 2)});
     } catch (error) {
       ui.notifications.error(game.i18n.localize("FLASH_ROLLS.notifications.macroDataMalformed"));
     }`;
@@ -299,7 +300,7 @@ export class FlashRollsAPI {
    * 
    * @example
    * // Standard Rule example (accepts method as number or string)
-   * const result = FlashRolls5e.calculateGroupRoll({
+   * const result = FlashAPI.calculateGroupRoll({
    *   method: "Standard Rule", // or method: 1
    *   rollResults: [
    *     { actorId: "ABC", total: 15 }, // actorName optional - will be looked up

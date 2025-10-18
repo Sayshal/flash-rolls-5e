@@ -75,7 +75,7 @@ if (selectedTokens.length === 0) {
   return;
 }
 
-FlashRolls5e.requestRoll({
+FlashAPI.requestRoll({
   requestType: 'skill',
   rollKey: 'ste',
   actorIds: selectedTokens,
@@ -92,7 +92,7 @@ Generated macros have the following structure:
 ```javascript
 // Flash Token Bar: Acrobatics
 try {
-  FlashRolls5e.requestRoll({
+  FlashAPI.requestRoll({
     "requestType": "skill",
     "rollKey": "acr",
     "actorIds": ["actorId1", "actorId2"],
@@ -124,7 +124,7 @@ if (selectedTokens.length === 0) {
 const darkness = canvas.scene.environment.darkness || 0; // 0 = bright, 1 = complete darkness
 const adaptiveDC = darkness > 0.5 ? 15 : (darkness > 0 ? 13 : 10);
 
-FlashRolls5e.requestRoll({
+FlashAPI.requestRoll({
   requestType: 'skill',
   rollKey: 'prc',
   actorIds: selectedTokens, // Can be token IDs or actor IDs
@@ -139,7 +139,7 @@ FlashRolls5e.requestRoll({
 const selectedTokens = canvas.tokens?.controlled.map(t => t.id) || [];
 
 // Perception first
-FlashRolls5e.requestRoll({
+FlashAPI.requestRoll({
   requestType: 'skill',
   rollKey: 'prc',
   actorIds: selectedTokens,
@@ -148,7 +148,7 @@ FlashRolls5e.requestRoll({
 
 // Investigation after a short delay
 setTimeout(() => {
-  FlashRolls5e.requestRoll({
+  FlashAPI.requestRoll({
     requestType: 'skill',
     rollKey: 'inv',
     actorIds: selectedTokens,
@@ -167,7 +167,7 @@ The API is available globally via the FlashRolls5e alias:
 
 ```javascript
 // Global alias
-FlashRolls5e.requestRoll(options);
+FlashAPI.requestRoll(options);
 
 // Alternative: Direct module API access
 game.modules.get('flash-rolls-5e').api.requestRoll(options);
@@ -193,7 +193,7 @@ Triggers roll requests for the provided actors using Flash Token Bar 5e's roll o
 **Example:**
 ```javascript
 // Request Acrobatics skill checks from selected actors
-FlashRolls5e.requestRoll({
+FlashAPI.requestRoll({
   requestType: 'skill',
   rollKey: 'acr',
   actorIds: ['actorId1', 'actorId2', 'actorId3'],
@@ -205,7 +205,7 @@ FlashRolls5e.requestRoll({
 });
 
 // Request Strength saving throws with disadvantage
-FlashRolls5e.requestRoll({
+FlashAPI.requestRoll({
   requestType: 'savingthrow',
   rollKey: 'str',
   actorIds: ['actorId1', 'actorId2'],
@@ -256,7 +256,7 @@ Calculate group roll results using Flash Token Bar 5e's group calculation method
 **Examples:**
 ```javascript
 // Standard Rule calculation
-const result = FlashRolls5e.calculateGroupRoll({
+const result = FlashAPI.calculateGroupRoll({
   method: "Standard Rule",  // or method: 1
   rollResults: [
     { actorId: "actorId1", total: 15 },  // actorName auto-resolved
@@ -268,7 +268,7 @@ const result = FlashRolls5e.calculateGroupRoll({
 // Returns: { success: true, result: 1, method: 'Standard Rule', actorResults: [...], details: {...} }
 
 // Group Average calculation
-const avgResult = FlashRolls5e.calculateGroupRoll({
+const avgResult = FlashAPI.calculateGroupRoll({
   method: 2,
   rollResults: [
     { actorId: "actorId1", total: 18 },
@@ -281,7 +281,7 @@ const avgResult = FlashRolls5e.calculateGroupRoll({
 // Returns: { success: false, result: 14, method: 'Group Average', ... }
 
 // Leader with Help calculation (actors auto-resolved)
-const leaderResult = FlashRolls5e.calculateGroupRoll({
+const leaderResult = FlashAPI.calculateGroupRoll({
   method: "Leader with Help",  // or method: 3
   rollResults: [
     { actorId: "actorId1", total: 15 },
@@ -300,7 +300,7 @@ Returns the available roll request options that can be used with `requestRoll()`
 
 **Example:**
 ```javascript
-const rollTypes = FlashRolls5e.getAvailableRollTypes();
+const rollTypes = FlashAPI.getAvailableRollTypes();
 console.log(rollTypes);
 // Returns object with all available roll types and their configurations
 ```
@@ -329,7 +329,7 @@ Creates a macro that executes Flash Token Bar requests with pre-configured setti
 
 **Example:**
 ```javascript
-FlashRolls5e.createMacro({
+FlashAPI.createMacro({
   requestType: 'skill',
   rollKey: 'per',
   actorIds: ['actorId1', 'actorId2'],

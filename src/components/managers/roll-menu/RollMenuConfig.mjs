@@ -24,8 +24,14 @@ export class RollMenuConfig {
     const rollRequestsEnabled = SettingsUtil.get(SETTINGS.rollRequestsEnabled.tag);
     const sendAsRequest = configOverrides.hasOwnProperty('sendAsRequest') ? configOverrides.sendAsRequest : undefined;
     const npcActors = actors.filter(actor => pcActors.includes(actor.id));
-    const confirmedSkipDialog = RollHelpers.shouldSkipRollDialog(skipRollDialog, {isPC: pcActors.length > 0, isNPC: npcActors.length > 0});
-    
+
+    let confirmedSkipDialog;
+    if (configOverrides.hasOwnProperty('skipRollDialog')) {
+      confirmedSkipDialog = configOverrides.skipRollDialog;
+    } else {
+      confirmedSkipDialog = RollHelpers.shouldSkipRollDialog(sendAsRequest, {isPC: pcActors.length > 0, isNPC: npcActors.length > 0});
+    }
+
     if (!confirmedSkipDialog && rollMethodName !== ROLL_TYPES.CUSTOM) {
       let DialogClass;
       if ([ROLL_TYPES.SKILL, ROLL_TYPES.TOOL].includes(rollMethodName)) {
@@ -37,7 +43,8 @@ export class RollMenuConfig {
       }
       const config = await DialogClass.initConfiguration(actors, rollMethodName, rollKey, {
         confirmedSkipDialog,
-        sendRequest: sendAsRequest===true || (sendAsRequest===undefined && rollRequestsEnabled) || false
+        sendRequest: sendAsRequest===true || (sendAsRequest===undefined && rollRequestsEnabled) || false,
+        ...configOverrides
       });
       LogUtil.log('getRollConfiguration', [config, configOverrides]);
 
@@ -62,6 +69,10 @@ export class RollMenuConfig {
         skipRollDialog: true,
         sendRequest: configOverrides.hasOwnProperty('sendAsRequest') ? configOverrides.sendAsRequest : (rollRequestsEnabled && pcActors.length > 0)
       };
+
+      if (configOverrides.dc) {
+        config.target = configOverrides.dc;
+      }
 
       if (rollMethodName === ROLL_TYPES.DEATH_SAVE) {
         config.target = 10;

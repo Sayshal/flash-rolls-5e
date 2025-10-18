@@ -16,11 +16,13 @@ import { ActorDirectoryIconUtil } from "../utils/ActorDirectoryIconUtil.mjs";
 import { FlashRollsAPI } from "./FlashRollsAPI.mjs";
 import { RollMenuDragManager } from "../managers/roll-menu/RollMenuDragManager.mjs";
 import { RollHooksHandler } from "../handlers/RollHooksHandler.mjs";
-import { ActivityManager } from "../managers/ActivityManager.mjs";
+import { BaseActivityManager } from "../managers/BaseActivityManager.mjs";
 import { GroupTokenTracker } from "../managers/GroupTokenTracker.mjs";
 import { TokenMovementManager } from "../utils/TokenMovementManager.mjs";
 import { TokenAnimationManager } from "../managers/TokenAnimationManager.mjs";
 import { TooltipUtil } from "../utils/TooltipUtil.mjs";
+import { UpdateNewsUtil } from "../utils/UpdateNewsUtil.mjs";
+import { MidiActivityManager } from "../managers/MidiActivityManager.mjs";
 
 /**
  * Utility class for managing all module hooks in one place
@@ -190,6 +192,7 @@ export class HooksManager {
     document.body.classList.add("flash5e");
     SettingsUtil.registerSettings();
     DiceConfigUtil.initialize();
+    UpdateNewsUtil.init();
     this._registerHook(HOOKS_CORE.RENDER_CHAT_MESSAGE, ChatMessageManager.onRenderChatMessage.bind(ChatMessageManager));
   }
   
@@ -249,6 +252,7 @@ export class HooksManager {
       module.api = FlashRollsAPI;
     }
 
+    globalThis.FlashAPI = FlashRollsAPI;
     globalThis.FlashRolls5e = FlashRollsAPI;
     Hooks.call("flash-rolls-5e.ready");
   }
@@ -306,9 +310,9 @@ export class HooksManager {
     // Roll interception (delegated to RollHooksHandler)
     this._registerHook(HOOKS_DND5E.PRE_ROLL_V2, RollHooksHandler.onPreRollGM.bind(RollHooksHandler));
 
-    // Activity hooks - GM side (delegated to ActivityManager)
-    this._registerHook(HOOKS_DND5E.PRE_USE_ACTIVITY, ActivityManager.onPreUseActivityGM.bind(ActivityManager));
-    this._registerHook(HOOKS_DND5E.POST_USE_ACTIVITY, ActivityManager.onPostUseActivityGM.bind(ActivityManager));
+    // Activity hooks - GM side (delegated to BaseActivityManager)
+    this._registerHook(HOOKS_DND5E.PRE_USE_ACTIVITY, BaseActivityManager.onPreUseActivityGM.bind(BaseActivityManager));
+    this._registerHook(HOOKS_DND5E.POST_USE_ACTIVITY, BaseActivityManager.onPostUseActivityGM.bind(BaseActivityManager));
 
     // Combat hooks for tracking status changes
     this._registerHook(HOOKS_CORE.CREATE_COMBATANT, this._onCombatChange.bind(this));
@@ -349,9 +353,9 @@ export class HooksManager {
     this._registerHook(HOOKS_DND5E.PRE_ROLL_DAMAGE_V2, RollHooksHandler.onPreRollDamageV2.bind(RollHooksHandler));
     Hooks.on(HOOKS_DND5E.PRE_ROLL_ABILITY_CHECK, RollHooksHandler.onPreRollAbilityCheck.bind(RollHooksHandler));
 
-    // Activity hooks - Player side (delegated to ActivityManager)
-    this._registerHook(HOOKS_DND5E.PRE_USE_ACTIVITY, ActivityManager.onPreUseActivityPlayer.bind(ActivityManager));
-    this._registerHook(HOOKS_DND5E.POST_USE_ACTIVITY, ActivityManager.onPostUseActivityPlayer.bind(ActivityManager));
+    // Activity hooks - Player side (delegated to BaseActivityManager)
+    this._registerHook(HOOKS_DND5E.PRE_USE_ACTIVITY, BaseActivityManager.onPreUseActivityPlayer.bind(BaseActivityManager));
+    this._registerHook(HOOKS_DND5E.POST_USE_ACTIVITY, BaseActivityManager.onPostUseActivityPlayer.bind(BaseActivityManager));
   }
 
   static _onSidebarUpdate(tab) {
@@ -513,7 +517,11 @@ export class HooksManager {
    */
   static _onUserConnected(user) {
     if (user.active && user.id !== game.user.id) {
-      DiceConfigUtil.requestDiceConfigFromUser(user.id);
+      setTimeout(() => {
+        if (user.active) {
+          DiceConfigUtil.requestDiceConfigFromUser(user.id);
+        }
+      }, 500);
     }
   }
 

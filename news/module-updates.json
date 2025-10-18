@@ -1,0 +1,7 @@
+{
+  "id": "1.12.0",
+  "title": "Updates on Flash Token Bar",
+  "content": "<p>Version 1.12.0:</p>\n<ul><li><b>Compatibility with Midi-QoL</b> The module already had compatibility with Midi-QoL, but you were recommended to not use the setting that sends roll requests from character sheets. Now, this setting should also work fine with Midi, so you can send requests to players for attacks and spell rools. Feel free to report any concerns!</li></ul>\n<p><b>If you like this module, consider supporting me on <a href='https://www.patreon.com/carolingiandev/membership'>Patreon</a>.</b></p><p>Join the discussion on <a href='https://discord.gg/P5ygvHXE3R'>Discord</a> or visit the <a href='https://github.com/crlngn/flash-rolls-5e/releases'>Github repository</a>.</p>",
+  "imageUrl": "",
+  "videoUrl": ""
+}

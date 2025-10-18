@@ -78,7 +78,7 @@ export class TooltipUtil {
   }
 
   /**
-   * Setup auto-dismiss for Flash Rolls menu tooltips
+   * Setup auto-dismiss for Flash Token Bar menu tooltips
    * @param {HTMLElement} element - The element with the tooltip
    * @param {number} autoDismissSeconds - Seconds before dismissing
    */

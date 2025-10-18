@@ -1,5 +1,5 @@
 import { ROLL_TYPES, MODULE_ID } from "../../constants/General.mjs";
-import { ActivityManager } from "../managers/ActivityManager.mjs";
+import { BaseActivityManager } from "../managers/BaseActivityManager.mjs";
 import { RollHelpers } from "../helpers/RollHelpers.mjs";
 import { LogUtil } from "../utils/LogUtil.mjs";
 import { CustomRollDialog } from "../ui/dialogs/CustomRollDialog.mjs";
@@ -204,6 +204,7 @@ export const RollHandlers = {
       const activityConfig = {
         usage: {
           ...requestData.config,
+          rollType: rollType,
           rolls: processConfig.rolls,
           ...(rollOptions.attackMode && { attackMode: rollOptions.attackMode }),
           ...(rollOptions.ammunition && { ammunition: rollOptions.ammunition }),
@@ -222,12 +223,12 @@ export const RollHandlers = {
       };
       
       LogUtil.log('handleActivityRoll - final activity config', [activityConfig]);
-      
-      await ActivityManager.executeActivityRoll(
-        actor, 
-        rollType, 
-        requestData.rollKey, 
-        requestData.activityId, 
+
+      await BaseActivityManager.executeActivityRoll(
+        actor,
+        rollType,
+        requestData.rollKey,
+        requestData.activityId,
         activityConfig
       );
     }

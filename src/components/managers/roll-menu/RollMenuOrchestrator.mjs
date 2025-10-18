@@ -483,16 +483,16 @@ export class RollMenuOrchestrator {
       type: "rollRequest",
       groupRollId: groupRollId,
       actorId: actor.isToken ? actor.token.id : actor.id,
-      isTokenActor: actor.isToken, 
+      isTokenActor: actor.isToken,
       baseActorId: actor.isToken ? actor._actor?.id : actor.id,
       rollType,
       rollKey,
-      activityId: null, 
+      activityId: null,
       rollProcessConfig: {
         ...cleanConfig,
         _requestedBy: game.user.name
       },
-      skipRollDialog: false,
+      skipRollDialog: config.skipRollDialog || false,
       targetTokenIds: Array.from(game.user.targets).map(t => t.id),
       preserveTargets: SettingsUtil.get(SETTINGS.useGMTargetTokens.tag)
     };

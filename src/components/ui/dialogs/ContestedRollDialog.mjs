@@ -266,7 +266,7 @@ export class ContestedRollDialog extends HandlebarsApplicationMixin(ApplicationV
 
         const uniqueId = tokenId || actor.id;
 
-        await FlashRolls5e.requestRoll({
+        await FlashAPI.requestRoll({
           requestType: requestType,
           rollKey: key,
           actorIds: [uniqueId],
@@ -340,7 +340,7 @@ export class ContestedRollDialog extends HandlebarsApplicationMixin(ApplicationV
   }`;
       } else {
         return `  // ${a.name}: ${type}:${key}
-  await FlashRolls5e.requestRoll({
+  await FlashAPI.requestRoll({
     requestType: "${requestType}",
     rollKey: "${key}",
     actorIds: ["${a.id}"],
@@ -369,7 +369,7 @@ ${this.flavor ? `// Flavor: ${this.flavor}` : ''}
 ${actorEntriesCode}
     ];
 
-    await FlashRolls5e.createGroupRollMessage(
+    await FlashAPI.createGroupRollMessage(
       actorEntries,
       "${firstType}",
       "${firstKey}",

@@ -1,0 +1,352 @@
+import { LogUtil } from '../utils/LogUtil.mjs';
+import { ROLL_TYPES, MODULE_ID, ACTIVITY_TYPES } from '../../constants/General.mjs';
+import { GeneralUtil } from '../utils/GeneralUtil.mjs';
+import { SettingsUtil } from '../utils/SettingsUtil.mjs';
+import { getSettings } from '../../constants/Settings.mjs';
+import { getConsumptionConfig, getCreateConfig, isPlayerOwned, showConsumptionConfig } from '../helpers/Helpers.mjs';
+import { RollHelpers } from '../helpers/RollHelpers.mjs';
+import { HooksManager } from '../core/HooksManager.mjs';
+import { VanillaActivityManager } from './VanillaActivityManager.mjs';
+import { MidiActivityManager } from './MidiActivityManager.mjs';
+
+/**
+ * @typedef {Object} ActivityUseConfiguration
+ * @property {object|false} create
+ * @property {boolean} create.measuredTemplate - Should this item create a template?
+ * @property {object} concentration
+ * @property {boolean} concentration.begin - Should this usage initiate concentration?
+ * @property {string|null} concentration.end - ID of an active effect to end concentration on.
+ * @property {object|false} consume
+ * @property {boolean} consume.action - Should action economy be tracked? Currently only handles legendary actions.
+ * @property {boolean|number[]} consume.resources - Set to `true` or `false` to enable or disable all resource
+ *                                                   consumption or provide a list of consumption target indexes
+ *                                                   to only enable those targets.
+ * @property {boolean} consume.spellSlot - Should this spell consume a spell slot?
+ * @property {Event} event - The browser event which triggered the item usage, if any.
+ * @property {boolean|number} scaling - Number of steps above baseline to scale this usage, or `false` if
+ *                                      scaling is not allowed.
+ * @property {object} spell
+ * @property {number} spell.slot - The spell slot to consume.
+ * @property {boolean} [subsequentActions=true] - Trigger subsequent actions defined by this activity.
+ * @property {object} [cause]
+ * @property {string} [cause.activity] - Relative UUID to the activity that caused this one to be used.
+ *                                       Activity must be on the same actor as this one.
+ * @property {boolean|number[]} [cause.resources] - Control resource consumption on linked item.
+ * @property {BasicRollConfiguration[]} [rolls] - Roll configurations for this activity
+ */
+
+/**
+ * Base Activity Manager - Single entry point for all activity operations
+ * Routes to appropriate implementation (Vanilla or Midi) based on active modules
+ * Contains common methods that work the same for both workflows
+ */
+export class BaseActivityManager {
+
+  static _isMidiActive = null;
+
+  /**
+   * Check if Midi-QOL is active (cached)
+   */
+  static get isMidiActive() {
+    if (this._isMidiActive === null) {
+      this._isMidiActive = GeneralUtil.isModuleOn('midi-qol');
+    }
+    return this._isMidiActive;
+  }
+
+  /**
+   * Reset Midi cache (useful for module hot reload)
+   */
+  static resetMidiCache() {
+    this._isMidiActive = null;
+  }
+
+  // ========================================
+  // COMMON METHODS (work same for both)
+  // ========================================
+
+  /**
+   * Find the appropriate activity for a given roll type on an item
+   */
+  static findActivityForRoll(item, rollType) {
+    if (!item?.system?.activities) return null;
+
+    const activities = item.system.activities;
+    const normalizedRollType = rollType?.toLowerCase();
+
+    switch (normalizedRollType) {
+      case ROLL_TYPES.ATTACK:
+        const attackActivities = activities.getByType("attack");
+        return attackActivities?.[0] || null;
+
+      case ROLL_TYPES.DAMAGE:
+        const damageAttackActivities = activities.getByType("attack");
+        if (damageAttackActivities?.length > 0) return damageAttackActivities[0];
+
+        const damageActivities = activities.getByType("damage");
+        if (damageActivities?.length > 0) return damageActivities[0];
+
+        const saveActivities = activities.getByType("save");
+        if (saveActivities?.length > 0) return saveActivities[0];
+
+        const healActivities = activities.getByType("heal");
+        if (healActivities?.length > 0) return healActivities[0];
+
+        return null;
+
+      case ROLL_TYPES.ITEM_SAVE:
+        const itemSaveActivities = activities.getByType("save");
+        return itemSaveActivities?.[0] || null;
+
+      default:
+        return null;
+    }
+  }
+
+  /**
+   * Get all activities of a specific type from an item
+   */
+  static getActivitiesByType(item, activityType) {
+    if (!item?.system?.activities) return [];
+    return item.system.activities.getByType(activityType);
+  }
+
+  /**
+   * Check if an item has activities suitable for a given roll type
+   */
+  static hasActivityForRoll(item, rollType) {
+    LogUtil.log('hasActivityForRoll', [item, rollType]);
+    return !!this.findActivityForRoll(item, rollType);
+  }
+
+  /**
+   * Get display information for an activity
+   */
+  static getActivityDisplayInfo(activity) {
+    LogUtil.log('getActivityDisplayInfo', [activity]);
+    if (!activity) return null;
+
+    return {
+      name: activity.name || activity.constructor.metadata.label,
+      type: activity.type,
+      icon: activity.constructor.metadata.icon,
+      canAttack: activity.type === 'attack',
+      canDamage: ['attack', 'damage', 'save'].includes(activity.type),
+      canSave: activity.type === 'save'
+    };
+  }
+
+  /**
+   * Get damage formula string from an activity
+   */
+  static getDamageFormula(activity) {
+    LogUtil.log('getDamageFormula', [activity]);
+    if (!activity?.damage?.parts?.length) return null;
+
+    const formulas = activity.damage.parts.map(part => part.formula).filter(f => f);
+    return formulas.length > 0 ? formulas.join(' + ') : null;
+  }
+
+  // ========================================
+  // ROUTER METHODS (delegate to appropriate manager)
+  // ========================================
+
+  /**
+   * Execute a roll - routes to appropriate manager
+   */
+  static async executeActivityRoll(actor, rollType, itemId, activityId, config) {
+    LogUtil.log('BaseActivityManager.executeActivityRoll - routing', [this.isMidiActive ? 'Midi' : 'Vanilla']);
+
+    if (this.isMidiActive) {
+      return await MidiActivityManager.executeActivityRoll(actor, rollType, itemId, activityId, config);
+    } else {
+      return await VanillaActivityManager.executeActivityRoll(actor, rollType, itemId, activityId, config);
+    }
+  }
+
+  /**
+   * Handle pre-use activity hook on GM side
+   * Prevents usage message on GM side when sending activity requests for player-owned actors
+   */
+  static onPreUseActivityGM(activity, config, dialog, message) {
+    LogUtil.log("BaseActivityManager.onPreUseActivityGM #0", [activity, config, dialog, message]);
+    const SETTINGS = getSettings();
+    const requestsEnabled = SettingsUtil.get(SETTINGS.rollRequestsEnabled.tag);
+    const rollInterceptionEnabled = SettingsUtil.get(SETTINGS.rollInterceptionEnabled.tag);
+    if (!requestsEnabled || !rollInterceptionEnabled) return;
+
+    const actor = activity.actor;
+    const actorOwner = GeneralUtil.getActorOwner(actor);
+    const isPlayerActor = isPlayerOwned(actor) && actorOwner.active;
+    const isLocalRoll = !isPlayerActor || config.isRollRequest===false;
+
+    LogUtil.log("BaseActivityManager.onPreUseActivityGM - Roll determination", {
+      isMidiActive: this.isMidiActive,
+      isPlayerActor,
+      isLocalRoll,
+      actorName: actor?.name,
+      ownerActive: actorOwner?.active
+    });
+
+    activity.item.unsetFlag(MODULE_ID, 'tempAttackConfig');
+    activity.item.unsetFlag(MODULE_ID, 'tempDamageConfig');
+    activity.item.unsetFlag(MODULE_ID, 'tempSaveConfig');
+
+    if (this.isMidiActive && isLocalRoll) {
+      LogUtil.log("BaseActivityManager.onPreUseActivityGM - Midi active but local roll, returning early");
+      return;
+    }
+
+    // if (this.isMidiActive && !isLocalRoll) {
+    //   LogUtil.log("BaseActivityManager.onPreUseActivityGM - Calling configureActivityOptionsGM");
+    //   // MidiActivityManager.configureActivityOptionsGM(activity, config);
+    // }
+
+    if (!actor) return;
+    LogUtil.log("BaseActivityManager.onPreUseActivityGM #1", [config, isLocalRoll]);
+
+    if (actorOwner && actorOwner.active && !actorOwner.isGM) {
+      config._originalConsume = structuredClone(config.consume || {});
+      config._originalCreate = structuredClone(config.create || {});
+    }
+
+    config.consume = getConsumptionConfig(config.consume || {}, isLocalRoll);
+    config.create = getCreateConfig(config.create || {}, isLocalRoll);
+
+    if (actorOwner && actorOwner.active && !actorOwner.isGM) {
+      if(this.isMidiActive){
+        LogUtil.log("BaseActivityManager.onPreUseActivityGM - Marking Midi message to suppress rendering for player-owned actor", [actor.name]);
+        if (!message.data) message.data = {};
+        if (!message.data.flags) message.data.flags = {};
+        if (!message.data.flags[MODULE_ID]) message.data.flags[MODULE_ID] = {};
+        message.data.flags[MODULE_ID].preventRender = true;
+      } else {
+        const showConsumptionDialog = showConsumptionConfig();
+        dialog.configure = dialog.configure ? showConsumptionDialog : false;
+        message.create = false;
+      }
+    }
+  }
+
+  /**
+   * Handle post-use activity hook on GM side
+   * Triggers damage rolls for save activities and stores activity configuration for caching
+   */
+  static onPostUseActivityGM(activity, config, results) {
+    const SETTINGS = getSettings();
+    const requestsEnabled = SettingsUtil.get(SETTINGS.rollRequestsEnabled.tag);
+    const rollInterceptionEnabled = SettingsUtil.get(SETTINGS.rollInterceptionEnabled.tag);
+    const actor = activity.actor;
+    
+    LogUtil.log("BaseActivityManager.onPostUseActivityGM #0", [activity, config, results, game.user.targets, requestsEnabled, rollInterceptionEnabled, actor]);
+
+    if (!requestsEnabled || !rollInterceptionEnabled || !actor) return;
+
+    const actorOwner = GeneralUtil.getActorOwner(actor);
+    const isOwnerActive = actorOwner && actorOwner.active && actorOwner.id !== game.user.id;
+    const isLocalRoll = !isOwnerActive || config.isRollRequest===false;
+        
+    LogUtil.log("BaseActivityManager.onPostUseActivityGM #1 ", [isLocalRoll, isOwnerActive, this.isMidiActive]);
+    if (this.isMidiActive && isLocalRoll) return;
+    const skipRollDialog = RollHelpers.shouldSkipRollDialog(isOwnerActive, {isPC: isOwnerActive, isNPC: !isOwnerActive});
+    results.configure = config.skipRollDialog !== undefined ? !config.skipRollDialog : (isOwnerActive && !skipRollDialog);
+
+    LogUtil.log("BaseActivityManager.onPostUseActivityGM - skipRollDialog", [skipRollDialog, config.skipRollDialog]);
+    if (config.skipRollDialog === false && (!actorOwner?.active || actorOwner.isGM)) {
+      LogUtil.log("BaseActivityManager.onPostUseActivityGM - Preventing usage message - no owning player for actor", [activity.actor]);
+      return;
+    }
+
+    if (activity.item) {
+      const activityConfig = {
+        spell: config.spell || {},
+        scaling: config.scaling,
+        consume: config._originalConsume || config.consume || {},
+        create: config._originalCreate || config.create || {}
+      };
+
+      const cacheKey = activity.item.id;
+      const cacheEntry = {
+        config: activityConfig,
+        timestamp: Date.now()
+      };
+      HooksManager.activityConfigCache.set(cacheKey, cacheEntry);
+      LogUtil.log('BaseActivityManager.onPostUseActivityGM - storing activity config in cache', [cacheKey, activityConfig]);
+    }
+
+    // Manually trigger missing rolls for roll requests
+    if (!isLocalRoll) {
+      if (this.isMidiActive) {
+        MidiActivityManager.triggerMissingRolls(activity, config, results);
+      } else {
+        VanillaActivityManager.triggerMissingRolls(activity, config, results);
+      }
+    }
+
+    // if (activity.type === ACTIVITY_TYPES.SAVE && activity.damage?.parts?.length > 0 && !this.isMidiActive && isLocalRoll) {
+    //   LogUtil.log("BaseActivityManager.onPostUseActivityGM - triggering vanilla save damage roll for local roll", [activity, config]);
+
+    //   const shouldShowDialog = config.skipRollDialog !== undefined ? !config.skipRollDialog : (isOwnerActive && !skipRollDialog);
+
+    //   activity.rollDamage(config, {
+    //     configure: shouldShowDialog
+    //   }, {});
+    // }
+  }
+
+  /**
+   * Handle pre-use activity hook on player side
+   * Configures consumption and creation settings
+   */
+  static onPreUseActivityPlayer(activity, config, dialog, message) {
+    const SETTINGS = getSettings();
+    const requestsEnabled = SettingsUtil.get(SETTINGS.rollRequestsEnabled.tag);
+    const rollInterceptionEnabled = SettingsUtil.get(SETTINGS.rollInterceptionEnabled.tag);
+    if (!requestsEnabled || !rollInterceptionEnabled) return;
+
+    LogUtil.log("BaseActivityManager.onPreUseActivityPlayer", [activity, config, dialog, message]);
+
+    const actor = activity.actor;
+
+    activity.item.unsetFlag(MODULE_ID, 'tempAttackConfig');
+    activity.item.unsetFlag(MODULE_ID, 'tempDamageConfig');
+    activity.item.unsetFlag(MODULE_ID, 'tempSaveConfig');
+
+    if (!actor) return;
+
+    const showConsumptionDialog = showConsumptionConfig();
+    dialog.configure = dialog.configure ? showConsumptionDialog : false;
+
+    config.consume = getConsumptionConfig(config.consume || {}, true);
+    config.create = getCreateConfig(config.create || {}, true);
+
+    if (this.isMidiActive) {
+      MidiActivityManager.onPreUseActivityPlayer(activity, config, dialog, message);
+    }
+  }
+
+  /**
+   * Handle post-use activity hook on player side
+   * Configures Midi-QOL options and triggers save damage if needed
+   */
+  static onPostUseActivityPlayer(activity, config, results) {
+    LogUtil.log("BaseActivityManager.onPostUseActivityPlayer", [activity, config, results, activity.target?.template.count]);
+
+    // For Midi, call Midi-specific POST-use handler
+    if (this.isMidiActive) {
+      MidiActivityManager.onPostUseActivityPlayer(activity, config, results);
+      return;
+    }
+
+    if (activity.type === ACTIVITY_TYPES.SAVE && activity.damage?.parts?.length > 0) {
+      LogUtil.log("BaseActivityManager.onPostUseActivityPlayer - triggering vanilla save damage roll", [activity, config]);
+      const shouldShowDialog = config.skipRollDialog !== undefined ? !config.skipRollDialog : true;
+
+      activity.rollDamage(config, {
+        configure: shouldShowDialog
+      }, {
+        create: true
+      });
+    }
+  }
+}

@@ -4,7 +4,6 @@ import { LogUtil } from '../utils/LogUtil.mjs';
 import { SettingsUtil } from '../utils/SettingsUtil.mjs';
 import { getSettings } from '../../constants/Settings.mjs';
 import { SocketUtil } from '../utils/SocketUtil.mjs';
-import { ActivityManager } from '../managers/ActivityManager.mjs';
 import { SidebarController } from '../managers/SidebarController.mjs';
 import { getPlayerOwner, isPlayerOwned, hasTokenInScene, updateCanvasTokenSelection, delay, buildRollTypes, NotificationManager, filterActorsForDeathSaves, categorizeActorsByOwnership, adjustMenuOffset, getActorData } from '../helpers/Helpers.mjs';
 import { RollHandlers } from '../handlers/RollHandlers.mjs';
@@ -983,7 +982,7 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
     
     try {
       // Use the API to create the macro
-      await FlashRolls5e.createMacro(macroData);
+      await FlashAPI.createMacro(macroData);
     } catch (error) {
       LogUtil.error("Failed to create macro", [error]);
       ui.notifications.error("Failed to create macro: " + error.message);

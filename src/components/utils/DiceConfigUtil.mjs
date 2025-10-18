@@ -89,7 +89,11 @@ export class DiceConfigUtil {
    * @param {string} userId - The user ID to request from
    */
   static requestDiceConfigFromUser(userId) {
-    SocketUtil.execForUser('getDiceConfig', userId);
+    try {
+      SocketUtil.execForUser('getDiceConfig', userId);
+    } catch (error) {
+      LogUtil.log('Failed to request dice config from user:', [userId, error.message]);
+    }
   }
   
   /**

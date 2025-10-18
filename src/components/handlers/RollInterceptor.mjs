@@ -11,6 +11,7 @@ import { GeneralUtil } from '../utils/GeneralUtil.mjs';
 import { ModuleHelpers } from '../helpers/ModuleHelpers.mjs';
 import { OfflinePlayerManager } from '../managers/roll-menu/OfflinePlayerManager.mjs';
 import { RollHelpers } from '../helpers/RollHelpers.mjs';
+import { HooksManager } from '../core/HooksManager.mjs';
 
 /**
  * Handles intercepting D&D5e rolls on the GM side and redirecting them to players
@@ -100,7 +101,6 @@ export class RollInterceptor {
     let actor;
     if (rollType === ROLL_TYPES.INITIATIVE && config instanceof Actor) {
       actor = config;
-      LogUtil.log('_onPreRollIntercept - Initiative', [config, dialog, message]);
       if (dialog?.isRollRequest === false || message?.isRollRequest === false) {
         return;
       }
@@ -119,10 +119,10 @@ export class RollInterceptor {
     const skipRollDialog = areSkipKeysPressed || SettingsUtil.get(SETTINGS.skipRollDialog.tag);
 
     if (!requestsEnabled || !rollInterceptionEnabled || config.isRollRequest === false) {
-      dialog.configure = areSkipKeysPressed ? false : config.isRollRequest!==undefined ? false : !RollHelpers.shouldSkipRollDialog(skipRollDialog, {isPC: isPC, isNPC: !isPC});
+      if(!isMidiOn) dialog.configure = areSkipKeysPressed ? false : config.isRollRequest!==undefined ? false : !RollHelpers.shouldSkipRollDialog(skipRollDialog, {isPC: isPC, isNPC: !isPC});
       return;
     }
-    LogUtil.log('_onPreRollIntercept #1', [requestsEnabled, rollInterceptionEnabled, config.isRollRequest]);
+    LogUtil.log('_onPreRollIntercept #1', [requestsEnabled, rollInterceptionEnabled, config]);
 
     // Only intercept on GM side, if this is a request
     if (!game.user.isGM) return;
@@ -133,7 +133,7 @@ export class RollInterceptor {
     
     if(rollType === ROLL_TYPES.ATTACK || rollType === ROLL_TYPES.DAMAGE){
       const moduleFlags = config.subject?.item?.getFlag(MODULE_ID, 'tempAttackConfig') || config.subject?.item?.getFlag(MODULE_ID, 'tempDamageConfig');
-      dialog.configure = false;
+      dialog.configure = !skipRollDialog;
       LogUtil.log('_onPreRollIntercept - attack / damage - flag', [moduleFlags]);
       if(moduleFlags){
         LogUtil.log('_onPreRollIntercept - found module flags, skipping interception', [moduleFlags]);
@@ -186,7 +186,7 @@ export class RollInterceptor {
       return false;
     }
     
-    LogUtil.log('_onPreRollIntercept - intercepting roll #1', [config, message]);
+    LogUtil.log('_onPreRollIntercept - intercepting roll #1', [config, dialog, message]);
     this._showGMConfigDialog(actor, owner, rollType, config, dialog, message); 
     
     return false;
@@ -361,7 +361,7 @@ export class RollInterceptor {
    * @param {Object} message 
    */
   static async _showGMConfigDialog(actor, owner, rollType, config, dialog, message) {
-    LogUtil.log('_showGMConfigDialog - config', [rollType, config]);
+    LogUtil.log('_showGMConfigDialog - config', [rollType, dialog, config, message]);
     const SETTINGS = getSettings();
     const rollRequestsEnabled = SettingsUtil.get(SETTINGS.rollRequestsEnabled.tag);
     const areSkipKeysPressed = GeneralUtil.areSkipKeysPressed(config.event);
@@ -379,7 +379,7 @@ export class RollInterceptor {
       const isOwnerActive = owner && owner?.active && !owner?.isGM;
       
       let result;
-      const shouldSkipDialog = areSkipKeysPressed || RollHelpers.shouldSkipRollDialog(isOwnerActive ? rollRequestsEnabled : false, {isPC: isOwnerActive, isNPC: !isOwnerActive});
+      const shouldSkipDialog = dialog.configure===true ? false : areSkipKeysPressed || dialog.configure===false || RollHelpers.shouldSkipRollDialog(isOwnerActive ? rollRequestsEnabled : false, {isPC: isOwnerActive, isNPC: !isOwnerActive});
       LogUtil.log('_showGMConfigDialog - rollConfig', [rollConfig, rollKey, shouldSkipDialog, isOwnerActive, owner]);
       // Check if dialog should be skipped - pass rollRequestsEnabled as the sendRequest context
       if (shouldSkipDialog) {
@@ -551,12 +551,10 @@ export class RollInterceptor {
    */
   static async _sendRollRequest(actor, owner, rollType, config) {
     LogUtil.log('_sendRollRequest', [actor, owner, rollType, config]);
-    LogUtil.log('_sendRollRequest - config.rolls', [config.rolls]);
     const SETTINGS = getSettings();
     let normalizedRollType = rollType?.toLowerCase();
     const isOwnerActive = owner && owner.active && owner.id !== game.user.id;
     
-    // Convert INITIATIVE to INITIATIVE_DIALOG for player requests
     if (normalizedRollType === ROLL_TYPES.INITIATIVE) {
       normalizedRollType = ROLL_TYPES.INITIATIVE_DIALOG;
     }
@@ -614,6 +612,20 @@ export class RollInterceptor {
         }
       };
     }
+
+    if (rollKey && (normalizedRollType === ROLL_TYPES.ATTACK || normalizedRollType === ROLL_TYPES.DAMAGE)) {
+      const activity = config.subject;
+      const MidiQOL = game.modules.get('midi-qol')?.api;
+
+      if (MidiQOL && activity) {
+        const workflow = MidiQOL.Workflow?.getWorkflowByActivityUuid?.(activity.uuid);
+        if (workflow?.templateUuid) {
+          cleanConfig.templateUuid = workflow.templateUuid;
+          LogUtil.log('_sendRollRequest - Added templateUuid from GM workflow', [workflow.templateUuid]);
+        }
+      }
+    }
+
     delete cleanConfig.subject;
     delete cleanConfig.workflow;
     delete cleanConfig.item;

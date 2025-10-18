@@ -179,6 +179,14 @@ export class ChatMessageManager {
 
     const htmlElement = html instanceof jQuery ? html[0] : (html[0] || html);
 
+    if (message.getFlag(MODULE_ID, 'preventRender')) {
+      LogUtil.log("ChatMessageManager.onRenderChatMessage - Hiding message for roll request", [message.id]);
+      if (htmlElement) {
+        htmlElement.style.display = 'none';
+      }
+      return;
+    }
+
     ChatMessageManager.interceptRollMessage(message, html, context);
 
     if (message.getFlag(MODULE_ID, 'isGroupRoll')) {

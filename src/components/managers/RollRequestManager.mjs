@@ -75,6 +75,7 @@ export class RollRequestManager {
         ...requestData.rollProcessConfig.midiOptions,
         fastForward: false,
         fastForwardAttack: false,
+        // autoRollDamage: 'onHit',
         dialogOptions: {
           ...requestData.rollProcessConfig.midiOptions.dialogOptions,
           fastForward: false,
@@ -99,9 +100,9 @@ export class RollRequestManager {
     });
     
     this.rollQueue.push({ actor, requestData });
-    LogUtil.log('handleRequest - Added to queue', [this.rollQueue.length, this.isProcessingRoll]);
+    LogUtil.log('handleRequest - Added to queue', [this.rollQueue, this.isProcessingRoll]);
     
-    if (!this.isProcessingRoll) {
+    if (!this.isProcessingRoll || this.rollQueue.length === 1) {
       this.processNextRoll();
     }
   }
@@ -110,22 +111,25 @@ export class RollRequestManager {
    * Process the next roll in the queue to be executed on the player side
    */
   static async processNextRoll() {
+    LogUtil.log('processNextRoll - called', [this.rollQueue.length, 'in queue', this.isProcessingRoll]);
+
     if (this.rollQueue.length === 0) {
       this.isProcessingRoll = false;
+      LogUtil.log('processNextRoll - queue empty, stopping');
       return;
     }
-    
+
     this.isProcessingRoll = true;
     const { actor, requestData } = this.rollQueue.shift();
-    
-    LogUtil.log('processNextRoll - Processing', [actor.name, this.rollQueue.length, 'remaining']);
-    
+
+    LogUtil.log('processNextRoll - Processing', [actor.name, requestData.rollType, this.rollQueue.length, 'remaining']);
+
     try {
       await this.executePlayerRollRequest(actor, requestData);
     } catch (error) {
       LogUtil.error('Error processing roll request:', [error]);
     }
-    
+
     setTimeout(() => {
       this.processNextRoll();
     }, 500);
@@ -140,27 +144,25 @@ export class RollRequestManager {
     const SETTINGS = getSettings();
     const publicPlayerRolls = SettingsUtil.get(SETTINGS.publicPlayerRolls.tag);
 
-    LogUtil.log('executePlayerRollRequest', [actor, requestData]);
-    LogUtil.log('executePlayerRollRequest - groupRollId check', [requestData.groupRollId, typeof requestData.groupRollId]);
-    
     try {
       const normalizedRollType = requestData.rollType?.toLowerCase();
+      LogUtil.log('executePlayerRollRequest - normalized roll type', [normalizedRollType]);
+
       const rollConfig = requestData.rollProcessConfig.rolls?.[0] || {
         parts: [],
         data: {},
         options: {}
       };
-      
-      
-      const shouldSkipDialog = game.user.isGM ? requestData.skipRollDialog : false;
+
+      const shouldSkipDialog = false;
       const dialogConfig = {
         configure: !shouldSkipDialog
       };
-      
+
       const rollModeFromGM = requestData.rollProcessConfig.rollMode;
       const defaultRollMode = game.settings.get("core", "rollMode");
       const finalRollMode = rollModeFromGM || defaultRollMode;
-      
+
       const messageConfig = {
         rollMode: finalRollMode,
         create: requestData.rollProcessConfig.chatMessage !== false,
@@ -170,26 +172,30 @@ export class RollRequestManager {
           }
         }
       };
-      
+
       const handlerRequestData = {
         rollKey: requestData.rollKey,
-        activityId: requestData.activityId, 
+        activityId: requestData.activityId,
         config: requestData.rollProcessConfig,
-        groupRollId: requestData.groupRollId 
+        groupRollId: requestData.groupRollId
       };
 
       const handler = RollHandlers[normalizedRollType];
+      LogUtil.log('executePlayerRollRequest - found handler?', [!!handler, normalizedRollType]);
+
       if (handler) {
+        LogUtil.log('executePlayerRollRequest - calling handler', [normalizedRollType]);
         await handler(actor, handlerRequestData, rollConfig, dialogConfig, messageConfig);
+        LogUtil.log('executePlayerRollRequest - handler completed', [normalizedRollType]);
       } else {
         LogUtil.warn(`No handler found for roll type: ${normalizedRollType}`);
-        NotificationManager.notify('warn', game.i18n.format('FLASH_ROLLS.notifications.rollError', { 
+        NotificationManager.notify('warn', game.i18n.format('FLASH_ROLLS.notifications.rollError', {
           actor: actor.name || 'Unknown Actor'
         }));
       }
     } catch (error) {
       LogUtil.error('Error executing roll request:', [error]);
-      NotificationManager.notify('error', game.i18n.format('FLASH_ROLLS.notifications.rollError', { 
+      NotificationManager.notify('error', game.i18n.format('FLASH_ROLLS.notifications.rollError', {
         actor: actor.name || 'Unknown Actor'
       }));
     }

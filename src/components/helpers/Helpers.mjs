@@ -571,9 +571,20 @@ export function getCreateConfig(createConfig, isLocalRoll=true){
   const SETTINGS = getSettings();
   const placeTemplateForPlayer = SettingsUtil.get(SETTINGS.placeTemplateForPlayer.tag);
   const withTemplate = createConfig.measuredTemplate === true;
-  const promptForTemplate = game.user.isGM ? isLocalRoll || placeTemplateForPlayer : !placeTemplateForPlayer
+  const isMidiActive = game.modules.get("midi-qol")?.active;
 
-  LogUtil.log("getCreateConfig", [createConfig, isLocalRoll, placeTemplateForPlayer, withTemplate, promptForTemplate]);
+  let promptForTemplate;
+  if (game.user.isGM) {
+    promptForTemplate = isLocalRoll || placeTemplateForPlayer;
+  } else {
+    if (isMidiActive && placeTemplateForPlayer && withTemplate && !isLocalRoll) {
+      promptForTemplate = true;
+    } else {
+      promptForTemplate = !placeTemplateForPlayer;
+    }
+  }
+
+  LogUtil.log("getCreateConfig", [createConfig, isLocalRoll, placeTemplateForPlayer, withTemplate, promptForTemplate, isMidiActive]);
   return {
     ...createConfig,
     measuredTemplate: withTemplate ? promptForTemplate : false

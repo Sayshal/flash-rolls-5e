@@ -24,7 +24,7 @@ export function GMRollConfigMixin(Base) {
       this.actors = options.actors || [];
       this.sendRequest = options.sendRequest ?? options.isRollRequest ?? false;
       this.showDC = options.showDC || false;
-      this.dcValue = options.dcValue || null;
+      this.dcValue = options.dcValue ?? options.dc ?? null;
       
       this.rollKey = options.rollKey || config.skill || config.ability || null;
       this.rollTypeString = options.rollTypeString || null;

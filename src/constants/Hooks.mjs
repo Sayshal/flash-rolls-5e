@@ -65,7 +65,8 @@ export const HOOKS_SOCKET = {
  * Midi-QOL hooks
  */
 export const HOOKS_MIDI_QOL = {
-  READY: "midi-qol.ready"
+  READY: "midi-qol.ready",
+  PRE_ITEM_ROLL: "midi-qol.preItemRoll"
 }
 
 /**

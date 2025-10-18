@@ -38,7 +38,7 @@
       "dropError": "Error adding actor to menu",
       "npcHiddenFromPlayers": "NPCs are now hidden from players in the group message.",
       "npcVisibleToPlayers": "NPCs are now visible to players in the group message.",
-      "midiQolActive": "The setting 'Send roll request from player sheets' might conflict with some Midi-QoL features, particularly damage application and card layout. Test before play, or disable the option below.",
+      "interceptWarning": "The setting 'Send roll request from player sheets' might conflict with some rolling modules. Test before play, or disable the option below.",
       "movementLocked": "Movement locked for {count} token(s)",
       "movementUnlocked": "Movement unlocked for {count} token(s)",
       "movementRestricted": "The GM has restricted movement for this token",
@@ -114,8 +114,8 @@
         }
       },
       "rollInterceptionEnabled": {
-        "label": "Send Roll Requests from Player Sheets",
-        "hint": "[Incompatible with Midi-QoL] When enabled, rolls made by the GM for player characters will be automatically redirected to the owner player, if they are online, from character sheets or other modules."
+        "label": "Send Roll Requests from Player Sheets and Other Modules",
+        "hint": "When enabled, rolls made by the GM for player characters will be automatically redirected to the owner player, if they are online, from character sheets or other modules."
       },
       "showOfflineNotifications": {
         "label": "Show Offline Notifications",

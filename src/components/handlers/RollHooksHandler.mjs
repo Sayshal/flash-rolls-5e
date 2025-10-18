@@ -6,6 +6,8 @@ import { LogUtil } from '../utils/LogUtil.mjs';
 import { GeneralUtil } from '../utils/GeneralUtil.mjs';
 import { RollHelpers } from '../helpers/RollHelpers.mjs';
 import { HooksManager } from '../core/HooksManager.mjs';
+import { BaseActivityManager } from '../managers/BaseActivityManager.mjs';
+import { MidiActivityManager } from '../managers/MidiActivityManager.mjs';
 
 /**
  * Handles roll-specific hooks
@@ -25,7 +27,7 @@ export class RollHooksHandler {
    * @param {Object} messageOptions - Chat message options
    */
   static onPreRollGM(config, dialogOptions, messageOptions) {
-    if (config._flashRollsProcessed) return;
+    if (config._flashRollsProcessed || BaseActivityManager.isMidiActive) return;
     config._flashRollsProcessed = true;
 
     LogUtil.log("RollHooksHandler.onPreRollGM", [config, dialogOptions, messageOptions]);
@@ -46,7 +48,6 @@ export class RollHooksHandler {
   // ========================================
   // PLAYER-ONLY METHODS
   // ========================================
-
   /**
    * Handle pre-roll initiative dialog to apply stored configuration from GM request
    * Always forces dialog to show on player side regardless of GM's skip dialog settings
@@ -85,21 +86,24 @@ export class RollHooksHandler {
 
   /**
    * Handle pre-roll attack hook to apply stored configuration from GM request
-   * Always forces dialog to show on player side regardless of GM's skip dialog settings
-   * @param {Object} config - Roll configuration
-   * @param {Object} dialogOptions - Dialog display options
-   * @param {Object} messageOptions - Chat message options
+   * Delegates Midi-specific logic to MidiActivityManager
    */
   static onPreRollAttackV2(config, dialogOptions, messageOptions) {
     if (config._flashRollsProcessed) return;
     config._flashRollsProcessed = true;
 
     LogUtil.log("RollHooksHandler.onPreRollAttackV2 triggered", [config, dialogOptions, messageOptions]);
+
+    const isMidiActive = GeneralUtil.isModuleOn('midi-qol');
+    if (isMidiActive && config.midiOptions) {
+      MidiActivityManager.onPreRollAttackV2(config, dialogOptions, messageOptions);
+    }
+
     const areSkipKeysPressed = GeneralUtil.areSkipKeysPressed(config.event);
     const stored = config.subject?.item?.getFlag(MODULE_ID, 'tempAttackConfig');
     LogUtil.log("RollHooksHandler.onPreRollAttackV2 - flag", [stored, areSkipKeysPressed, config.event]);
 
-    if(areSkipKeysPressed || config.midiOptions?.fastForward===true){
+    if(areSkipKeysPressed){
       dialogOptions.configure = false;
     }else if(stored){
       dialogOptions.configure = true;
@@ -133,10 +137,7 @@ export class RollHooksHandler {
 
   /**
    * Handle pre-roll damage hook to apply stored configuration from GM request
-   * Always forces dialog to show on player side regardless of GM's skip dialog settings
-   * @param {Object} config - Roll configuration
-   * @param {Object} dialogOptions - Dialog display options
-   * @param {Object} messageOptions - Chat message options
+   * Delegates Midi-specific logic to MidiActivityManager
    */
   static onPreRollDamageV2(config, dialogOptions, messageOptions) {
     if (config._flashRollsProcessed) return;
@@ -147,35 +148,20 @@ export class RollHooksHandler {
     const isMidiActive = GeneralUtil.isModuleOn('midi-qol');
     config.rolls = RollHelpers.consolidateRolls(config.rolls);
 
+    if (isMidiActive && config.midiOptions) {
+      MidiActivityManager.onPreRollDamageV2(config, dialogOptions, messageOptions);
+    }
+
     const areSkipKeysPressed = GeneralUtil.areSkipKeysPressed(config.event);
     const stored = config.subject?.item?.getFlag(MODULE_ID, 'tempDamageConfig');
 
-    if(areSkipKeysPressed || config.midiOptions?.fastForward===true){
+    if(areSkipKeysPressed){
       dialogOptions.configure = false;
     }else if(stored){
       dialogOptions.configure = true;
     }
 
     if(!stored) return;
-
-    if(config.midiOptions && !game.user.isGM && isMidiActive &&
-      config.subject?.type === ACTIVITY_TYPES.DAMAGE){
-
-      const existingWorkflowOptions = config.midiOptions.workflowOptions || {};
-      config.midiOptions = {
-        ...config.midiOptions,
-        fastForwardDamage: false,
-        workflowOptions: {
-          ...existingWorkflowOptions,
-          fastForwardDamage: false,
-          autoRollAttack: false,
-          autoRollDamage: false,
-          forceCompletion: false
-        }
-      }
-
-      LogUtil.log("RollHooksHandler.onPreRollDamageV2 - configured midiOptions for Flash Token Bar compatibility", [config.midiOptions]);
-    }
 
     if (stored) {
       LogUtil.log("RollHooksHandler.onPreRollDamageV2 - Found stored request config from flag", [stored, stored.situational]);

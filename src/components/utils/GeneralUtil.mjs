@@ -13,7 +13,6 @@ export class GeneralUtil {
    */
   static isModuleOn(moduleName){
     const module = game.modules?.get(moduleName);
-    LogUtil.log('isModuleOn', [moduleName, module, module?.active]);
     return module?.active ? true : false;
   }
 
@@ -615,8 +614,6 @@ export class GeneralUtil {
   static areSkipKeysPressed(event){
     // if (!event) return false;
 
-    // Use D&D 5e's areKeysPressed function to properly handle all platforms including Mac Cmd key
-    LogUtil.log("areSkipKeysPressed", [game.dnd5e.utils.areKeysPressed]);
     const { areKeysPressed } = game.dnd5e.utils || {};
     if (!areKeysPressed) {
       return event.shiftKey || event.altKey || event.ctrlKey || event.metaKey || false;

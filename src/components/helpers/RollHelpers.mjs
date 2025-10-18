@@ -782,21 +782,10 @@ export const RollHelpers = {
     const skipRollDialogOption = SettingsUtil.get(SETTINGS.skipRollDialogOption.tag);
     const rollRequestsEnabled = SettingsUtil.get(SETTINGS.rollRequestsEnabled.tag);
     
-    LogUtil.log('RollHelpers.shouldSkipRollDialog', [
-      'skipRollDialogOption:', skipRollDialogOption,
-      'rollRequestsEnabled:', rollRequestsEnabled,
-      'sendRequest:', sendRequest,
-      'isPC:', isPC,
-      'isNPC:', isNPC,
-      'test:',
-      (sendRequest===true || (sendRequest !== false && rollRequestsEnabled === true))
-    ]);
-    
     switch (skipRollDialogOption) {
       case 1: // all rolls
         return true;
       case 2: // Only request rolls
-        LogUtil.log('RollHelpers.shouldSkipRollDialog!!!', [(isPC===true && sendRequest===true), (isPC===true && sendRequest !== false && rollRequestsEnabled === true)]);
         return (isPC===true && sendRequest===true) || (isPC===true && sendRequest !== false && rollRequestsEnabled === true);
       case 3: // Only non-request rolls
         return isNPC===true;

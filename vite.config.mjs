@@ -28,6 +28,7 @@ export default defineConfig({
       output: {
         dir: "dist/",
         entryFileNames:"scripts/flash-rolls-5e.js",
+        chunkFileNames: "scripts/flash-rolls-5e.js",
         assetFileNames: (assetInfo) => {
           const isImgType = /\.(gif|jpe?g|png|svg)$/.test(assetInfo.name);
           const isStyleType = /\.css$/.test(assetInfo.name);
@@ -36,7 +37,7 @@ export default defineConfig({
             return 'assets/[name][extname]';
           }
           if (isStyleType) {
-            return 'styles/flash-rolls-5e.css';   
+            return 'styles/flash-rolls-5e.css';
           }
           if (assetInfo.originalFileNames?.includes("src/module.mjs")) {
             return "scripts/flash-rolls-5e.js";
@@ -45,6 +46,7 @@ export default defineConfig({
           return 'assets/[name][extname]';
         },
         format: "es",
+        inlineDynamicImports: true,
       },
     },
   },
