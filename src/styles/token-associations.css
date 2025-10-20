@@ -1,9 +1,10 @@
 .flash5e-token-associations {
   display: flex;
+  flex-direction: row;
+  flex: 0 0 auto;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0 1rem 1rem 1rem;
-  margin-top: 0.5rem;
+  gap: 0.25rem 1rem;
+  padding: 0.5rem 1rem 1rem 1rem;
   flex-wrap: wrap;
 }
 
@@ -11,6 +12,7 @@
   flex: 1 1 auto;
   font-size: 0.875rem;
   color: var(--color-text-primary);
+  text-align: right;
 }
 
 .flash5e-token-associations:before {
@@ -37,6 +39,5 @@
 .flash5e-select-tokens,
 .flash5e-remove-associations {
   flex: 0 0 auto;
-  padding-left: 1rem;
-  padding-right: 1rem;
+  padding: 0.2rem 1rem;
 }

@@ -166,6 +166,21 @@ export const HOOKS_DND5E = {
 }
 
 /**
+ * Tidy5e Sheets Hooks
+ * @constant
+ * @type {Object}
+ */
+export const HOOKS_TIDY5E = {
+  READY: "tidy5e-sheet.ready",
+  PRE_PROMPT_GROUP_SKILL_ROLL: "tidy5e-sheet.prePromptGroupSkillRoll",
+  RENDER_ACTOR_SHEET: "tidy5e-sheet.renderActorSheet",
+  RENDER_GROUP_SHEET_QUADRONE: "renderTidy5eGroupSheetQuadrone",
+  RENDER_GROUP_SHEET_CLASSIC: "renderTidy5eGroupSheetClassic",
+  RENDER_ENCOUNTER_SHEET_QUADRONE: "renderTidy5eEncounterSheetQuadrone",
+  RENDER_ENCOUNTER_SHEET_CLASSIC: "renderTidy5eEncounterSheetClassic"
+}
+
+/**
  * Flash Token Bar 5e Hooks
  * @constant
  * @type {Object}

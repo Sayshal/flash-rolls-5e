@@ -1,7 +1,7 @@
 {
-  "id": "1.13.2",
+  "id": "1.14.0",
   "title": "Updates on Flash Token Bar",
-  "content": "<p>Version 1.13.2:</p>\n<ul><li><b>Compatibility with Midi-QoL</b> Previously, you were recommended to not use the setting that sends roll requests from character sheets with Midi-QoL. Now, this setting should also work fine with Midi, so you can send requests to players for attack, damage and spell rolls. </li></ul>\n<p><b>If you like this module, consider supporting me on <a href='https://www.patreon.com/carolingiandev/membership'>Patreon</a>.</b></p><p>Join the discussion on <a href='https://discord.gg/P5ygvHXE3R'>Discord</a> or visit the <a href='https://github.com/crlngn/flash-rolls-5e/releases'>Github repository</a>.</p>",
+  "content": "<p>Version 1.14.0:</p>\n<ul><li><b>Compatibility with Tidy5e</b> You can now make group roll requests from Tidy5e Group/Encounter Sheets. Tidy sheets will now also trigger token associations.</li></ul>\n<p>Version 1.13.2:</p>\n<ul><li><b>Compatibility with Midi-QoL</b> Previously, you were recommended to not use the setting that sends roll requests from character sheets with Midi-QoL. Now, this setting should also work fine with Midi, so you can send requests to players for attack, damage and spell rolls. </li></ul>\n<p><b>If you like this module, consider supporting me on <a href='https://www.patreon.com/carolingiandev/membership'>Patreon</a>.</b></p><p>Join the discussion on <a href='https://discord.gg/P5ygvHXE3R'>Discord</a> or visit the <a href='https://github.com/crlngn/flash-rolls-5e/releases'>Github repository</a>.</p>",
   "imageUrl": "",
   "videoUrl": "https://raw.githubusercontent.com/crlngn/flash-rolls-5e/main/demo/midi-pass-template.mp4"
 }

@@ -78,9 +78,17 @@
         "label": "Show Group DC to Players",
         "hint": "Enable to show the group DC in the group roll message to players."
       },
+      "showGroupResultToPlayers": {
+        "label": "Show Group Result to Players",
+        "hint": "Enable to show the group roll result footer (success/failure summary) to players. When disabled, only the GM sees the result summary."
+      },
       "groupRollNPCHidden": {
         "label": "Hide NPC rolls in group messages from players",
         "hint": "When enabled, players will not see roll results from actors they don't have observer permission on in group roll messages. GMs always see all results."
+      },
+      "interceptTidySheetsGroupRolls": {
+        "label": "Intercept Tidy5e Sheets Group Rolls",
+        "hint": "When enabled, group skill rolls from Tidy5e Sheets will use Flash Rolls' group roll system instead of the default chat prompt. Requires Tidy5e Sheets module."
       },
       "groupRollResultMode": {
         "label": "Group Roll Result Mode",

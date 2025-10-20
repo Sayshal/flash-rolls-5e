@@ -88,13 +88,17 @@ export const getSettings = () => {
         'groupRollsMsgEnabled',
         'groupRollResultMode',
         'showGroupDCToPlayers',
-        'groupRollNPCHidden'
+        'showGroupResultToPlayers',
+        'groupRollNPCHidden',
+        'interceptTidySheetsGroupRolls'
       ],
       default: {
         groupRollsMsgEnabled: true,
         groupRollResultMode: 1,
         showGroupDCToPlayers: false,
-        groupRollNPCHidden: true
+        showGroupResultToPlayers: true,
+        groupRollNPCHidden: true,
+        interceptTidySheetsGroupRolls: true
       },
       scope: SETTING_SCOPE.world,
       config: false, 
@@ -141,6 +145,17 @@ export const getSettings = () => {
       config: false
     },
 
+    showGroupResultToPlayers: {
+      tag: "show-group-result-to-players",
+      label: game.i18n.localize("FLASH_ROLLS.settings.showGroupResultToPlayers.label"),
+      hint: game.i18n.localize("FLASH_ROLLS.settings.showGroupResultToPlayers.hint"),
+      propType: Boolean,
+      inputType: SETTING_INPUT.checkbox,
+      default: true,
+      scope: SETTING_SCOPE.world,
+      config: false
+    },
+
     groupRollNPCHidden: {
       tag: "group-roll-npc-hidden",
       label: game.i18n.localize("FLASH_ROLLS.settings.groupRollNPCHidden.label"),
@@ -151,7 +166,18 @@ export const getSettings = () => {
       scope: SETTING_SCOPE.world,
       config: false
     },
-    
+
+    interceptTidySheetsGroupRolls: {
+      tag: "intercept-tidy-sheets-group-rolls",
+      label: game.i18n.localize("FLASH_ROLLS.settings.interceptTidySheetsGroupRolls.label"),
+      hint: game.i18n.localize("FLASH_ROLLS.settings.interceptTidySheetsGroupRolls.hint"),
+      propType: Boolean,
+      inputType: SETTING_INPUT.checkbox,
+      default: true,
+      scope: SETTING_SCOPE.world,
+      config: false
+    },
+
     rollRequestsEnabled: {
       tag: "roll-requests-enabled",
       label: game.i18n.localize("FLASH_ROLLS.settings.rollRequestsEnabled.label"),

@@ -614,6 +614,14 @@ export class ChatMessageManager {
         }
       }
     }
+
+    const groupFooter = html.querySelector('.group-roll-footer');
+    if (groupFooter) {
+      const showResultToPlayers = groupFooter.dataset.showToPlayers === 'true';
+      if (!game.user.isGM && !showResultToPlayers) {
+        groupFooter.style.display = 'none';
+      }
+    }
     
     if (dcInput) {
       if (!game.user.isGM) {
@@ -758,6 +766,7 @@ export class ChatMessageManager {
     const supportsDC = RollHelpers.shouldShowDC(rollType);
     const SETTINGS = getSettings();
     const showDCToPlayers = SettingsUtil.get(SETTINGS.showGroupDCToPlayers.tag);
+    const showResultToPlayers = SettingsUtil.get(SETTINGS.showGroupResultToPlayers.tag);
     const groupRollNPCHidden = SettingsUtil.get(SETTINGS.groupRollNPCHidden.tag);
     const isGM = game.user.isGM;
     
@@ -775,6 +784,7 @@ export class ChatMessageManager {
       rollKey,
       supportsDC,
       showDCToPlayers,
+      showResultToPlayers,
       groupRollNPCHidden,
       isGM,
       actorEntries: validEntries.map(entry => ({ actorId: entry.actor.id, uniqueId: entry.uniqueId, tokenId: entry.tokenId })),
@@ -1095,9 +1105,10 @@ export class ChatMessageManager {
     flagData.allRolled = flagData.results.every(r => r.rolled);
     flagData.messageId = message.id;
     flagData.supportsDC = RollHelpers.shouldShowDC(flagData.rollType);
-    
+
     const SETTINGS = getSettings();
     flagData.showDCToPlayers = SettingsUtil.get(SETTINGS.showGroupDCToPlayers.tag);
+    flagData.showResultToPlayers = SettingsUtil.get(SETTINGS.showGroupResultToPlayers.tag);
     flagData.groupRollNPCHidden = SettingsUtil.get(SETTINGS.groupRollNPCHidden.tag);
     flagData.isGM = game.user.isGM;
     
@@ -1221,9 +1232,10 @@ export class ChatMessageManager {
     
     flagData.allRolled = flagData.results.every(r => r.rolled);
     flagData.messageId = message.id;
-    
+
     const SETTINGS = getSettings();
     flagData.showDCToPlayers = SettingsUtil.get(SETTINGS.showGroupDCToPlayers.tag);
+    flagData.showResultToPlayers = SettingsUtil.get(SETTINGS.showGroupResultToPlayers.tag);
     flagData.groupRollNPCHidden = SettingsUtil.get(SETTINGS.groupRollNPCHidden.tag);
     flagData.isGM = game.user.isGM;
     

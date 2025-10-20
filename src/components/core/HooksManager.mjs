@@ -1,4 +1,4 @@
-import { HOOKS_CORE, HOOKS_DND5E, HOOKS_MIDI_QOL, HOOKS_MODULE } from "../../constants/Hooks.mjs";
+import { HOOKS_CORE, HOOKS_DND5E, HOOKS_MIDI_QOL, HOOKS_MODULE, HOOKS_TIDY5E } from "../../constants/Hooks.mjs";
 import { getSettings } from "../../constants/Settings.mjs";
 import { SettingsUtil } from "../utils/SettingsUtil.mjs";
 import { DiceConfigUtil } from "../utils/DiceConfigUtil.mjs";
@@ -72,7 +72,9 @@ export class HooksManager {
     });
     
     Hooks.on(HOOKS_CORE.CLIENT_SETTING_CHANGED, this._onClientSettingChanged.bind(this));
-    
+
+    this._registerTidy5eHooks();
+
     Hooks.once(HOOKS_CORE.GET_ACTOR_CONTEXT_OPTIONS, (html, contextOptions) => {
       LogUtil.log("getActorContextOptions hook", [html, contextOptions]);
       
@@ -523,6 +525,74 @@ export class HooksManager {
         }
       }, 500);
     }
+  }
+
+  /**
+   * Register Tidy5e Sheets hooks once the module is ready
+   */
+  static _registerTidy5eHooks() {
+    Hooks.once(HOOKS_TIDY5E.READY, () => {
+      LogUtil.log('Tidy5e Sheets ready - registering hooks');
+      Hooks.on(HOOKS_TIDY5E.PRE_PROMPT_GROUP_SKILL_ROLL, this._onTidy5eGroupSkillRoll.bind(this));
+      Hooks.on(HOOKS_TIDY5E.RENDER_ACTOR_SHEET, GroupTokenTracker.onRenderActorSheet.bind(GroupTokenTracker));
+      Hooks.on(HOOKS_TIDY5E.RENDER_GROUP_SHEET_QUADRONE, GroupTokenTracker.onRenderActorSheet.bind(GroupTokenTracker));
+      Hooks.on(HOOKS_TIDY5E.RENDER_GROUP_SHEET_CLASSIC, GroupTokenTracker.onRenderActorSheet.bind(GroupTokenTracker));
+      Hooks.on(HOOKS_TIDY5E.RENDER_ENCOUNTER_SHEET_QUADRONE, GroupTokenTracker.onRenderActorSheet.bind(GroupTokenTracker));
+      Hooks.on(HOOKS_TIDY5E.RENDER_ENCOUNTER_SHEET_CLASSIC, GroupTokenTracker.onRenderActorSheet.bind(GroupTokenTracker));
+    });
+  }
+
+  /**
+   * Handle Tidy5e group skill roll prompt
+   * @param {Application} app - The sheet application instance
+   * @param {Object} options - Roll configuration options
+   * @param {string} options.skill - The skill key (e.g., 'acr' for Acrobatics)
+   * @param {string} options.ability - The ability key (e.g., 'dex' for Dexterity)
+   * @param {Event} options.event - The triggering event
+   * @returns {boolean} False to prevent the default prompt, true to allow it
+   */
+  static _onTidy5eGroupSkillRoll(app, options) {
+    LogUtil.log('HooksManager._onTidy5eGroupSkillRoll', [app, options]);
+
+    if (!game.user.isGM) return true;
+
+    const SETTINGS = getSettings();
+    const interceptEnabled = SettingsUtil.get(SETTINGS.interceptTidySheetsGroupRolls.tag);
+
+    if (!interceptEnabled) {
+      LogUtil.log('Tidy5e group roll interception disabled', []);
+      return true;
+    }
+
+    const { skill, ability, event } = options;
+
+    if (!app?.actor?.system?.members) {
+      LogUtil.warn('Tidy5e group roll: No members found', [app]);
+      return true;
+    }
+
+    const members = app.actor.system.members;
+    const actorIds = members.map(m => m.actor.id).filter(id => id);
+
+    if (actorIds.length === 0) {
+      LogUtil.warn('Tidy5e group roll: No valid actor IDs', [members]);
+      return true;
+    }
+
+    const skipRollDialog = SettingsUtil.get(SETTINGS.skipRollDialog.tag);
+    const groupRollId = foundry.utils.randomID();
+
+    FlashRollsAPI.requestRoll({
+      requestType: 'skill',
+      rollKey: skill,
+      actorIds,
+      ability,
+      skipRollDialog,
+      groupRollId,
+      sendAsRequest: true
+    });
+
+    return false;
   }
 
   /**

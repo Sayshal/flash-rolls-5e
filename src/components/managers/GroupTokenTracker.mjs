@@ -752,12 +752,16 @@ export class GroupTokenTracker {
     if (needsSync) {
       await this.autoSyncTokens(groupActor, scene);
     }
+
+    LogUtil.log("checkAndSyncAssociations", [associations]);
   }
 
   /**
    * Handle actor sheet rendering to inject token association UI
    */
   static async onRenderActorSheet(app, element, options) {
+    LogUtil.log("onRenderActorSheet",[app, element, options]);
+    
     if (!app.document || (app.document.type !== 'group' && app.document.type !== 'encounter')) {
       return;
     }
@@ -765,9 +769,12 @@ export class GroupTokenTracker {
       return;
     }
 
-    const mainContent = element.querySelector('[data-container-id="main"]');
+    let mainContent = element.querySelector('[data-container-id="main"]');
     if (!mainContent) {
-      return;
+      const tidyContent = element.dataset.sheetModule==="tidy5e-sheet";// hasAttibute('[data-sheet-module="tidy5e-sheet"]');
+      mainContent = element;
+      LogUtil.log("onRenderActorSheet #1",[mainContent]);
+      if(!mainContent) return;
     }
 
     let container = mainContent.querySelector('.flash5e-token-associations');
@@ -779,10 +786,12 @@ export class GroupTokenTracker {
     if (!currentScene) {
       return;
     }
+    LogUtil.log("onRenderActorSheet #2",[currentScene]);
 
     // Clean up associations for deleted scenes and invalid tokens
     const associations = app.document.getFlag(MODULE_ID, 'tokenAssociationsByScene') || {};
     let hasChanges = false;
+    LogUtil.log("onRenderActorSheet - tokenAssociationsByScene",[associations]);
 
     for (const sceneId of Object.keys(associations)) {
       const scene = game.scenes.get(sceneId);
@@ -851,7 +860,9 @@ export class GroupTokenTracker {
     }
 
     container = document.createElement('div');
-    container.className = 'flash5e-token-associations';
+    container.classList.add('sheet-body');
+    container.classList.add('flash5e-token-associations');
+    
     if (totalTokens === 0) {
       container.classList.add('no-tokens');
     }

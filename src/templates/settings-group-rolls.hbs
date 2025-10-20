@@ -29,8 +29,20 @@
   </div>
 
   <div class="form-group">
+    <label for="showGroupResultToPlayers">{{fields.showGroupResultToPlayers.label}}</label>
+    <input type="checkbox" name="showGroupResultToPlayers" id="showGroupResultToPlayers" {{#if showGroupResultToPlayers}}checked{{/if}} />
+    <p class="hint">{{fields.showGroupResultToPlayers.hint}}</p>
+  </div>
+
+  <div class="form-group">
     <label for="groupRollNPCHidden">{{fields.groupRollNPCHidden.label}}</label>
     <input type="checkbox" name="groupRollNPCHidden" id="groupRollNPCHidden" {{#if groupRollNPCHidden}}checked{{/if}} />
     <p class="hint">{{fields.groupRollNPCHidden.hint}}</p>
+  </div>
+
+  <div class="form-group">
+    <label for="interceptTidySheetsGroupRolls">{{fields.interceptTidySheetsGroupRolls.label}}</label>
+    <input type="checkbox" name="interceptTidySheetsGroupRolls" id="interceptTidySheetsGroupRolls" {{#if interceptTidySheetsGroupRolls}}checked{{/if}} />
+    <p class="hint">{{fields.interceptTidySheetsGroupRolls.hint}}</p>
   </div>
 </section>

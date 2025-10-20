@@ -57,9 +57,9 @@
                  data-group-roll-id="{{groupRollId}}">
         </div>
       </div>
-      
+
       {{#if groupResult.complete}}
-      <div class="group-roll-footer {{#if groupResult.success}}success{{else}}failure{{/if}}">
+      <div class="group-roll-footer {{#if groupResult.success}}success{{else}}failure{{/if}}" data-show-to-players="{{showResultToPlayers}}">
         <div class="group-result-summary">
           <span class="group-result-label">Group Result:</span>
           {{#if groupResult.success}}
