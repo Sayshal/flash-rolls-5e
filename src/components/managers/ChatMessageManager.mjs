@@ -204,7 +204,7 @@ export class ChatMessageManager {
           const result = flagData.results[index];
           if (result) {
             const actor = game.actors.get(result.actorId);
-            const shouldHide = shouldHideNPCs && actor && !actor.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER);
+            const shouldHide = shouldHideNPCs && actor && !actor.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.LIMITED);
 
             if (shouldHide) {
               element.classList.add('npc-hidden');
@@ -259,24 +259,22 @@ export class ChatMessageManager {
         }
 
         if (showDC===false) {
-          setTimeout(() => {
-            const chatCard = html.querySelectorAll("[data-display-challenge]");
-            chatCard.forEach((el) => delete el.dataset.displayChallenge);
+          const chatCard = html.querySelectorAll("[data-display-challenge]");
+          chatCard.forEach((el) => delete el.dataset.displayChallenge);
 
-            const diceTotals = html.querySelectorAll(".success, .failure, .critical, .fumble");
-            diceTotals?.forEach((el) => {
-              el.classList.remove("success", "failure", "critical", "fumble");
-            });
+          const diceTotals = html.querySelectorAll(".success, .failure, .critical, .fumble");
+          diceTotals?.forEach((el) => {
+            el.classList.remove("success", "failure", "critical", "fumble");
+          });
 
-            diceTotals?.forEach((el) => el.querySelector(".icons")?.remove());
+          diceTotals?.forEach((el) => el.querySelector(".icons")?.remove());
 
-            html.querySelectorAll(".save-dc, .dc, .target-dc").forEach((el) => {
-              const text = el.textContent;
-              if (text && text.includes("DC")) {
-                el.textContent = text.replace(/DC\s*\d+/gi, "");
-              }
-            });
-          }, 50);
+          html.querySelectorAll(".save-dc, .dc, .target-dc").forEach((el) => {
+            const text = el.textContent;
+            if (text && text.includes("DC")) {
+              el.textContent = text.replace(/DC\s*\d+/gi, "");
+            }
+          });
         }
       }
     }
@@ -753,7 +751,7 @@ export class ChatMessageManager {
         actorName: entry.tokenId ?
           (canvas.tokens?.get(entry.tokenId)?.name || entry.actor.name) :
           entry.actor.name,
-        isNPC: !entry.actor.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER),
+        isNPC: !entry.actor.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.LIMITED),
         rolled: false,
         showDice: true,
         total: null,
@@ -1117,7 +1115,7 @@ export class ChatMessageManager {
       flagData.results.forEach(result => {
         if (result.isNPC === undefined) {
           const actor = game.actors.get(result.actorId);
-          result.isNPC = actor ? !actor.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER) : false;
+          result.isNPC = actor ? !actor.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.LIMITED) : false;
         }
         // Update shouldHide flag
         result.shouldHide = result.isNPC && flagData.groupRollNPCHidden && !flagData.isGM;
@@ -1244,7 +1242,7 @@ export class ChatMessageManager {
       flagData.results.forEach(result => {
         if (result.isNPC === undefined) {
           const actor = game.actors.get(result.actorId);
-          result.isNPC = actor ? !actor.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER) : false;
+          result.isNPC = actor ? !actor.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.LIMITED) : false;
         }
         // Update shouldHide flag
         result.shouldHide = result.isNPC && flagData.groupRollNPCHidden && !flagData.isGM;

@@ -1140,7 +1140,7 @@ export class RollMenuEventManager {
         const hasPlayerOwnership = Object.entries(actor.ownership || {}).some(([userId, level]) => {
           if (userId === 'default') return false;
           const user = game.users.get(userId);
-          return user && !user.isGM && level >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER;
+          return user && !user.isGM && level >= CONST.DOCUMENT_OWNERSHIP_LEVELS.LIMITED;
         });
 
         if (hasPlayerOwnership) {
