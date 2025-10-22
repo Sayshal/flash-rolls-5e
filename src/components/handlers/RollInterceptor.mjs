@@ -122,7 +122,18 @@ export class RollInterceptor {
       if(!isMidiOn) dialog.configure = areSkipKeysPressed ? false : config.isRollRequest!==undefined ? false : !RollHelpers.shouldSkipRollDialog(skipRollDialog, {isPC: isPC, isNPC: !isPC});
       return;
     }
-    LogUtil.log('_onPreRollIntercept #1', [requestsEnabled, rollInterceptionEnabled, config]);
+
+    message.data = {
+      ...message.data,
+      flags: {
+        ...message.data.flags,
+        rsr5e: { 
+          ...message.data.flags.rsr5e,
+          processed: true, quickRoll: false
+        }
+      }
+    }
+    LogUtil.log('_onPreRollIntercept #1', [requestsEnabled, rollInterceptionEnabled, config, message]);
 
     // Only intercept on GM side, if this is a request
     if (!game.user.isGM) return;

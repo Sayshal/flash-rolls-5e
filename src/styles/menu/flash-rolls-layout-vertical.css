@@ -262,7 +262,7 @@
     list-style: none;
     max-height: none;
     gap: 0;
-    border: 1px solid var(--fr5e-secondary-bg-5);
+    border: 1px solid var(--fr5e-secondary-bg-10);
     border-radius: 4px;
     max-width: 100%;
   }
@@ -339,7 +339,7 @@
     list-style: none;
     max-height: none;
     gap: 0.2rem;
-    border: 1px solid var(--fr5e-secondary-bg-5);
+    border: 1px solid var(--fr5e-secondary-bg-10);
     border-radius: 4px;
   }
 

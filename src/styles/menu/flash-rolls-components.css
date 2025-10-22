@@ -406,7 +406,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  border-top: 1px solid #000;
+  border-top: 0;
   margin: auto 0 0.5rem 0;
   justify-content: flex-end;
   flex-shrink: 0;
@@ -416,10 +416,9 @@
 }
 
 #flash-rolls-menu div.main-content > ul.actors > li.actors-tabs button {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--fr5e-secondary-bg-10);
   border-radius: 0;
   color: inherit;
-  border: 1px solid rgba(0,0,0,0.1);
   cursor: pointer;
   box-shadow: none;
   padding: 0 4px;
@@ -436,7 +435,7 @@
 }
 
 #flash-rolls-menu div.main-content > ul.actors > li.actors-tabs button:hover {
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--fr5e-secondary-bg-10);
   border: 1px solid transparent;
   opacity: 1;
 }
@@ -804,7 +803,7 @@
 .actor-filter-tooltip {
   position: absolute;
   background: var(--fr5e-menu-background);
-  border: 1px solid var(--fr5e-secondary-bg-5);
+  border: 1px solid var(--fr5e-secondary-bg-10);
   border-radius: 4px;
   padding: 0.75rem;
   z-index: 10000;
@@ -828,7 +827,7 @@
   color: var(--color-warm-2);
   margin-bottom: 0.25rem;
   padding-bottom: 0.25rem;
-  border-bottom: 1px solid var(--fr5e-secondary-bg-5);
+  border-bottom: 1px solid var(--fr5e-secondary-bg-10);
   font-size: var(--font-size-11);
 }
 

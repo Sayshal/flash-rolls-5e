@@ -244,7 +244,7 @@ body > .actor.drag-wrapper .actor-data {
 }
 
 #flash-rolls-menu .actor-group .group-expand-btn:hover {
-  background-color: var(--fr5e-secondary-bg-5);
+  background-color: var(--fr5e-secondary-bg-10);
   opacity: 0.7;
 }
 

@@ -30,7 +30,7 @@
       border-top: 1px solid rgba(0,0,0,0.35);
 
       &:hover {
-        background-color: var(--fr5e-secondary-bg-5);
+        background-color: var(--fr5e-secondary-bg-10);
       }
     }
     
@@ -48,7 +48,7 @@
       display: none;
       padding: 0.25rem;
       margin-top: 0.25rem;
-      border-top: 1px solid var(--fr5e-secondary-bg-5);
+      border-top: 1px solid var(--fr5e-secondary-bg-10);
 
       .dice-total{
         display: none;
@@ -149,7 +149,7 @@
     transition: border-color 0s;
   }
   .dice-formula {
-    background-color: var(--fr5e-secondary-bg-5);
+    background-color: var(--fr5e-secondary-bg-10);
   }
   .roll-breakdown {
     .dice-tooltip .total {
@@ -166,7 +166,7 @@
   margin-top: 0.5rem;
   padding: 0.5rem;
   border-radius: 4px;
-  background: var(--fr5e-secondary-bg-5);
+  background: var(--fr5e-secondary-bg-10);
   border: 1px solid transparent;
   
   &.success {
@@ -247,7 +247,7 @@
       width: 25%;
       text-align: center;
       padding: 0.25rem;
-      border: 1px solid var(--fr5e-secondary-bg-5);
+      border: 1px solid var(--fr5e-secondary-bg-10);
       border-radius: 6px;
       background: var(--fr5e-bg-50);
       font-size: 1.1rem;
