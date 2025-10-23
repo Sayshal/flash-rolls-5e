@@ -47,7 +47,11 @@
       "noRollSelected": "No roll type selected for {name}",
       "rollFailed": "Failed to execute roll for {name}",
       "codeCopied": "Code copied to clipboard",
-      "twoActorsRequired": "Two actors must be selected for a contested roll"
+      "twoActorsRequired": "Two actors must be selected for a contested roll",
+      "menuNotOpen": "Flash Token Bar menu is not open",
+      "iconRemoved": "Icon {iconName} removed from menu",
+      "iconRemoveFailed": "Failed to remove icon from menu",
+      "macroCreationFailed": "Failed to create macro"
     },
     "contextMenu": {
       "addToFavorites": "Add to Flash Token Bar Menu",
@@ -319,6 +323,10 @@
         "associatedTokens": "{count} associated token(s) in this scene",
         "noTokensInScene": "No associated tokens in this scene",
         "associationsRemoved": "Token associations removed for {actor}"
+      },
+      "contextMenu": {
+        "removeIcon": "Remove Icon",
+        "createMacro": "Create Macro"
       },
       "filters": {
         "title": "Filter Actors",

@@ -13,7 +13,7 @@ import { ChatMessageManager } from "../managers/ChatMessageManager.mjs";
 import RollRequestsMenu from "../ui/RollRequestsMenu.mjs";
 import { ActorStatusManager } from "../managers/ActorStatusManager.mjs";
 import { ActorDirectoryIconUtil } from "../utils/ActorDirectoryIconUtil.mjs";
-import { FlashRollsAPI } from "./FlashRollsAPI.mjs";
+import { FlashAPI } from "./FlashAPI.mjs";
 import { RollMenuDragManager } from "../managers/roll-menu/RollMenuDragManager.mjs";
 import { RollHooksHandler } from "../handlers/RollHooksHandler.mjs";
 import { BaseActivityManager } from "../managers/BaseActivityManager.mjs";
@@ -251,11 +251,11 @@ export class HooksManager {
     // Initialize public API for other modules
     const module = game.modules.get("flash-rolls-5e");
     if (module) {
-      module.api = FlashRollsAPI;
+      module.api = FlashAPI;
     }
 
-    globalThis.FlashAPI = FlashRollsAPI;
-    globalThis.FlashRolls5e = FlashRollsAPI;
+    globalThis.FlashAPI = FlashAPI;
+    globalThis.FlashRolls5e = FlashAPI;
     Hooks.call("flash-rolls-5e.ready");
   }
   
@@ -582,7 +582,7 @@ export class HooksManager {
     const skipRollDialog = SettingsUtil.get(SETTINGS.skipRollDialog.tag);
     const groupRollId = foundry.utils.randomID();
 
-    FlashRollsAPI.requestRoll({
+    FlashAPI.requestRoll({
       requestType: 'skill',
       rollKey: skill,
       actorIds,

@@ -121,13 +121,17 @@ export class RollMenuStateManager {
    * @param {Event} event - Toggle event
    * @param {RollRequestsMenu} menu - Menu instance
    */
-  static handleToggleLock(event, menu) {
+  static async handleToggleLock(event, menu) {
     event.preventDefault();
     menu.isLocked = !menu.isLocked;
 
-    const lockIcon = event.currentTarget;
-    lockIcon.classList.remove('fa-lock-keyhole', 'fa-lock-keyhole-open');
-    lockIcon.classList.add(menu.isLocked ? 'fa-lock-keyhole' : 'fa-lock-keyhole-open');
+    await game.user.setFlag(MODULE.ID, 'menuLocked', menu.isLocked);
+
+    const lockIcon = event.currentTarget || menu.element?.querySelector('#flash5e-actors-lock');
+    if (lockIcon) {
+      lockIcon.classList.remove('fa-lock-keyhole', 'fa-lock-keyhole-open');
+      lockIcon.classList.add(menu.isLocked ? 'fa-lock-keyhole' : 'fa-lock-keyhole-open');
+    }
   }
 
   /**

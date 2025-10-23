@@ -70,8 +70,8 @@
   height: auto;
   flex-shrink: 0;
   border-radius: 4px;
-  background-color: rgba(0, 0, 0, 0.25);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: var(--fr5e-secondary-bg-10);
+  border: 1px solid var(--fr5e-secondary-bg-10);
   align-self: stretch;
   display: flex;
   align-items: center;
@@ -882,4 +882,46 @@
   clip: rect(0, 0, 0, 0) !important;
   white-space: nowrap !important;
   border: 0 !important;
+}
+
+/* Icon Context Menu */
+.icon-context-menu {
+  background: var(--fr5e-menu-background);
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  min-width: 160px;
+  padding: 4px 0;
+}
+
+.icon-context-menu ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.icon-context-menu .context-menu-item {
+  align-items: center;
+  color: var(--fr5e-text-color);
+  cursor: pointer;
+  display: flex;
+  gap: 6px;
+  padding: 6px 12px;
+  transition: background-color 0.15s ease;
+  user-select: none;
+}
+
+.icon-context-menu .context-menu-item:hover {
+  background: var(--color-warm-2);
+  color: var(--color-light-1, #fff);
+}
+
+.icon-context-menu .context-menu-item i {
+  font-size: 0.875rem;
+  width: 16px;
+  text-align: center;
+}
+
+.icon-context-menu .context-menu-item span {
+  flex: 1;
+  font-size: 0.875rem;
 }

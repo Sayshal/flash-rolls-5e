@@ -294,4 +294,39 @@ export class IconLayoutUtil {
       await SettingsUtil.set(SETTINGS.menuIconsLayout.tag, defaultLayout);
     }
   }
+
+  /**
+   * Remove an icon from the layout by disabling it
+   * @param {string} iconId - The icon ID to remove
+   * @param {string} iconType - The icon type (moduleActions or actorActions)
+   */
+  static async removeIcon(iconId, iconType) {
+    const SETTINGS = getSettings();
+    const currentLayout = SettingsUtil.get(SETTINGS.menuIconsLayout.tag) || getDefaultIconLayout();
+
+    if (!currentLayout[iconType]) {
+      LogUtil.error('IconLayoutUtil.removeIcon - Invalid icon type:', [iconType]);
+      return;
+    }
+
+    const iconIndex = currentLayout[iconType].findIndex(icon => icon.id === iconId);
+    if (iconIndex === -1) {
+      LogUtil.error('IconLayoutUtil.removeIcon - Icon not found:', [iconId, iconType]);
+      return;
+    }
+
+    const updatedLayout = {
+      ...currentLayout,
+      [iconType]: currentLayout[iconType].map(icon =>
+        icon.id === iconId ? { ...icon, enabled: false } : icon
+      )
+    };
+
+    await SettingsUtil.set(SETTINGS.menuIconsLayout.tag, updatedLayout);
+
+    const RollRequestsMenu = game.modules.get('flash-rolls-5e')?.api?.RollRequestsMenu;
+    if (RollRequestsMenu) {
+      RollRequestsMenu.refreshIfOpen();
+    }
+  }
 }

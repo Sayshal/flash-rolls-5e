@@ -60,7 +60,7 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
     this.currentTab = 'pc';
     this.selectedSubmenu = 'request-types';
     this.selectedRequestType = null;
-    this.isLocked = false; 
+    this.isLocked = game.user.getFlag(MODULE.ID, 'menuLocked') ?? false; 
     this.optionsExpanded = game.user.getFlag(MODULE.ID, 'menuOptionsExpanded') ?? false;
     this.accordionStates = game.user.getFlag(MODULE.ID, 'menuAccordionStates') ?? {};
     this.groupExpansionStates = game.user.getFlag(MODULE.ID, 'groupExpansionStates') ?? {};

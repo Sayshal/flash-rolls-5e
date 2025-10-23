@@ -104,6 +104,4 @@ body:not(.crlngn-ui) #flash-rolls-menu:after {
 }
 
 /* No Actors State */
-#flash-rolls-menu.no-actors .main-content ul.action-icons .bulk-action:not([data-icon-id="filter-actors"]) {
-  display: none;
-}
+/* Icons are now always visible since many actions work without actors */

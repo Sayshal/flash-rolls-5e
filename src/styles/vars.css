@@ -25,14 +25,14 @@
   --fr5e-width-regular: 12.5rem;
   --fr5e-actors-width-compact: 4.75rem;
   --fr5e-actors-width-regular: 10rem;
-  --fr5e-actions-width: 2rem;
+  --fr5e-actions-width: 1.8rem;
   
   /* Horizontal Layout Dimensions */
   --fr5e-height-compact: 8.25rem;
   --fr5e-height-regular: 13.5rem;
   --fr5e-actors-height-compact: 5rem;
   --fr5e-actors-height-regular: 10.5rem;
-  --fr5e-actions-height: 2rem;
+  --fr5e-actions-height: 1.8rem;
   --fr5e-max-width-horizontal: clamp(400px, 40vw, 800px);
   
   /* Actor Item Dimensions */

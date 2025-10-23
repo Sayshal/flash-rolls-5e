@@ -5,6 +5,7 @@ import { getSettings } from '../../../constants/Settings.mjs';
 import { SettingsUtil } from '../../utils/SettingsUtil.mjs';
 import { MODULE_ID } from '../../../constants/General.mjs';
 import { TokenMovementManager } from '../../utils/TokenMovementManager.mjs';
+import { IconContextMenu } from '../../ui/IconContextMenu.mjs';
 
 /**
  * Handles Roll Requests Menu event listeners
@@ -65,6 +66,7 @@ export class RollMenuEventManager {
     this.attachTabHandlers(menu, html);
     this.attachActorHandlers(menu, html);
     this.attachActionIconHandlers(menu, html);
+    this.attachIconContextMenuHandlers(menu, html);
     this.attachCompactTooltipHandlers(menu, html);
     this.attachSearchHandlers(menu, html);
     this.attachAccordionHandlers(menu, html);
@@ -329,6 +331,30 @@ export class RollMenuEventManager {
       secondButton.classList.remove('disabled');
       secondButton.removeAttribute('disabled');
     }
+  }
+
+  /**
+   * Attach context menu handlers to all icon elements
+   */
+  static attachIconContextMenuHandlers(menu, html) {
+    const moduleIcons = html.querySelectorAll('[data-icon-id][data-icon-type="moduleActions"]');
+    const actorIcons = html.querySelectorAll('[data-icon-id][data-icon-type="actorActions"]');
+
+    const allIcons = [...moduleIcons, ...actorIcons];
+
+    allIcons.forEach(iconElement => {
+      const iconId = iconElement.dataset.iconId;
+      const iconType = iconElement.dataset.iconType;
+
+      if (!iconId || !iconType) return;
+
+      iconElement.addEventListener('contextmenu', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+
+        IconContextMenu.show(event, iconId, iconType, menu);
+      });
+    });
   }
 
   /**
@@ -678,19 +704,29 @@ export class RollMenuEventManager {
   }
 
   /**
-   * Toggle targeting for all selected actors
+   * Toggle targeting for all selected actors, or clear all targets if none selected
    * @param {RollRequestsMenu} menu - The menu instance
    */
   static toggleTargetsForSelected(menu) {
-    menu.selectedActors.forEach(uniqueId => {
-      const actor = getActorData(uniqueId);
-      if (!actor) return;
-      
-      const actorId = actor.id;
-      const tokenId = game.actors.get(uniqueId) ? null : uniqueId;
-      
-      this.toggleActorTargetById(actorId, tokenId);
-    });
+    if (menu.selectedActors.size > 0) {
+      menu.selectedActors.forEach(uniqueId => {
+        const actor = getActorData(uniqueId);
+        if (!actor) return;
+
+        const actorId = actor.id;
+        const tokenId = game.actors.get(uniqueId) ? null : uniqueId;
+
+        this.toggleActorTargetById(actorId, tokenId);
+      });
+    } else {
+      if (game.user.targets.size > 0) {
+        const targetCount = game.user.targets.size;
+        game.user.targets.forEach(token => {
+          token.setTarget(false, { releaseOthers: false });
+        });
+        ui.notifications.info(`Cleared ${targetCount} target(s)`);
+      }
+    }
   }
 
   /**
@@ -1178,15 +1214,14 @@ export class RollMenuEventManager {
         const baseActor = game.actors.get(baseActorId);
         if (baseActor) {
           members.push({
-            actor: baseActor, 
-            quantity: count
+            actor: baseActorId
           });
         }
       }
     } else {
       for (const [baseActorId, { actor, count }] of actorGroups) {
         members.push({
-          uuid: `Actor.${baseActorId}`, // Base actor UUID
+          uuid: `Actor.${baseActorId}`,
           quantity: {
             value: count,
             formula: ""

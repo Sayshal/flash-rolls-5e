@@ -7,13 +7,18 @@ import { SettingsUtil } from "../utils/SettingsUtil.mjs";
 import { getSettings } from "../../constants/Settings.mjs";
 import { RollHelpers } from "../helpers/RollHelpers.mjs";
 import { ChatMessageManager } from "../managers/ChatMessageManager.mjs";
+import { ModuleSettingsMenu } from "../ui/dialogs/ModuleSettingsMenu.mjs";
+import { RollMenuEventManager } from "../managers/roll-menu/RollMenuEventManager.mjs";
+import { TokenMovementManager } from "../utils/TokenMovementManager.mjs";
+import { RollMenuStateManager } from "../managers/roll-menu/RollMenuStateManager.mjs";
+import { SidebarController } from "../managers/SidebarController.mjs";
 
 /**
  * Public API for Flash Token Bar 5e that can be used by other modules
  * Accessible via FlashAPI or game.modules.get('flash-rolls-5e').api
  * Legacy access: FlashRolls5e (deprecated, use FlashAPI instead)
  */
-export class FlashRollsAPI {
+export class FlashAPI {
   
   /**
    * Request a roll for specified actors
@@ -48,7 +53,7 @@ export class FlashRollsAPI {
 
       const config = { dc, situationalBonus, advantage, disadvantage, skipRollDialog, sendAsRequest, groupRollId, isContestedRoll };
       
-      LogUtil.log('FlashRollsAPI.requestRoll', [requestType, rollKey, actorIds, config]);
+      LogUtil.log('FlashAPI.requestRoll', [requestType, rollKey, actorIds, config]);
       
       // Find roll option by either uppercase key or lowercase name
       let rollOption = MODULE.ROLL_REQUEST_OPTIONS[requestType];
@@ -126,7 +131,7 @@ export class FlashRollsAPI {
       // Use orchestrator to handle the roll request
       return RollMenuOrchestrator.triggerRoll(normalizedRequestType, rollKey, mockMenu, config);
     } catch (error) {
-      LogUtil.error('FlashRollsAPI.requestRoll - Execution error:', [error]);
+      LogUtil.error('FlashAPI.requestRoll - Execution error:', [error]);
       ui.notifications.error(game.i18n.localize("FLASH_ROLLS.notifications.macroExecutionFailed"));
       return;
     }
@@ -183,7 +188,7 @@ export class FlashRollsAPI {
     const SETTINGS = getSettings();
     const addMacrosToFolder = SettingsUtil.get(SETTINGS.addMacrosToFolder.tag);
     
-    LogUtil.log('FlashRollsAPI.createMacro', [macroData]);
+    LogUtil.log('FlashAPI.createMacro', [macroData]);
     
     const { requestType, rollKey = null, actorIds = [], config = {} } = macroData;
     
@@ -199,7 +204,7 @@ export class FlashRollsAPI {
     
     // Generate macro name using label property
     let macroName = rollOption.label;
-    LogUtil.log('FlashRollsAPI.createMacro', [macroName, rollOption.subList]);
+    LogUtil.log('FlashAPI.createMacro', [macroName, rollOption.subList]);
     if (rollKey && rollOption.subList && Array.isArray(rollOption.subList)) {
       const subItem = rollOption.subList.find(item => item.id === rollKey);
       if (subItem) {
@@ -473,7 +478,7 @@ export class FlashRollsAPI {
           return null;
       }
     } catch (error) {
-      LogUtil.error('FlashRollsAPI.calculateGroupRoll - Error:', [error]);
+      LogUtil.error('FlashAPI.calculateGroupRoll - Error:', [error]);
       ui.notifications.error(`Error calculating group roll: ${error.message}`);
       return null;
     }
@@ -481,5 +486,337 @@ export class FlashRollsAPI {
 
   static async createGroupRollMessage(actorEntries, rollType, rollKey, config = {}, groupRollId) {
     return ChatMessageManager.createGroupRollMessage(actorEntries, rollType, rollKey, config, groupRollId);
+  }
+
+  /**
+   * Toggle the menu lock state
+   * When locked, the menu won't close when clicking outside
+   */
+  static async toggleLockMenu() {
+    const currentLockState = game.user.getFlag(MODULE.ID, 'menuLocked') ?? false;
+    const newLockState = !currentLockState;
+
+    await game.user.setFlag(MODULE.ID, 'menuLocked', newLockState);
+
+    const menu = RollRequestsMenu.getInstance();
+    if (menu && menu.rendered) {
+      menu.isLocked = newLockState;
+      const lockIcon = menu.element?.querySelector('#flash5e-actors-lock');
+      if (lockIcon) {
+        lockIcon.classList.remove('fa-lock-keyhole', 'fa-lock-keyhole-open');
+        lockIcon.classList.add(newLockState ? 'fa-lock-keyhole' : 'fa-lock-keyhole-open');
+      }
+    }
+  }
+
+  /**
+   * Toggle the roll requests enabled state
+   * Controls whether the module intercepts and processes roll requests
+   */
+  static async toggleRollRequests() {
+    const SETTINGS = getSettings();
+    const currentValue = SettingsUtil.get(SETTINGS.rollRequestsEnabled.tag);
+    const newValue = !currentValue;
+
+    await SettingsUtil.set(SETTINGS.rollRequestsEnabled.tag, newValue);
+
+    SidebarController.updateRollRequestsIcon(newValue);
+    SettingsUtil.applyRollRequestsEnabled(newValue);
+
+    const menu = RollRequestsMenu.getInstance();
+    if (menu && menu.rendered) {
+      await menu.render();
+    }
+  }
+
+  /**
+   * Toggle the skip roll dialogs setting
+   * When enabled, rolls are made immediately without showing configuration dialogs
+   */
+  static async toggleSkipDialogs() {
+    const SETTINGS = getSettings();
+    const currentValue = SettingsUtil.get(SETTINGS.skipRollDialog.tag);
+    await SettingsUtil.set(SETTINGS.skipRollDialog.tag, !currentValue);
+
+    const menu = RollRequestsMenu.getInstance();
+    if (menu && menu.rendered) {
+      await menu.render();
+    }
+  }
+
+  /**
+   * Toggle the group rolls message setting
+   * When enabled, multiple rolls are combined into a single chat message
+   */
+  static async toggleGroupRolls() {
+    const SETTINGS = getSettings();
+    const currentValue = SettingsUtil.get(SETTINGS.groupRollsMsgEnabled.tag);
+    await SettingsUtil.set(SETTINGS.groupRollsMsgEnabled.tag, !currentValue);
+
+    const menu = RollRequestsMenu.getInstance();
+    if (menu && menu.rendered) {
+      await menu.render();
+    }
+  }
+
+  /**
+   * Toggle the show options list on hover setting
+   * When enabled, the roll request options list is shown when hovering over the menu
+   */
+  static async toggleShowOptions() {
+    const SETTINGS = getSettings();
+    const currentValue = SettingsUtil.get(SETTINGS.showOptionsListOnHover.tag);
+    await SettingsUtil.set(SETTINGS.showOptionsListOnHover.tag, !currentValue);
+
+    const menu = RollRequestsMenu.getInstance();
+    if (menu && menu.rendered) {
+      await menu.render();
+    }
+  }
+
+  /**
+   * Open the module settings dialog
+   */
+  static openSettings() {
+    new ModuleSettingsMenu().render(true);
+  }
+
+  /**
+   * Toggle select all actors in the Roll Requests Menu
+   * Toggles between selecting all and deselecting all based on current state
+   * @param {string} tab - Optional tab to switch to before selecting ('pc', 'npc', or 'group')
+   */
+  static async selectAllActors(tab) {
+    const menu = RollRequestsMenu.getInstance();
+    if (!menu || !menu.rendered) {
+      ui.notifications.warn(game.i18n.localize("FLASH_ROLLS.notifications.menuNotOpen"));
+      return;
+    }
+
+    if (tab && ['pc', 'npc', 'group'].includes(tab)) {
+      if (menu.currentTab !== tab) {
+        menu.currentTab = tab;
+        await menu.render();
+      }
+    }
+
+    const selectAllCheckbox = menu.element?.querySelector('#flash5e-actors-all');
+    if (selectAllCheckbox) {
+      selectAllCheckbox.checked = !selectAllCheckbox.checked;
+      selectAllCheckbox.dispatchEvent(new Event('change'));
+    }
+  }
+
+  /**
+   * Apply actor filters or open the actor filter dialog
+   * @param {Object} filters - Optional filter configuration { inCombat: boolean, visible: boolean, removeDead: boolean }
+   */
+  static async filterActors(filters) {
+    const menu = RollRequestsMenu.getInstance();
+    if (!menu || !menu.rendered) {
+      ui.notifications.warn(game.i18n.localize("FLASH_ROLLS.notifications.menuNotOpen"));
+      return;
+    }
+
+    if (filters && typeof filters === 'object') {
+      const validFilters = {
+        inCombat: !!filters.inCombat,
+        visible: !!filters.visible,
+        removeDead: !!filters.removeDead
+      };
+
+      menu.actorFilters = validFilters;
+      await game.user.setFlag(MODULE.ID, 'actorFilters', validFilters);
+      menu.render();
+    } else {
+      const filterButton = menu.element?.querySelector('#flash5e-filter-actors');
+      if (filterButton) {
+        filterButton.click();
+      }
+    }
+  }
+
+  /**
+   * Get the current actor filter values
+   * @returns {Object} Current filter configuration { inCombat: boolean, visible: boolean, removeDead: boolean }
+   */
+  static getActorFilters() {
+    return game.user.getFlag(MODULE.ID, 'actorFilters') || {
+      inCombat: false,
+      visible: false,
+      removeDead: false
+    };
+  }
+
+  /**
+   * Toggle targeting for actors
+   * If actorIds are provided, toggles targeting for those actors
+   * If no actorIds provided, uses menu selection (or clears all targets if nothing selected)
+   * @param {string[]} actorIds - Array of actor/token IDs to toggle targeting for
+   */
+  static toggleTargets(actorIds) {
+    const menu = RollRequestsMenu.getInstance();
+
+    if (actorIds && actorIds.length > 0) {
+      actorIds.forEach(uniqueId => {
+        const actor = getActorData(uniqueId);
+        if (!actor) return;
+
+        const actorId = actor.id;
+        const tokenId = game.actors.get(uniqueId) ? null : uniqueId;
+        RollMenuEventManager.toggleActorTargetById(actorId, tokenId);
+      });
+    } else if (menu && menu.rendered) {
+      RollMenuEventManager.toggleTargetsForSelected(menu);
+    }
+  }
+
+  /**
+   * Heal actors to full HP
+   * @param {string[]} actorIds - Array of actor/token IDs to heal
+   */
+  static healAll(actorIds) {
+    const menu = RollRequestsMenu.getInstance();
+
+    if (actorIds && actorIds.length > 0) {
+      actorIds.forEach(uniqueId => {
+        const actor = getActorData(uniqueId);
+        if (!actor) return;
+
+        const actorId = actor.id;
+        const tokenId = game.actors.get(uniqueId) ? null : uniqueId;
+        RollMenuEventManager.healActorById(actorId, tokenId);
+      });
+    } else if (menu && menu.rendered) {
+      RollMenuEventManager.healSelectedActors(menu);
+    }
+  }
+
+  /**
+   * Set actor HP to 0
+   * @param {string[]} actorIds - Array of actor/token IDs to set HP to 0
+   */
+  static killAll(actorIds) {
+    const menu = RollRequestsMenu.getInstance();
+
+    if (actorIds && actorIds.length > 0) {
+      actorIds.forEach(uniqueId => {
+        const actor = getActorData(uniqueId);
+        if (!actor) return;
+
+        const actorId = actor.id;
+        const tokenId = game.actors.get(uniqueId) ? null : uniqueId;
+        RollMenuEventManager.killActorById(actorId, tokenId);
+      });
+    } else if (menu && menu.rendered) {
+      RollMenuEventManager.killSelectedActors(menu);
+    }
+  }
+
+  /**
+   * Remove all status effects from actors
+   * @param {string[]} actorIds - Array of actor/token IDs to remove status effects from
+   */
+  static async removeStatusEffects(actorIds) {
+    const menu = RollRequestsMenu.getInstance();
+
+    if (actorIds && actorIds.length > 0) {
+      let totalRemoved = 0;
+      for (const uniqueId of actorIds) {
+        const actor = getActorData(uniqueId);
+        if (!actor) continue;
+
+        const statusEffects = actor.appliedEffects.filter(effect =>
+          effect.statuses?.size > 0 || effect.flags?.core?.statusId
+        );
+
+        for (const effect of statusEffects) {
+          try {
+            await effect.delete();
+            totalRemoved++;
+          } catch (error) {
+            LogUtil.error(`Failed to remove status effect from ${actor.name}`, [error]);
+          }
+        }
+      }
+
+      if (totalRemoved > 0) {
+        ui.notifications.info(`Removed ${totalRemoved} status effects`);
+      }
+    } else if (menu && menu.rendered) {
+      await RollMenuEventManager.removeAllStatusEffectsFromSelected(menu);
+    }
+  }
+
+  /**
+   * Open character sheets for actors
+   * @param {string[]} actorIds - Array of actor/token IDs to open sheets for
+   */
+  static openSheets(actorIds) {
+    const menu = RollRequestsMenu.getInstance();
+
+    if (actorIds && actorIds.length > 0) {
+      actorIds.forEach(uniqueId => {
+        const actor = getActorData(uniqueId);
+        if (!actor) return;
+
+        const actorId = actor.id;
+        const tokenId = game.actors.get(uniqueId) ? null : uniqueId;
+        RollMenuEventManager.openActorSheetById(actorId, tokenId);
+      });
+    } else if (menu && menu.rendered) {
+      RollMenuEventManager.openSheetsForSelected(menu);
+    }
+  }
+
+  /**
+   * Create a group or encounter from selected actors
+   * @param {string[]} actorIds - Array of actor/token IDs to group
+   */
+  static async groupSelected(actorIds) {
+    const menu = RollRequestsMenu.getInstance();
+
+    if (actorIds && actorIds.length > 0) {
+      const tempMenu = { selectedActors: new Set(actorIds) };
+      await RollMenuEventManager.createGroupFromSelected(tempMenu);
+    } else if (menu && menu.rendered) {
+      await RollMenuEventManager.createGroupFromSelected(menu);
+    } else {
+      ui.notifications.warn(game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelected"));
+    }
+  }
+
+  /**
+   * Toggle movement restriction for actors
+   * @param {string[]} actorIds - Array of actor/token IDs to toggle movement for
+   */
+  static async toggleMovement(actorIds) {
+    const menu = RollRequestsMenu.getInstance();
+
+    if (actorIds && actorIds.length > 0) {
+      const tempMenu = { selectedActors: new Set(actorIds) };
+      await TokenMovementManager.toggleMovementForSelected(tempMenu);
+    } else if (menu && menu.rendered) {
+      await TokenMovementManager.toggleMovementForSelected(menu);
+    } else {
+      ui.notifications.warn(game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelected"));
+    }
+  }
+
+  /**
+   * Open the contested roll dialog for selected actors
+   * @param {string[]} actorIds - Array of actor/token IDs for contested roll
+   */
+  static async openContestedRoll(actorIds) {
+    const menu = RollRequestsMenu.getInstance();
+
+    if (actorIds && actorIds.length > 0) {
+      const tempMenu = { selectedActors: new Set(actorIds) };
+      await RollMenuEventManager.openContestedRollDialog(tempMenu);
+    } else if (menu && menu.rendered) {
+      await RollMenuEventManager.openContestedRollDialog(menu);
+    } else {
+      ui.notifications.warn(game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelected"));
+    }
   }
 }

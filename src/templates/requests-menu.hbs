@@ -1,9 +1,4 @@
 <div data-tab="{{selectedTab}}">
-  {{!-- {{#if isCompact}}
-    <div class="floating-info">
-      Test
-    </div>
-  {{/if}} --}}
   {{!-- Drag Handle --}}
   <div class="drag-handle" tootlip="{{localize 'FLASH_ROLLS.ui.menus.dragHandleTooltip'}}">
     <i class="fas fa-grip-horizontal"></i>
@@ -177,7 +172,7 @@
       {{!-- Module Action Icons --}}
       {{#each enabledModuleIcons as |icon|}}
         {{#with (lookup ../iconConfigs.moduleActions id)}}
-          <li data-icon-id="{{../id}}">
+          <li data-icon-id="{{../id}}" data-icon-type="moduleActions">
             {{#if (eq type "button")}}
               {{#if (eq ../id "lock-menu")}}
                 <i class="icon-option icon fas {{#if ../../actorsLocked}}fa-lock-keyhole{{else}}fa-lock-keyhole-open{{/if}}"
@@ -224,7 +219,7 @@
         <div class="actor-actions-scrollable">
           {{#each enabledActorIcons as |icon|}}
             {{#with (lookup ../iconConfigs.actorActions id)}}
-              <li data-icon-id="{{../id}}" class="bulk-action">
+              <li data-icon-id="{{../id}}" data-icon-type="actorActions" class="bulk-action">
                 {{#if (eq type "button")}}
                   <button id="{{element}}"
                           data-tooltip="{{localize tooltipKey}}"

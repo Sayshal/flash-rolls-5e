@@ -2,7 +2,7 @@ import { LogUtil } from "../../../utils/LogUtil.mjs";
 import { MODULE_ID } from "../../../../constants/General.mjs";
 import { HOOKS_CORE } from "../../../../constants/Hooks.mjs";
 import { GeneralUtil } from "../../../utils/GeneralUtil.mjs";
-import { FlashRollsAPI } from "../../../core/FlashRollsAPI.mjs";
+import { FlashAPI } from "../../../core/FlashAPI.mjs";
 
 // Check if required D&D5e classes exist
 Hooks.once(HOOKS_CORE.READY, () => {
@@ -168,7 +168,7 @@ export function GMRollConfigMixin(Base) {
       };
       
       try {
-        await FlashRollsAPI.createMacro(macroData);
+        await FlashAPI.createMacro(macroData);
         
         // Close the dialog after successful macro creation
         this.close();
