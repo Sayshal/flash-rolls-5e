@@ -156,6 +156,24 @@ export const ACTOR_ACTION_ICONS = {
     element: "flash5e-contested-roll",
     type: "button",
     cssClass: "bulk-action"
+  },
+  "place-tokens": {
+    id: "place-tokens",
+    icon: "fa-location-dot",
+    labelKey: "FLASH_ROLLS.ui.inputs.placeTokens",
+    tooltipKey: "FLASH_ROLLS.ui.inputs.placeTokens",
+    element: "flash5e-place-tokens",
+    type: "button",
+    cssClass: "bulk-action"
+  },
+  "teleport-tokens": {
+    id: "teleport-tokens",
+    icon: "fa-person-to-portal",
+    labelKey: "FLASH_ROLLS.ui.inputs.teleportTokens",
+    tooltipKey: "FLASH_ROLLS.ui.inputs.teleportTokens",
+    element: "flash5e-teleport-tokens",
+    type: "button",
+    cssClass: "bulk-action"
   }
 };
 
@@ -210,7 +228,9 @@ export function getDefaultIconLayout() {
       { id: "open-sheets", icon: "fa-square-user", enabled: true, order: 6 },
       { id: "heal-all", icon: "fa-heart-pulse", enabled: true, order: 7 },
       { id: "kill-all", icon: "fa-skull", enabled: true, order: 8 },
-      { id: "contested-roll", icon: "fa-swords", enabled: true, order: 9 }
+      { id: "contested-roll", icon: "fa-swords", enabled: true, order: 9 },
+      { id: "place-tokens", icon: "fa-location-dot", enabled: true, order: 10 },
+      { id: "teleport-tokens", icon: "fa-person-to-portal", enabled: true, order: 11 }
     ]
   };
 }

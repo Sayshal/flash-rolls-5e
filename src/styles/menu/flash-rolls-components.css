@@ -208,6 +208,7 @@
 #flash-rolls-menu div.main-content > ul.actors > li .actor .actor-data {
   align-self: stretch;
   align-items: flex-start;
+  justify-content: center;
   display: flex;
   flex: 0 0 calc(100% - 4rem);
   flex-direction: column;

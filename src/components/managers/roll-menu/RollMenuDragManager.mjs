@@ -9,7 +9,7 @@ import { SettingsUtil } from '../../utils/SettingsUtil.mjs';
  * Handles drag and positioning of the Roll Requests Menu
  */
 export class RollMenuDragManager {
-  static SNAP_DISTANCE = 30; // pixels
+  static SNAP_DISTANCE = 50; // pixels
   static DRAG_HANDLE_SELECTOR = '.drag-handle';
   static LIGHTNING_BOLT_SELECTOR = '#flash-rolls-icon';
   

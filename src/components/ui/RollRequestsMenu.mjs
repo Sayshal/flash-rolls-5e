@@ -170,12 +170,6 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
     }
     
     RollMenuDragManager.applyCustomPosition(this, this.customPosition);
-    if (this._dragDrop && this._dragDrop.length > 0) {
-      this._dragDrop.forEach((handler, index) => {
-        LogUtil.log(`_onRender - DragDrop handler ${index}:`, [handler, handler.dropSelector, handler.callbacks]);
-      });
-    }
-    
     const dropZones = this.element.querySelectorAll('.actor-list');
 
     // Remove existing listeners

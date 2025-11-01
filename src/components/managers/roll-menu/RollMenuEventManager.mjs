@@ -156,6 +156,14 @@ export class RollMenuEventManager {
       this.openContestedRollDialog(menu);
     });
 
+    html.querySelector('#flash5e-place-tokens')?.addEventListener('click', () => {
+      this.placeTokensForSelected(menu);
+    });
+
+    html.querySelector('#flash5e-teleport-tokens')?.addEventListener('click', () => {
+      this.teleportTokensForSelected(menu);
+    });
+
     const navButtons = html.querySelectorAll('.actor-actions-nav');
     navButtons.forEach(button => {
       button.addEventListener('click', (event) => {
@@ -1328,5 +1336,23 @@ export class RollMenuEventManager {
 
     const { ContestedRollDialog } = await import('../../../components/ui/dialogs/ContestedRollDialog.mjs');
     await ContestedRollDialog.show(selectedActors);
+  }
+
+  /**
+   * Place tokens for selected actors on canvas
+   * @param {RollRequestsMenu} menu - The menu instance
+   */
+  static async placeTokensForSelected(menu) {
+    const { TokenPlacementManager } = await import('../TokenPlacementManager.mjs');
+    await TokenPlacementManager.placeTokensForSelectedActors(menu);
+  }
+
+  /**
+   * Teleport selected tokens to a new location
+   * @param {RollRequestsMenu} menu - The menu instance
+   */
+  static async teleportTokensForSelected(menu) {
+    const { TokenTeleportManager } = await import('../TokenTeleportManager.mjs');
+    await TokenTeleportManager.teleportSelectedTokens(menu);
   }
 }

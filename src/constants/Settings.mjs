@@ -30,10 +30,10 @@ export const getSettings = () => {
         'addMacrosToFolder',
         'templateAutoTarget',
         'removeTemplate',
+        'tooltipAutoDismiss',
         'templateRemovalTimeout',
         'tokenMovementSpeed',
-        'autoBlockMovementInCombat',
-        'tooltipAutoDismiss'
+        'autoBlockMovementInCombat'
       ],
       default: {
         showMenuOnLoad: false,
@@ -64,14 +64,16 @@ export const getSettings = () => {
         'compactMode',
         'menuLayout',
         'menuIconsLayout',
-        'maxIconsPerRow'
+        'maxIconsPerRow',
+        'teleportAnimationPath'
       ],
       default: {
         showMenuOnLoad: false,
         compactMode: true,
         menuLayout: "vertical",
         menuIconsLayout: iconsMenuDefault,
-        maxIconsPerRow: 5
+        maxIconsPerRow: 5,
+        teleportAnimationPath: ''
       },
       scope: SETTING_SCOPE.world,
       config: false,
@@ -516,6 +518,18 @@ export const getSettings = () => {
         max: 10,
         step: 1
       }
+    },
+
+    teleportAnimationPath: {
+      tag: "teleport-animation-path",
+      label: game.i18n.localize("FLASH_ROLLS.settings.teleportAnimationPath.label"),
+      hint: game.i18n.localize("FLASH_ROLLS.settings.teleportAnimationPath.hint"),
+      propType: String,
+      inputType: "filepicker",
+      default: "",
+      scope: SETTING_SCOPE.world,
+      config: false,
+      filePicker: "video"
     },
 
     legacyTokenAssociationsMigrated: {

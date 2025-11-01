@@ -216,7 +216,7 @@ export class HooksManager {
     }else{
       this._initModule();
     }
-    LogUtil.log("HooksManager.ready", [CONFIG.statusEffects]);
+    LogUtil.log("HooksManager.ready", [canvas]);
   }
 
   static async _initModule() {

@@ -19,7 +19,7 @@ body{
     --flash-rolls-menu-offset: 36px;
   }
 
-  &.flash5e-sidebar-expanded{
+  &.flash-sidebar-expanded{
     --current-sidebar-width: var(--sidebar-width, 200px);
   }
 }
