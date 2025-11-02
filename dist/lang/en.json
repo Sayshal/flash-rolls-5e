@@ -90,6 +90,10 @@
         "label": "Hide NPC rolls in group messages from players",
         "hint": "When enabled, players will not see roll results from actors they don't have observer permission on in group roll messages. GMs always see all results."
       },
+      "concealNPCNames": {
+        "label": "Conceal NPC Names in Group Rolls",
+        "hint": "When enabled, NPC actor names will be replaced with '???' for players in group roll messages. Only applies to NPCs that are visible (not hidden by the 'Hide NPC rolls' setting). GM always sees the actual names."
+      },
       "interceptTidySheetsGroupRolls": {
         "label": "Intercept Tidy5e Sheets Group Rolls",
         "hint": "When enabled, group skill rolls from Tidy5e Sheets will use Flash Rolls' group roll system instead of the default chat prompt. Requires Tidy5e Sheets module."

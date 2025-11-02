@@ -27,14 +27,16 @@ export class RollHooksHandler {
    * @param {Object} messageOptions - Chat message options
    */
   static onPreRollGM(config, dialogOptions, messageOptions) {
+    // const SETTINGS = getSettings();
+    // if (config._flashRollsProcessed || BaseActivityManager.isMidiActive || !SettingsUtil.get(SETTINGS.rollInterceptionEnabled.tag)) return;
     if (config._flashRollsProcessed || BaseActivityManager.isMidiActive) return;
     config._flashRollsProcessed = true;
 
     LogUtil.log("RollHooksHandler.onPreRollGM", [config, dialogOptions, messageOptions]);
 
-    config.rolls = RollHelpers.consolidateRolls(config.rolls);
 
     if (config.subject?.item) {
+      config.rolls = RollHelpers.consolidateRolls(config.rolls);
       const areSkipKeysPressed = GeneralUtil.areSkipKeysPressed(config.event);
       const stored = config.subject.item.getFlag(MODULE_ID, 'tempAttackConfig') || config.subject.item.getFlag(MODULE_ID, 'tempDamageConfig') || config.subject.item.getFlag(MODULE_ID, 'tempSaveConfig');
       LogUtil.log("RollHooksHandler.onPreRollGM - flag", [stored]);
@@ -56,6 +58,8 @@ export class RollHooksHandler {
    * @param {Object} messageOptions - Chat message options
    */
   static onPreRollInitiativeDialog(config, dialogOptions, messageOptions) {
+    // const SETTINGS = getSettings();
+    // if (config._flashRollsProcessed || !SettingsUtil.get(SETTINGS.rollInterceptionEnabled.tag)) return;
     if (config._flashRollsProcessed) return;
     config._flashRollsProcessed = true;
 
@@ -89,9 +93,11 @@ export class RollHooksHandler {
    * Delegates Midi-specific logic to MidiActivityManager
    */
   static onPreRollAttackV2(config, dialogOptions, messageOptions) {
+    // const SETTINGS = getSettings();
+    // if (config._flashRollsProcessed || !SettingsUtil.get(SETTINGS.rollInterceptionEnabled.tag)) return;
     if (config._flashRollsProcessed) return;
     config._flashRollsProcessed = true;
-
+    
     LogUtil.log("RollHooksHandler.onPreRollAttackV2 triggered", [config, dialogOptions, messageOptions]);
 
     const isMidiActive = GeneralUtil.isModuleOn('midi-qol');
@@ -140,6 +146,8 @@ export class RollHooksHandler {
    * Delegates Midi-specific logic to MidiActivityManager
    */
   static onPreRollDamageV2(config, dialogOptions, messageOptions) {
+    // const SETTINGS = getSettings();
+    // if (config._flashRollsProcessed || !SettingsUtil.get(SETTINGS.rollInterceptionEnabled.tag)) return;
     if (config._flashRollsProcessed) return;
     config._flashRollsProcessed = true;
 

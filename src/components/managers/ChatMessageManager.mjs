@@ -211,6 +211,45 @@ export class ChatMessageManager {
             } else {
               element.classList.remove('npc-hidden');
             }
+
+            const rollMode = result.rollMode || CONST.DICE_ROLL_MODES.PUBLIC;
+            const hasPermission = actor?.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER);
+
+            let shouldHideRoll;
+            if (isGM) {
+              shouldHideRoll = false;
+            } else if (rollMode === CONST.DICE_ROLL_MODES.BLIND) {
+              shouldHideRoll = true;
+            } else if (rollMode === CONST.DICE_ROLL_MODES.PRIVATE || rollMode === CONST.DICE_ROLL_MODES.SELF) {
+              shouldHideRoll = !hasPermission;
+            } else {
+              shouldHideRoll = false;
+            }
+
+            LogUtil.log("onRenderChatMessage - Roll visibility", [result.actorName, "rollMode:", rollMode, "isGM:", isGM, "hasPermission:", hasPermission, "shouldHideRoll:", shouldHideRoll]);
+
+            if (shouldHideRoll) {
+              element.classList.add('roll-hidden');
+            } else {
+              element.classList.remove('roll-hidden');
+            }
+
+            const concealNPCNames = SettingsUtil.get(SETTINGS.concealNPCNames.tag);
+            const shouldConcealName = !isGM && result.isNPC && concealNPCNames && !shouldHide;
+
+            LogUtil.log("onRenderChatMessage - Name concealment", [
+              result.actorName,
+              "isNPC:", result.isNPC,
+              "concealNPCNames:", concealNPCNames,
+              "shouldHide:", shouldHide,
+              "shouldConcealName:", shouldConcealName
+            ]);
+
+            if (shouldConcealName) {
+              element.classList.add('npc-name-concealed');
+            } else {
+              element.classList.remove('npc-name-concealed');
+            }
           }
         });
       }
@@ -692,19 +731,14 @@ export class ChatMessageManager {
   static async createGroupRollMessage(actorEntries, rollType, rollKey, config, groupRollId) {
     LogUtil.log('ChatMessageManager.createGroupRollMessage', [actorEntries.length, rollType, rollKey, groupRollId]);
 
-    const data = this.buildGroupRollData(actorEntries, rollType, rollKey, config);
+    const validEntries = actorEntries.filter(entry => entry && entry.actor);
+    const data = this.buildGroupRollData(actorEntries, rollType, rollKey, config, null);
     if (!data) {
       LogUtil.error('createGroupRollMessage - Failed to build group roll data');
       return null;
     }
     data.groupRollId = groupRollId;
     data.isContestedRoll = config.isContestedRoll || false;
-
-    const validEntries = actorEntries.filter(entry => entry && entry.actor);
-    const hasPlayerOwnedActor = validEntries.some(entry => RollHelpers.isPlayerOwnerActive(entry.actor));
-    const rollMode = hasPlayerOwnedActor ?
-      CONST.DICE_ROLL_MODES.PUBLIC :
-      game.settings.get("core", "rollMode");
 
     this.pendingRolls.set(groupRollId, {
       actorEntries: validEntries.map(entry => ({ actorId: entry.actor.id, uniqueId: entry.uniqueId, tokenId: entry.tokenId })),
@@ -714,7 +748,7 @@ export class ChatMessageManager {
       results: new Map()
     });
 
-    const message = await this.postGroupMessage(data, rollMode);
+    const message = await this.postGroupMessage(data, CONST.DICE_ROLL_MODES.PUBLIC);
     return message;
   }
   
@@ -726,7 +760,7 @@ export class ChatMessageManager {
    * @param {Object} config - Roll configuration
    * @returns {Object} Template data
    */
-  static buildGroupRollData(actorEntries, rollType, rollKey, config) {
+  static buildGroupRollData(actorEntries, rollType, rollKey, config, messageRollMode = null) {
 
     const validEntries = actorEntries.filter(entry => entry && entry.actor);
     if (validEntries.length === 0) {
@@ -751,7 +785,7 @@ export class ChatMessageManager {
         actorName: entry.tokenId ?
           (canvas.tokens?.get(entry.tokenId)?.name || entry.actor.name) :
           entry.actor.name,
-        isNPC: !entry.actor.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.LIMITED),
+        isNPC: entry.actor.type === 'npc' || !entry.actor.hasPlayerOwner,
         rolled: false,
         showDice: true,
         total: null,
@@ -767,10 +801,23 @@ export class ChatMessageManager {
     const showResultToPlayers = SettingsUtil.get(SETTINGS.showGroupResultToPlayers.tag);
     const groupRollNPCHidden = SettingsUtil.get(SETTINGS.groupRollNPCHidden.tag);
     const isGM = game.user.isGM;
-    
-    // Add shouldHide flag to each result
+
     results.forEach(result => {
       result.shouldHide = result.isNPC && groupRollNPCHidden && !isGM;
+      result.rollMode = messageRollMode || CONST.DICE_ROLL_MODES.PUBLIC;
+      const hasPermission = validEntries.find(e => e.uniqueId === result.uniqueId)?.actor.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.LIMITED);
+
+      if (isGM) {
+        result.shouldHideRoll = false;
+      } else if (result.rollMode === CONST.DICE_ROLL_MODES.BLIND) {
+        result.shouldHideRoll = true;
+      } else if (result.rollMode === CONST.DICE_ROLL_MODES.PRIVATE || result.rollMode === CONST.DICE_ROLL_MODES.SELF) {
+        result.shouldHideRoll = !hasPermission;
+      } else {
+        result.shouldHideRoll = false;
+      }
+
+      LogUtil.log("buildGroupRollData - Roll visibility", [result.actorName, "rollMode:", result.rollMode, "isGM:", isGM, "hasPermission:", hasPermission, "shouldHideRoll:", result.shouldHideRoll]);
     });
     
     return {
@@ -957,13 +1004,13 @@ export class ChatMessageManager {
    * @param {string} uniqueId - The unique identifier (token ID or actor ID) who rolled
    * @param {Roll} roll - The completed roll
    */
-  static async updateGroupRollMessage(groupRollId, uniqueId, roll) {
+  static async updateGroupRollMessage(groupRollId, uniqueId, roll, rollMode = CONST.DICE_ROLL_MODES.PUBLIC) {
     if (!game.user.isGM) {
       return;
     }
-    LogUtil.log('ChatMessageManager.updateGroupRollMessage #0', [groupRollId, uniqueId, roll ]);
-    
-    return await this._performGroupRollUpdate(groupRollId, uniqueId, roll);
+    LogUtil.log('ChatMessageManager.updateGroupRollMessage #0', [groupRollId, uniqueId, roll, rollMode]);
+
+    return await this._performGroupRollUpdate(groupRollId, uniqueId, roll, rollMode);
   }
   
   /**
@@ -971,9 +1018,10 @@ export class ChatMessageManager {
    * @param {string} groupRollId - The group roll identifier
    * @param {string} uniqueId - The unique identifier (token ID or actor ID) who rolled
    * @param {Roll} roll - The completed roll
+   * @param {string} rollMode - The roll mode for this specific roll
    * @private
    */
-  static async _performGroupRollUpdate(groupRollId, uniqueId, roll) {
+  static async _performGroupRollUpdate(groupRollId, uniqueId, roll, rollMode = CONST.DICE_ROLL_MODES.PUBLIC) {
     
     let message = this.groupRollMessages.get(groupRollId);
     let pendingData = this.pendingRolls.get(groupRollId);
@@ -1082,7 +1130,9 @@ export class ChatMessageManager {
       flagData.results[resultIndex].rolled = true;
       flagData.results[resultIndex].showDice = false;
       flagData.results[resultIndex].total = roll.total;
-      
+      flagData.results[resultIndex].rollMode = rollMode;
+      LogUtil.log('_performGroupRollUpdate - Set roll mode for result', [flagData.results[resultIndex].actorName, 'rollMode:', rollMode]);
+
       try {
         let rollBreakdown = await roll.render();
         flagData.results[resultIndex].rollBreakdown = rollBreakdown;
@@ -1090,7 +1140,7 @@ export class ChatMessageManager {
         LogUtil.error('Error rendering roll breakdown', [error]);
         flagData.results[resultIndex].rollBreakdown = null;
       }
-      
+
       if (flagData.showDC && flagData.dc) {
         flagData.results[resultIndex].success = roll.total >= flagData.dc;
         flagData.results[resultIndex].failure = roll.total < flagData.dc;
@@ -1109,19 +1159,41 @@ export class ChatMessageManager {
     flagData.showResultToPlayers = SettingsUtil.get(SETTINGS.showGroupResultToPlayers.tag);
     flagData.groupRollNPCHidden = SettingsUtil.get(SETTINGS.groupRollNPCHidden.tag);
     flagData.isGM = game.user.isGM;
-    
-    // Ensure isNPC flag is set on results if not already present
+
     if (flagData.results) {
       flagData.results.forEach(result => {
         if (result.isNPC === undefined) {
           const actor = game.actors.get(result.actorId);
-          result.isNPC = actor ? !actor.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.LIMITED) : false;
+          result.isNPC = actor ? (actor.type === 'npc' || !actor.hasPlayerOwner) : false;
         }
-        // Update shouldHide flag
         result.shouldHide = result.isNPC && flagData.groupRollNPCHidden && !flagData.isGM;
+
+        if (result.rollMode === undefined) {
+          result.rollMode = CONST.DICE_ROLL_MODES.PUBLIC;
+        }
+        const actor = game.actors.get(result.actorId);
+        const hasPermission = actor?.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.LIMITED);
+
+        if (flagData.isGM) {
+          result.shouldHideRoll = false;
+        } else if (result.rollMode === CONST.DICE_ROLL_MODES.BLIND) {
+          result.shouldHideRoll = true;
+        } else if (result.rollMode === CONST.DICE_ROLL_MODES.PRIVATE || result.rollMode === CONST.DICE_ROLL_MODES.SELF) {
+          result.shouldHideRoll = !hasPermission;
+        } else {
+          result.shouldHideRoll = false;
+        }
+
+        LogUtil.log('_performGroupRollUpdate - Result visibility calculated', [
+          result.actorName,
+          'rollMode:', result.rollMode,
+          'isGM:', flagData.isGM,
+          'hasPermission:', hasPermission,
+          'shouldHideRoll:', result.shouldHideRoll
+        ]);
       });
     }
-    
+
     // Calculate contested result if it's a contested roll
     if (flagData.isContestedRoll) {
       const contestedResult = this._calculateContestedResult(flagData.results);
@@ -1334,14 +1406,35 @@ export class ChatMessageManager {
     
     const roll = message.rolls?.[0];
     if (!roll) return;
-    
+
+    let rollMode = CONST.DICE_ROLL_MODES.PUBLIC;
+    if (message.blind) {
+      rollMode = CONST.DICE_ROLL_MODES.BLIND;
+    } else if (message.whisper && message.whisper.length > 0) {
+      const gmUserIds = game.users.filter(u => u.isGM).map(u => u.id);
+      const isWhisperToGMOnly = message.whisper.every(id => gmUserIds.includes(id));
+      if (isWhisperToGMOnly) {
+        rollMode = CONST.DICE_ROLL_MODES.PRIVATE;
+      }
+    }
+
+    LogUtil.log('interceptRollMessage - Message details', [
+      'message.rollMode:', message.rollMode,
+      'message.blind:', message.blind,
+      'message.whisper:', message.whisper,
+      'determined rollMode:', rollMode,
+      'PUBLIC constant:', CONST.DICE_ROLL_MODES.PUBLIC,
+      'PRIVATE constant:', CONST.DICE_ROLL_MODES.PRIVATE,
+      'BLIND constant:', CONST.DICE_ROLL_MODES.BLIND
+    ]);
+
     if (html && html instanceof HTMLElement && html.style) {
       html.style.display = 'none';
     }
-    
+
     if (game.user.isGM) {
-      LogUtil.log('interceptRollMessage - Updating group message', [groupRollId, uniqueId, actor.name, roll.total]);
-      this.updateGroupRollMessage(groupRollId, uniqueId, roll);
+      LogUtil.log('interceptRollMessage - Updating group message', [groupRollId, uniqueId, actor.name, roll.total, 'rollMode:', rollMode]);
+      this.updateGroupRollMessage(groupRollId, uniqueId, roll, rollMode);
       
       const msgId = message.id;
       if (this.messagesScheduledForDeletion.has(msgId)) {

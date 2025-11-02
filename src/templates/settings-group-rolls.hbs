@@ -41,6 +41,12 @@
   </div>
 
   <div class="form-group">
+    <label for="concealNPCNames">{{fields.concealNPCNames.label}}</label>
+    <input type="checkbox" name="concealNPCNames" id="concealNPCNames" {{#if concealNPCNames}}checked{{/if}} />
+    <p class="hint">{{fields.concealNPCNames.hint}}</p>
+  </div>
+
+  <div class="form-group">
     <label for="interceptTidySheetsGroupRolls">{{fields.interceptTidySheetsGroupRolls.label}}</label>
     <input type="checkbox" name="interceptTidySheetsGroupRolls" id="interceptTidySheetsGroupRolls" {{#if interceptTidySheetsGroupRolls}}checked{{/if}} />
     <p class="hint">{{fields.interceptTidySheetsGroupRolls.hint}}</p>

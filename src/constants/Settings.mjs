@@ -90,6 +90,7 @@ export const getSettings = () => {
         'showGroupDCToPlayers',
         'showGroupResultToPlayers',
         'groupRollNPCHidden',
+        'concealNPCNames',
         'interceptTidySheetsGroupRolls'
       ],
       default: {
@@ -98,6 +99,7 @@ export const getSettings = () => {
         showGroupDCToPlayers: false,
         showGroupResultToPlayers: true,
         groupRollNPCHidden: true,
+        concealNPCNames: false,
         interceptTidySheetsGroupRolls: true
       },
       scope: SETTING_SCOPE.world,
@@ -163,6 +165,17 @@ export const getSettings = () => {
       propType: Boolean,
       inputType: SETTING_INPUT.checkbox,
       default: true,
+      scope: SETTING_SCOPE.world,
+      config: false
+    },
+
+    concealNPCNames: {
+      tag: "conceal-npc-names",
+      label: game.i18n.localize("FLASH_ROLLS.settings.concealNPCNames.label"),
+      hint: game.i18n.localize("FLASH_ROLLS.settings.concealNPCNames.hint"),
+      propType: Boolean,
+      inputType: SETTING_INPUT.checkbox,
+      default: false,
       scope: SETTING_SCOPE.world,
       config: false
     },

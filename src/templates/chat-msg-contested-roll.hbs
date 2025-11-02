@@ -1,7 +1,7 @@
 <div class="flash5e-group-roll flash5e-contested-roll">
   <div class="group-roll-list contested-roll-list">
     {{#each results}}
-    <div class="actor-result {{#if @first}}contestant-1{{else}}contestant-2{{/if}} {{#if isWinner}}success{{/if}} {{#if isLoser}}failure{{/if}} {{#if shouldHide}}npc-hidden{{/if}}" data-actor-id="{{actorId}}"{{#if tokenId}} data-token-id="{{tokenId}}"{{/if}}>
+    <div class="actor-result {{#if @first}}contestant-1{{else}}contestant-2{{/if}} {{#if isWinner}}success{{/if}} {{#if isLoser}}failure{{/if}} {{#if shouldHide}}npc-hidden{{/if}} {{#if shouldHideRoll}}roll-hidden{{/if}}" data-actor-id="{{actorId}}"{{#if tokenId}} data-token-id="{{tokenId}}"{{/if}}>
       <div class="actor-summary">
         <img class="actor-image" src="{{actorImg}}" alt="{{actorName}}" />
         <div class="actor-info">
