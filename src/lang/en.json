@@ -51,7 +51,8 @@
       "menuNotOpen": "Flash Token Bar menu is not open",
       "iconRemoved": "Icon {iconName} removed from menu",
       "iconRemoveFailed": "Failed to remove icon from menu",
-      "macroCreationFailed": "Failed to create macro"
+      "macroCreationFailed": "Failed to create macro",
+      "libWrapperRecommended": "Flash Rolls 5e: for optimal compatibility, consider installing the libWrapper module."
     },
     "contextMenu": {
       "addToFavorites": "Add to Flash Token Bar Menu",
@@ -181,6 +182,10 @@
       "showMenuOnLoad": {
         "label": "Show Menu on Load",
         "hint": "When enabled, the roll requests menu will automatically be visible when you reload Foundry."
+      },
+      "showTokenVisionOnHover": {
+        "label": "Show Token Vision on Hover",
+        "hint": "When enabled, hovering over an actor in the roll requests menu will switch the canvas view to that token's vision. Disable this if you prefer manual token selection."
       },
       "templateAutoTarget": {
         "label": "Template Auto Targeting",
@@ -348,7 +353,7 @@
       },
       "dialogs": {
         "worldSettingsLabel": "World Settings (GM)",
-        "toggleHints": "Toggle Help",
+        "toggleHints": "Toggle Hints",
         "reloadRequiredTitle": "Reload Foundry",
         "reloadRequiredLabel": "A reload is required. Reload now?",
         "multipleActors": "Multiple Actors",

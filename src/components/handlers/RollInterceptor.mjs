@@ -145,9 +145,14 @@ export class RollInterceptor {
     if(rollType === ROLL_TYPES.ATTACK || rollType === ROLL_TYPES.DAMAGE){
       const moduleFlags = config.subject?.item?.getFlag(MODULE_ID, 'tempAttackConfig') || config.subject?.item?.getFlag(MODULE_ID, 'tempDamageConfig');
       dialog.configure = !skipRollDialog;
-      LogUtil.log('_onPreRollIntercept - attack / damage - flag', [moduleFlags]);
+      LogUtil.log('_onPreRollIntercept - attack / damage - flag', [moduleFlags, config.subject, owner]);
       if(moduleFlags){
         LogUtil.log('_onPreRollIntercept - found module flags, skipping interception', [moduleFlags]);
+        return;
+      }
+
+      if((config.subject?.activity || config.subject?.item) && !owner?.active){
+        LogUtil.log('_onPreRollIntercept - activity-based attack/damage roll with offline owner, skip interception', [config.subject, owner]);
         return;
       }
     }

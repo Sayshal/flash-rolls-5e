@@ -11,6 +11,12 @@
   </div>
 
   <div class="form-group">
+    <label for="showTokenVisionOnHover">{{fields.showTokenVisionOnHover.label}}</label>
+    <input type="checkbox" name="showTokenVisionOnHover" id="showTokenVisionOnHover" {{#if showTokenVisionOnHover}}checked{{/if}} />
+    <p class="hint">{{fields.showTokenVisionOnHover.hint}}</p>
+  </div>
+
+  <div class="form-group">
     <label for="compactMode">{{fields.compactMode.label}}</label>
     <input type="checkbox" name="compactMode" id="compactMode" {{#if compactMode}}checked{{/if}} />
     <p class="hint">{{fields.compactMode.hint}}</p>

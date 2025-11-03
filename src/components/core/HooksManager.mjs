@@ -23,6 +23,7 @@ import { TokenAnimationManager } from "../managers/TokenAnimationManager.mjs";
 import { TooltipUtil } from "../utils/TooltipUtil.mjs";
 import { UpdateNewsUtil } from "../utils/UpdateNewsUtil.mjs";
 import { MidiActivityManager } from "../managers/MidiActivityManager.mjs";
+import { LibWrapperUtil } from "../utils/LibWrapperUtil.mjs";
 
 /**
  * Utility class for managing all module hooks in one place
@@ -206,11 +207,15 @@ export class HooksManager {
     SidebarController.addSidebarControls(ui.sidebar, ui.sidebar?.element);
     UpdateNewsUtil.init();
 
+    if (game.user.isGM) {
+      LibWrapperUtil.showMissingLibWrapperNotification();
+    }
+
     // Listen for browser color scheme changes
     if (matchMedia) {
       matchMedia("(prefers-color-scheme: dark)").addEventListener("change", this._onBrowserColorSchemeChanged.bind(this));
     }
-    
+
     if(GeneralUtil.isModuleOn("midi-qol")){
       Hooks.once(HOOKS_MIDI_QOL.READY, this._initModule.bind(this));
     }else{

@@ -61,6 +61,7 @@ export const getSettings = () => {
       propType: Object,
       fields: [
         'showMenuOnLoad',
+        'showTokenVisionOnHover',
         'compactMode',
         'menuLayout',
         'menuIconsLayout',
@@ -68,6 +69,7 @@ export const getSettings = () => {
       ],
       default: {
         showMenuOnLoad: false,
+        showTokenVisionOnHover: true,
         compactMode: true,
         menuLayout: "vertical",
         menuIconsLayout: iconsMenuDefault,
@@ -469,6 +471,17 @@ export const getSettings = () => {
       config: false
     },
 
+    showTokenVisionOnHover: {
+      tag: "show-token-vision-on-hover",
+      label: game.i18n.localize("FLASH_ROLLS.settings.showTokenVisionOnHover.label"),
+      hint: game.i18n.localize("FLASH_ROLLS.settings.showTokenVisionOnHover.hint"),
+      propType: Boolean,
+      inputType: SETTING_INPUT.checkbox,
+      default: true,
+      scope: SETTING_SCOPE.world,
+      config: false
+    },
+
     addMacrosToFolder: {
       tag: "add-macros-to-folder",
       label: game.i18n.localize("FLASH_ROLLS.settings.addMacrosToFolder.label"),
@@ -548,6 +561,16 @@ export const getSettings = () => {
       propType: String,
       default: "",
       scope: SETTING_SCOPE.client,
+      config: false
+    },
+
+    libWrapperNotificationShown: {
+      tag: "libwrapper-notification-shown",
+      label: "LibWrapper Notification Shown",
+      hint: "Tracks whether the libWrapper recommendation notification has been shown",
+      propType: Boolean,
+      default: false,
+      scope: SETTING_SCOPE.world,
       config: false
     }
   };

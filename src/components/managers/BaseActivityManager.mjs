@@ -178,29 +178,25 @@ export class BaseActivityManager {
     const actor = activity.actor;
     const actorOwner = GeneralUtil.getActorOwner(actor);
     const isPlayerActor = isPlayerOwned(actor) && actorOwner.active;
-    const isLocalRoll = !isPlayerActor || config.isRollRequest===false;
+    const isLocalRoll = !isPlayerActor || config.isRollRequest === false;
 
     LogUtil.log("BaseActivityManager.onPreUseActivityGM - Roll determination", {
       isMidiActive: this.isMidiActive,
       isPlayerActor,
       isLocalRoll,
       actorName: actor?.name,
-      ownerActive: actorOwner?.active
+      ownerActive: actorOwner?.active,
+      isRollRequest: config.isRollRequest
     });
+
+    if (isLocalRoll) {
+      LogUtil.log("BaseActivityManager.onPreUseActivityGM - Local roll, returning early to let normal D&D5e flow handle it");
+      return;
+    }
 
     activity.item.unsetFlag(MODULE_ID, 'tempAttackConfig');
     activity.item.unsetFlag(MODULE_ID, 'tempDamageConfig');
     activity.item.unsetFlag(MODULE_ID, 'tempSaveConfig');
-
-    if (this.isMidiActive && isLocalRoll) {
-      LogUtil.log("BaseActivityManager.onPreUseActivityGM - Midi active but local roll, returning early");
-      return;
-    }
-
-    // if (this.isMidiActive && !isLocalRoll) {
-    //   LogUtil.log("BaseActivityManager.onPreUseActivityGM - Calling configureActivityOptionsGM");
-    //   // MidiActivityManager.configureActivityOptionsGM(activity, config);
-    // }
 
     if (!actor) return;
     LogUtil.log("BaseActivityManager.onPreUseActivityGM #1", [config, isLocalRoll]);
@@ -213,7 +209,7 @@ export class BaseActivityManager {
     config.consume = getConsumptionConfig(config.consume || {}, isLocalRoll);
     config.create = getCreateConfig(config.create || {}, isLocalRoll);
 
-    if (actorOwner && actorOwner.active && !actorOwner.isGM) {
+    if (actorOwner && !actorOwner.isGM && !isLocalRoll) {
       if(this.isMidiActive){
         LogUtil.log("BaseActivityManager.onPreUseActivityGM - Marking Midi message to suppress rendering for player-owned actor", [actor.name]);
         if (!message.data) message.data = {};
@@ -226,6 +222,7 @@ export class BaseActivityManager {
         message.create = false;
       }
     }
+
   }
 
   /**

@@ -34,7 +34,6 @@ export class RollHooksHandler {
 
     LogUtil.log("RollHooksHandler.onPreRollGM", [config, dialogOptions, messageOptions]);
 
-
     if (config.subject?.item) {
       config.rolls = RollHelpers.consolidateRolls(config.rolls);
       const areSkipKeysPressed = GeneralUtil.areSkipKeysPressed(config.event);
