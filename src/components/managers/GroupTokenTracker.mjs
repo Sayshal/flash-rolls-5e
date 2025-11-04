@@ -777,10 +777,9 @@ export class GroupTokenTracker {
       if(!mainContent) return;
     }
 
-    let container = mainContent.querySelector('.flash5e-token-associations');
-    if (container) {
-      container.remove();
-    }
+    const existingContainers = mainContent.querySelectorAll('.flash5e-token-associations');
+    existingContainers.forEach(c => c.remove());
+    let container;
 
     const currentScene = game.scenes.current;
     if (!currentScene) {

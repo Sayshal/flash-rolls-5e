@@ -20,6 +20,7 @@ import { BaseActivityManager } from "../managers/BaseActivityManager.mjs";
 import { GroupTokenTracker } from "../managers/GroupTokenTracker.mjs";
 import { TokenMovementManager } from "../utils/TokenMovementManager.mjs";
 import { TokenAnimationManager } from "../managers/TokenAnimationManager.mjs";
+import { TokenTeleportManager } from "../managers/TokenTeleportManager.mjs";
 import { TooltipUtil } from "../utils/TooltipUtil.mjs";
 import { UpdateNewsUtil } from "../utils/UpdateNewsUtil.mjs";
 import { MidiActivityManager } from "../managers/MidiActivityManager.mjs";
@@ -62,6 +63,7 @@ export class HooksManager {
   static initialize() {
     Hooks.once(HOOKS_CORE.INIT, this._onInit.bind(this));
     Hooks.once(HOOKS_CORE.READY, this._onReady.bind(this));
+    Hooks.on(HOOKS_CORE.CANVAS_READY, this._onCanvasReady.bind(this));
     Hooks.on(HOOKS_MODULE.READY, ()=>{
       LogUtil.log("flash-rolls-5e.ready hook", []);
     })
@@ -223,6 +225,7 @@ export class HooksManager {
     }
     LogUtil.log("HooksManager.ready", [canvas]);
   }
+
 
   static async _initModule() {
     const SETTINGS = getSettings();
@@ -701,6 +704,14 @@ export class HooksManager {
   static _onCanvasReady(canvas) {
     LogUtil.log('HooksManager._onCanvasReady - Re-rendering roll requests menu due to scene view change');
     RollRequestsMenu.refreshIfOpen();
+
+    const isTeleporting = TokenTeleportManager.isTeleporting();
+    LogUtil.log("HooksManager._onCanvasReady - Checking for teleport", { isTeleporting });
+
+    if (isTeleporting) {
+      LogUtil.log("HooksManager._onCanvasReady - Calling TokenTeleportManager._onSceneChange");
+      TokenTeleportManager._onSceneChange();
+    }
   }
 
   static _onActorUpdate(actor, changes, options, userId) {

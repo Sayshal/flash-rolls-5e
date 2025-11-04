@@ -52,6 +52,13 @@
       "iconRemoved": "Icon {iconName} removed from menu",
       "iconRemoveFailed": "Failed to remove icon from menu",
       "macroCreationFailed": "Failed to create macro",
+      "tokensPlaced": "Placed {count} token(s)",
+      "tokenPlacementCancelled": "Token placement cancelled",
+      "noActorsSelectedForPlacement": "No actors selected for token placement",
+      "tokensTeleported": "Teleported {count} token(s)",
+      "teleportCancelled": "Teleport cancelled",
+      "teleportReady": "Teleporting {count} token(s). Navigate to desired scene and click canvas to place them. Right-click to cancel.",
+      "noTokensSelectedForTeleport": "No tokens selected for teleport",
       "libWrapperRecommended": "Flash Rolls 5e: for optimal compatibility, consider installing the libWrapper module."
     },
     "contextMenu": {
@@ -255,6 +262,10 @@
         "label": "Tooltip Auto-Dismiss (seconds)",
         "hint": "Time in seconds before tooltips automatically disappear. Set to 0 to disable tooltips entirely. Default is 2 seconds."
       },
+      "teleportAnimationPath": {
+        "label": "Teleport Animation Video",
+        "hint": "Path to the video file to play when teleporting tokens. If JB2A is installed, the blue teleportation animation will be used by default. Leave empty to disable animations."
+      },
       "legacyTokenAssociationsMigrated": {
         "label": "Legacy Token Associations Migration Status",
         "hint": "Internal flag tracking whether legacy token associations have been migrated to the new scene-based format."
@@ -325,6 +336,8 @@
         "groupSelected": "Create Group",
         "toggleMovement": "Toggle Movement",
         "contestedRoll": "Contested Roll",
+        "placeTokens": "Place Tokens",
+        "teleportTokens": "Teleport Tokens",
         "selectTokens": "Select",
         "removeAssociations": "Remove Associations"
       },

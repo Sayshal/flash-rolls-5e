@@ -17,8 +17,6 @@ export class TokenPlacementManager {
   static _canvasMoveHandler = null;
   static _canvasRightDownHandler = null;
   static _canvasRightUpHandler = null;
-  static _cursorIndicator = null;
-  static _cursorAnimation = null;
   static _rightMouseDown = false;
 
   /**
@@ -72,7 +70,7 @@ export class TokenPlacementManager {
     await this._createPreviewTokens();
     this._attachCanvasHandlers();
 
-    ui.notifications.info(`Click to place ${actorsToPlace.length} token(s), right-click to cancel`);
+    ui.notifications.info(`Click to place ${actorsToPlace.length} token(s) one at a time, right-click to skip current token`);
   }
 
   /**
@@ -113,200 +111,136 @@ export class TokenPlacementManager {
     canvas.stage.on('rightclick', this._canvasRightClickHandler);
     canvas.stage.on('rightdown', this._canvasRightDownHandler);
     canvas.stage.on('rightup', this._canvasRightUpHandler);
-
-    setTimeout(() => {
-      this._createCursorIndicator();
-    }, 100);
   }
 
   /**
-   * Handle mouse move to update preview token positions
+   * Handle mouse move to update preview token position
    * @param {PIXI.InteractionEvent} event - The mouse move event
    */
-  static _onCanvasMouseMove(event) {
+  static async _onCanvasMouseMove(event) {
     if (!this._isPlacingTokens) return;
+    if (this._placementIndex >= this._previewTokens.length) return;
 
     const position = event.data.getLocalPosition(canvas.tokens);
     const snapped = canvas.grid.getSnappedPoint({ x: position.x, y: position.y }, { mode: CONST.GRID_SNAPPING_MODES.CENTER });
 
-    if (canvas.controls?.ruler?.children) {
+    if (canvas.controls?.children) {
       try {
-        const children = Array.from(canvas.controls.ruler.children);
+        const children = Array.from(canvas.controls.children);
         for (const child of children) {
-          if (child !== this._cursorIndicator) {
-            canvas.controls.ruler.removeChild(child);
+          if (child._flashRollsPlacementPreview) {
+            canvas.controls.removeChild(child);
+            if (child.destroy) child.destroy();
           }
         }
       } catch (error) {
-        LogUtil.warn("Error clearing ruler children", error);
+        LogUtil.warn("Error clearing preview graphics", error);
       }
     }
 
+    const currentPreview = this._previewTokens[this._placementIndex];
+    const tokenData = currentPreview.data;
     const gridSize = canvas.grid.size;
-    const offset = gridSize * 0.1;
 
-    for (let i = 0; i < this._previewTokens.length; i++) {
-      const previewToken = this._previewTokens[i];
-      const xOffset = (i % 3) * offset;
-      const yOffset = Math.floor(i / 3) * offset;
+    try {
+      const texture = await foundry.canvas.loadTexture(tokenData.texture.src);
+      const ghostToken = new PIXI.Sprite(texture);
 
-      const shape = new PIXI.Graphics();
-      shape.lineStyle(2, 0x00ff00, 0.8);
-      shape.drawRect(
-        snapped.x - gridSize/2 + xOffset,
-        snapped.y - gridSize/2 + yOffset,
-        gridSize,
-        gridSize
-      );
+      const tokenWidth = tokenData.width * gridSize;
+      const tokenHeight = tokenData.height * gridSize;
 
-      if (canvas.controls?.ruler) {
-        canvas.controls.ruler.addChild(shape);
+      ghostToken.anchor.set(0);
+      ghostToken.x = snapped.x - tokenWidth / 2;
+      ghostToken.y = snapped.y - tokenHeight / 2;
+      ghostToken.width = tokenWidth;
+      ghostToken.height = tokenHeight;
+      ghostToken.alpha = 0.5;
+      ghostToken.tint = 0x00ccff;
+      ghostToken._flashRollsPlacementPreview = true;
+
+      if (canvas.controls) {
+        canvas.controls.addChild(ghostToken);
       }
 
-      const text = new PIXI.Text(`${i + 1}`, {
-        fontSize: 16,
+      const progressText = `${this._placementIndex + 1}/${this._previewTokens.length}`;
+      const text = new PIXI.Text(progressText, {
+        fontSize: 20,
         fill: 0xffffff,
         stroke: 0x000000,
-        strokeThickness: 3
+        strokeThickness: 4
       });
       text.anchor.set(0.5);
-      text.x = snapped.x + xOffset;
-      text.y = snapped.y + yOffset;
+      text.x = snapped.x;
+      text.y = snapped.y - tokenHeight / 2 - 20;
+      text._flashRollsPlacementPreview = true;
 
-      if (canvas.controls?.ruler) {
-        canvas.controls.ruler.addChild(text);
+      if (canvas.controls) {
+        canvas.controls.addChild(text);
       }
-    }
-
-    if (this._cursorIndicator) {
-      this._cursorIndicator.x = snapped.x;
-      this._cursorIndicator.y = snapped.y;
+    } catch (error) {
+      LogUtil.warn("Error drawing placement preview", error);
     }
   }
 
   /**
-   * Handle canvas click to place tokens
+   * Handle canvas click to place current token
    * @param {PIXI.InteractionEvent} event - The click event
    */
   static async _onCanvasClick(event) {
     if (!this._isPlacingTokens) return;
+    if (this._placementIndex >= this._previewTokens.length) return;
 
     const position = event.data.getLocalPosition(canvas.tokens);
     const snapped = canvas.grid.getSnappedPoint({ x: position.x, y: position.y }, { mode: CONST.GRID_SNAPPING_MODES.CENTER });
 
     const gridSize = canvas.grid.size;
-    const offset = gridSize * 0.1;
-    const tokensCreated = [];
+    const currentPreview = this._previewTokens[this._placementIndex];
 
-    for (let i = 0; i < this._previewTokens.length; i++) {
-      const previewToken = this._previewTokens[i];
-      const xOffset = (i % 3) * offset;
-      const yOffset = Math.floor(i / 3) * offset;
+    const tokenData = {
+      ...currentPreview.data,
+      x: snapped.x - (currentPreview.data.width * gridSize) / 2,
+      y: snapped.y - (currentPreview.data.height * gridSize) / 2,
+      alpha: 1
+    };
 
-      const tokenData = {
-        ...previewToken.data,
-        x: snapped.x - gridSize/2 + xOffset,
-        y: snapped.y - gridSize/2 + yOffset,
-        alpha: 1
-      };
+    try {
+      await canvas.scene.createEmbeddedDocuments('Token', [tokenData]);
+      this._placementIndex++;
 
-      try {
-        const tokenDoc = await canvas.scene.createEmbeddedDocuments('Token', [tokenData]);
-        tokensCreated.push(tokenDoc[0]);
-      } catch (error) {
-        LogUtil.error("Failed to create token", [error, previewToken.actor.name]);
+      if (this._placementIndex >= this._previewTokens.length) {
+        const totalPlaced = this._previewTokens.length;
+        this._cleanup();
+        ui.notifications.info(game.i18n.format("FLASH_ROLLS.notifications.tokensPlaced", {
+          count: totalPlaced
+        }));
       }
-    }
-
-    this._cleanup();
-
-    if (tokensCreated.length > 0) {
-      ui.notifications.info(game.i18n.format("FLASH_ROLLS.notifications.tokensPlaced", {
-        count: tokensCreated.length
-      }));
+    } catch (error) {
+      LogUtil.error("Failed to create token", [error, currentPreview.actor.name]);
     }
   }
 
-  /**
-   * Create animated cursor indicator
-   */
-  static _createCursorIndicator() {
-    if (!canvas?.controls?.ruler) {
-      LogUtil.warn("Canvas controls not ready for cursor indicator");
-      return;
-    }
-
-    if (this._cursorIndicator) {
-      this._cursorIndicator.destroy({ children: true });
-      this._cursorIndicator = null;
-    }
-
-    if (this._cursorAnimation) {
-      clearInterval(this._cursorAnimation);
-      this._cursorAnimation = null;
-    }
-
-    this._cursorIndicator = new PIXI.Container();
-    this._cursorIndicator.zIndex = 1000;
-    canvas.controls.ruler.addChild(this._cursorIndicator);
-
-    const circle1 = new PIXI.Graphics();
-    circle1.lineStyle(3, 0x00ff00, 1);
-    circle1.drawCircle(0, 0, 20);
-    this._cursorIndicator.addChild(circle1);
-
-    const circle2 = new PIXI.Graphics();
-    circle2.lineStyle(3, 0x00ff00, 0.6);
-    circle2.drawCircle(0, 0, 30);
-    this._cursorIndicator.addChild(circle2);
-
-    const circle3 = new PIXI.Graphics();
-    circle3.lineStyle(3, 0x00ff00, 0.3);
-    circle3.drawCircle(0, 0, 40);
-    this._cursorIndicator.addChild(circle3);
-
-    let animationFrame = 0;
-    this._cursorAnimation = setInterval(() => {
-      if (!this._cursorIndicator || !this._cursorIndicator.parent) {
-        if (this._cursorAnimation) {
-          clearInterval(this._cursorAnimation);
-          this._cursorAnimation = null;
-        }
-        return;
-      }
-
-      animationFrame += 0.05;
-
-      const scale1 = 1 + Math.sin(animationFrame) * 0.3;
-      const scale2 = 1 + Math.sin(animationFrame + 1) * 0.3;
-      const scale3 = 1 + Math.sin(animationFrame + 2) * 0.3;
-
-      circle1.alpha = 0.8 + Math.sin(animationFrame) * 0.2;
-      circle2.alpha = 0.5 + Math.sin(animationFrame + 1) * 0.3;
-      circle3.alpha = 0.3 + Math.sin(animationFrame + 2) * 0.2;
-
-      circle1.scale.set(scale1);
-      circle2.scale.set(scale2);
-      circle3.scale.set(scale3);
-    }, 50);
-
-    LogUtil.log("Cursor indicator created and animation started");
-  }
 
   /**
-   * Handle right-click to cancel placement
+   * Handle right-click to skip current token
    * @param {PIXI.InteractionEvent} event - The right-click event
    */
   static _onCanvasRightClick(event) {
     if (!this._isPlacingTokens) return;
+    if (this._placementIndex >= this._previewTokens.length) return;
 
     if (this._rightMouseDown) {
       return;
     }
 
     event.stopPropagation();
-    this._cleanup();
-    ui.notifications.info(game.i18n.localize("FLASH_ROLLS.notifications.tokenPlacementCancelled"));
+
+    this._previewTokens.splice(this._placementIndex, 1);
+    this._actorsToPlace.splice(this._placementIndex, 1);
+
+    if (this._previewTokens.length === 0) {
+      this._cleanup();
+      ui.notifications.info(game.i18n.localize("FLASH_ROLLS.notifications.tokenPlacementCancelled"));
+    }
   }
 
   /**
@@ -343,18 +277,21 @@ export class TokenPlacementManager {
       this._canvasRightUpHandler = null;
     }
 
-    if (this._cursorAnimation) {
-      clearInterval(this._cursorAnimation);
-      this._cursorAnimation = null;
-    }
-
-    if (this._cursorIndicator) {
-      this._cursorIndicator.destroy({ children: true });
-      this._cursorIndicator = null;
-    }
-
     this._rightMouseDown = false;
-    canvas.controls.ruler.clear();
+
+    if (canvas.controls?.children) {
+      try {
+        const children = Array.from(canvas.controls.children);
+        for (const child of children) {
+          if (child._flashRollsPlacementPreview) {
+            canvas.controls.removeChild(child);
+            if (child.destroy) child.destroy();
+          }
+        }
+      } catch (error) {
+        LogUtil.warn("Error clearing preview graphics during cleanup", error);
+      }
+    }
   }
 
   /**

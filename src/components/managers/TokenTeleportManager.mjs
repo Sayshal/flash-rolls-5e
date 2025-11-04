@@ -19,10 +19,9 @@ export class TokenTeleportManager {
   static _canvasRightClickHandler = null;
   static _canvasMoveHandler = null;
   static _canvasRightDownHandler = null;
+  static _canvasRightUpHandler = null;
+  static _escapeKeyHandler = null;
   static _targetScene = null;
-  static _sceneSelectDialog = null;
-  static _cursorIndicator = null;
-  static _cursorAnimation = null;
   static _rightMouseDown = false;
   static _rightMouseDownPosition = null;
   static _hasDragged = false;
@@ -65,7 +64,8 @@ export class TokenTeleportManager {
           x: token.document.x,
           y: token.document.y,
           width: token.document.width,
-          height: token.document.height
+          height: token.document.height,
+          documentData: token.document.toObject()
         });
       }
     }
@@ -81,76 +81,7 @@ export class TokenTeleportManager {
     this._targetScene = canvas.scene;
     this._isTeleporting = true;
 
-    await this._showSceneSelector();
-  }
-
-  /**
-   * Show dialog to select target scene
-   */
-  static async _showSceneSelector() {
-    const scenes = game.scenes.filter(s => s.active || game.user.isGM);
-    const currentSceneId = canvas.scene.id;
-
-    const content = `
-      <div class="form-group">
-        <label>${game.i18n.localize("FLASH_ROLLS.ui.dialogs.teleportDestinationLabel")}</label>
-        <select id="target-scene" style="width: 100%;">
-          ${scenes.map(s => {
-            const isCurrent = s.id === currentSceneId;
-            const label = isCurrent
-              ? game.i18n.format("FLASH_ROLLS.ui.dialogs.teleportSameSceneLabel", { name: s.name })
-              : s.name;
-            return `<option value="${s.id}" ${isCurrent ? 'selected' : ''}>${label}</option>`;
-          }).join('')}
-        </select>
-      </div>
-      <p style="margin-top: 1em; font-size: 0.9em; color: var(--color-text-dark-secondary);">
-        ${game.i18n.localize("FLASH_ROLLS.ui.dialogs.teleportDestinationHint")}
-      </p>
-    `;
-
-    this._sceneSelectDialog = new Dialog({
-      title: game.i18n.localize("FLASH_ROLLS.ui.dialogs.teleportDestinationTitle"),
-      content,
-      buttons: {
-        ok: {
-          icon: '<i class="fas fa-check"></i>',
-          label: game.i18n.localize("FLASH_ROLLS.ui.dialogs.teleportDestinationButton"),
-          callback: (html) => {
-            const sceneId = html.find('#target-scene').val();
-            this._targetScene = game.scenes.get(sceneId);
-
-            this._sceneSelectDialog.close();
-
-            setTimeout(async () => {
-              if (this._targetScene.id !== this._sourceScene.id) {
-                await this._targetScene.view();
-                await new Promise(resolve => setTimeout(resolve, 1000));
-              }
-
-              await this._showTargetingUI();
-              this._attachCanvasHandlers();
-
-              const tokenCount = this._tokenDataToTeleport?.length || 0;
-              LogUtil.log(`Teleport ready with ${tokenCount} tokens`, this._tokenDataToTeleport);
-              ui.notifications.info(`Click to teleport ${tokenCount} token(s), right-click to cancel`);
-            }, 50);
-          }
-        },
-        cancel: {
-          icon: '<i class="fas fa-times"></i>',
-          label: "Cancel",
-          callback: () => {
-            this._cleanup();
-          }
-        }
-      },
-      default: "ok",
-      close: () => {
-      }
-    });
-
-    this._sceneSelectDialog.render(true);
+    await this._enterPlacementMode();
   }
 
   /**
@@ -173,12 +104,9 @@ export class TokenTeleportManager {
   }
 
   /**
-   * Show targeting UI for destination selection
+   * Enter placement mode and show ghost token preview
    */
-  static async _showTargetingUI() {
-    const positions = this._tokenDataToTeleport.map(t => ({ x: t.x, y: t.y }));
-    const center = this._calculateCenterPoint(positions);
-
+  static async _enterPlacementMode() {
     if (this._targetScene.id === this._sourceScene.id) {
       const tokens = this._getTokensFromData();
       tokens.forEach(token => {
@@ -187,6 +115,65 @@ export class TokenTeleportManager {
         }
       });
     }
+
+    this._attachCanvasHandlers();
+
+    const tokenCount = this._tokenDataToTeleport?.length || 0;
+    const sceneName = this._targetScene.name;
+    LogUtil.log(`Teleport ready with ${tokenCount} tokens on scene: ${sceneName}`, this._tokenDataToTeleport);
+    ui.notifications.info(game.i18n.format("FLASH_ROLLS.notifications.teleportReady", {
+      count: tokenCount
+    }));
+  }
+
+  /**
+   * Handle scene change during teleport mode
+   * Called from canvasReady hook when user navigates to a new scene
+   */
+  static async _onSceneChange() {
+    if (!this._isTeleporting) {
+      LogUtil.log("_onSceneChange called but not teleporting");
+      return;
+    }
+
+    if (this._targetScene?.id === canvas.scene?.id) {
+      LogUtil.log("_onSceneChange - Same scene, skipping");
+      return;
+    }
+
+    LogUtil.log("_onSceneChange - Before cleanup", {
+      currentScene: canvas.scene?.name,
+      targetScene: this._targetScene?.name,
+      tokenCount: this._tokenDataToTeleport?.length,
+      hasHandlers: {
+        move: !!this._canvasMoveHandler,
+        click: !!this._canvasClickHandler,
+        rightclick: !!this._canvasRightClickHandler
+      }
+    });
+
+    this._targetScene = canvas.scene;
+    LogUtil.log(`Scene changed to ${this._targetScene.name} during teleport`, this._tokenDataToTeleport);
+
+    this._removeCanvasHandlers();
+    this._clearPreviewGraphics();
+
+    LogUtil.log("_onSceneChange - About to re-enter placement mode", {
+      canvasReady: !!canvas?.stage,
+      sceneId: this._targetScene?.id
+    });
+
+    setTimeout(async () => {
+      await this._enterPlacementMode();
+
+      LogUtil.log("_onSceneChange - After re-entering placement mode", {
+        hasHandlers: {
+          move: !!this._canvasMoveHandler,
+          click: !!this._canvasClickHandler,
+          rightclick: !!this._canvasRightClickHandler
+        }
+      });
+    }, 100);
   }
 
   /**
@@ -209,6 +196,15 @@ export class TokenTeleportManager {
         this._hasDragged = false;
       }, 300);
     };
+    this._escapeKeyHandler = (event) => {
+      if (event.key === 'Escape' && this._isTeleporting) {
+        event.preventDefault();
+        event.stopPropagation();
+        LogUtil.log("Cancelling teleport via ESC key");
+        this._cleanup();
+        ui.notifications.info(game.i18n.localize("FLASH_ROLLS.notifications.teleportCancelled"));
+      }
+    };
 
     if (!canvas?.stage) {
       LogUtil.warn("Canvas stage not available");
@@ -220,12 +216,9 @@ export class TokenTeleportManager {
     canvas.stage.on('rightclick', this._canvasRightClickHandler);
     canvas.stage.on('rightdown', this._canvasRightDownHandler);
     canvas.stage.on('rightup', this._canvasRightUpHandler);
+    document.addEventListener('keydown', this._escapeKeyHandler);
 
     LogUtil.log("Canvas handlers attached successfully");
-
-    setTimeout(() => {
-      this._createCursorIndicator();
-    }, 100);
   }
 
   /**
@@ -245,6 +238,10 @@ export class TokenTeleportManager {
     }
 
     if (!this._isTeleporting || !this._targetScene || this._tokenDataToTeleport.length === 0) {
+      return;
+    }
+
+    if (this._isPerformingTeleport) {
       return;
     }
 
@@ -316,11 +313,6 @@ export class TokenTeleportManager {
     } catch (error) {
       LogUtil.warn("Error drawing teleport preview", error);
       return;
-    }
-
-    if (this._cursorIndicator) {
-      this._cursorIndicator.x = snapped.x;
-      this._cursorIndicator.y = snapped.y;
     }
   }
 
@@ -436,10 +428,11 @@ export class TokenTeleportManager {
 
     await this._sourceScene.updateEmbeddedDocuments('Token', showUpdates, { animate: false });
 
+    const tokenCount = this._tokenDataToTeleport.length;
     this._cleanup();
 
     ui.notifications.info(game.i18n.format("FLASH_ROLLS.notifications.tokensTeleported", {
-      count: this._tokenDataToTeleport.length
+      count: tokenCount
     }));
   }
 
@@ -495,8 +488,7 @@ export class TokenTeleportManager {
       const newX = newCenterX - targetTokenWidth / 2;
       const newY = newCenterY - targetTokenHeight / 2;
 
-      const tokenDoc = this._sourceScene.tokens.get(tokenData.id);
-      const data = tokenDoc.toObject();
+      const data = foundry.utils.duplicate(tokenData.documentData);
       data.x = newX;
       data.y = newY;
 
@@ -846,6 +838,41 @@ export class TokenTeleportManager {
   }
 
   /**
+   * Remove canvas event handlers without cleaning up state
+   */
+  static _removeCanvasHandlers() {
+    if (this._canvasMoveHandler) {
+      canvas.stage?.off('mousemove', this._canvasMoveHandler);
+      this._canvasMoveHandler = null;
+    }
+
+    if (this._canvasClickHandler) {
+      canvas.stage?.off('click', this._canvasClickHandler);
+      this._canvasClickHandler = null;
+    }
+
+    if (this._canvasRightClickHandler) {
+      canvas.stage?.off('rightclick', this._canvasRightClickHandler);
+      this._canvasRightClickHandler = null;
+    }
+
+    if (this._canvasRightDownHandler) {
+      canvas.stage?.off('rightdown', this._canvasRightDownHandler);
+      this._canvasRightDownHandler = null;
+    }
+
+    if (this._canvasRightUpHandler) {
+      canvas.stage?.off('rightup', this._canvasRightUpHandler);
+      this._canvasRightUpHandler = null;
+    }
+
+    if (this._escapeKeyHandler) {
+      document.removeEventListener('keydown', this._escapeKeyHandler);
+      this._escapeKeyHandler = null;
+    }
+  }
+
+  /**
    * Clean up teleportation mode and handlers
    */
   static _cleanup() {
@@ -867,45 +894,7 @@ export class TokenTeleportManager {
     this._rightMouseDown = false;
     this._rightMouseDownPosition = null;
 
-    if (this._canvasMoveHandler) {
-      canvas.stage.off('mousemove', this._canvasMoveHandler);
-      this._canvasMoveHandler = null;
-    }
-
-    if (this._canvasClickHandler) {
-      canvas.stage.off('click', this._canvasClickHandler);
-      this._canvasClickHandler = null;
-    }
-
-    if (this._canvasRightClickHandler) {
-      canvas.stage.off('rightclick', this._canvasRightClickHandler);
-      this._canvasRightClickHandler = null;
-    }
-
-    if (this._canvasRightDownHandler) {
-      canvas.stage.off('rightdown', this._canvasRightDownHandler);
-      this._canvasRightDownHandler = null;
-    }
-
-    if (this._canvasRightUpHandler) {
-      canvas.stage.off('rightup', this._canvasRightUpHandler);
-      this._canvasRightUpHandler = null;
-    }
-
-    if (this._cursorAnimation) {
-      clearInterval(this._cursorAnimation);
-      this._cursorAnimation = null;
-    }
-
-    if (this._cursorIndicator) {
-      this._cursorIndicator.destroy({ children: true });
-      this._cursorIndicator = null;
-    }
-
-    if (this._sceneSelectDialog) {
-      this._sceneSelectDialog.close();
-      this._sceneSelectDialog = null;
-    }
+    this._removeCanvasHandlers();
   }
 
   /**

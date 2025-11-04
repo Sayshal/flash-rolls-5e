@@ -8,6 +8,64 @@ import { getSettings } from '../../constants/Settings.mjs';
 export class IconLayoutUtil {
 
   /**
+   * Merge saved icon layout with default layout
+   * Preserves user's order and enabled state for existing icons
+   * Adds new icons from default layout that aren't in saved layout
+   * @param {Object} savedLayout - The saved layout from settings
+   * @param {Object} defaultLayout - The default layout
+   * @returns {Object} Merged layout
+   */
+  static mergeWithDefaultLayout(savedLayout, defaultLayout) {
+    if (!savedLayout) return defaultLayout;
+
+    const mergedLayout = {};
+
+    for (const iconType of ['moduleActions', 'actorActions']) {
+      const savedIcons = savedLayout[iconType] || [];
+      const defaultIcons = defaultLayout[iconType] || [];
+
+      const savedIconIds = new Set(savedIcons.map(icon => icon.id));
+      const mergedIcons = [...savedIcons];
+
+      let maxOrder = savedIcons.length > 0
+        ? Math.max(...savedIcons.map(icon => icon.order))
+        : -1;
+
+      for (const defaultIcon of defaultIcons) {
+        if (!savedIconIds.has(defaultIcon.id)) {
+          maxOrder++;
+          mergedIcons.push({
+            ...defaultIcon,
+            enabled: true,
+            order: maxOrder
+          });
+        }
+      }
+
+      mergedIcons.sort((a, b) => a.order - b.order);
+
+      mergedLayout[iconType] = mergedIcons.map((icon, index) => ({
+        ...icon,
+        order: index
+      }));
+    }
+
+    return mergedLayout;
+  }
+
+  /**
+   * Get icon layout with migration from saved settings
+   * @returns {Object} Icon layout
+   */
+  static getIconLayout() {
+    const SETTINGS = getSettings();
+    const savedLayout = SettingsUtil.get(SETTINGS.menuIconsLayout.tag);
+    const defaultLayout = getDefaultIconLayout();
+
+    return this.mergeWithDefaultLayout(savedLayout, defaultLayout);
+  }
+
+  /**
    * Initialize drag and drop functionality for icon lists
    * @param {HTMLElement} container - The settings container element
    */
@@ -208,7 +266,7 @@ export class IconLayoutUtil {
 
     // Get current settings
     const SETTINGS = getSettings();
-    const currentLayout = SettingsUtil.get(SETTINGS.menuIconsLayout.tag) || getDefaultIconLayout();
+    const currentLayout = this.getIconLayout();
 
     // Update the specific icon type
     const updatedLayout = {
@@ -242,8 +300,7 @@ export class IconLayoutUtil {
    * @returns {Array} Array of enabled icons in order
    */
   static getEnabledIcons(iconType) {
-    const SETTINGS = getSettings();
-    const layout = SettingsUtil.get(SETTINGS.menuIconsLayout.tag) || getDefaultIconLayout();
+    const layout = this.getIconLayout();
     const icons = layout[iconType] || [];
 
     return icons
@@ -257,8 +314,7 @@ export class IconLayoutUtil {
    * @returns {Array} Array of all icons in order
    */
   static getAllIcons(iconType) {
-    const SETTINGS = getSettings();
-    const layout = SettingsUtil.get(SETTINGS.menuIconsLayout.tag) || getDefaultIconLayout();
+    const layout = this.getIconLayout();
     const icons = layout[iconType] || [];
 
     return icons.sort((a, b) => a.order - b.order);
@@ -302,7 +358,7 @@ export class IconLayoutUtil {
    */
   static async removeIcon(iconId, iconType) {
     const SETTINGS = getSettings();
-    const currentLayout = SettingsUtil.get(SETTINGS.menuIconsLayout.tag) || getDefaultIconLayout();
+    const currentLayout = this.getIconLayout();
 
     if (!currentLayout[iconType]) {
       LogUtil.error('IconLayoutUtil.removeIcon - Invalid icon type:', [iconType]);
