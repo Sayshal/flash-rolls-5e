@@ -1028,7 +1028,10 @@ export class RollMenuEventManager {
       token.renderFlags.set({refreshState: true});
       this._hoveredTokens.add(token);
 
-      if (canvas.scene?.tokenVision && token.document.sight?.enabled && game.user.isGM) {
+      const SETTINGS = getSettings();
+      const showTokenVisionOnHover = SettingsUtil.get(SETTINGS.showTokenVisionOnHover.tag);
+
+      if (showTokenVisionOnHover && canvas.scene?.tokenVision && token.document.sight?.enabled && game.user.isGM) {
         this._previouslyControlledTokens = [...canvas.tokens.controlled];
         this._previewControlToken = token;
 

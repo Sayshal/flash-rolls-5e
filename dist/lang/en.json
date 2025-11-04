@@ -52,12 +52,7 @@
       "iconRemoved": "Icon {iconName} removed from menu",
       "iconRemoveFailed": "Failed to remove icon from menu",
       "macroCreationFailed": "Failed to create macro",
-      "tokensPlaced": "Placed {count} token(s)",
-      "tokenPlacementCancelled": "Token placement cancelled",
-      "noActorsSelectedForPlacement": "No actors selected for token placement",
-      "tokensTeleported": "Teleported {count} token(s)",
-      "teleportCancelled": "Teleport cancelled",
-      "noTokensSelectedForTeleport": "No tokens selected for teleport"
+      "libWrapperRecommended": "Flash Rolls 5e: for optimal compatibility, consider installing the libWrapper module."
     },
     "contextMenu": {
       "addToFavorites": "Add to Flash Token Bar Menu",
@@ -95,6 +90,10 @@
       "groupRollNPCHidden": {
         "label": "Hide NPC rolls in group messages from players",
         "hint": "When enabled, players will not see roll results from actors they don't have observer permission on in group roll messages. GMs always see all results."
+      },
+      "concealNPCNames": {
+        "label": "Conceal NPC Names in Group Rolls",
+        "hint": "When enabled, NPC actor names will be replaced with '???' for players in group roll messages. Only applies to NPCs that are visible (not hidden by the 'Hide NPC rolls' setting). GM always sees the actual names."
       },
       "interceptTidySheetsGroupRolls": {
         "label": "Intercept Tidy5e Sheets Group Rolls",
@@ -184,6 +183,10 @@
         "label": "Show Menu on Load",
         "hint": "When enabled, the roll requests menu will automatically be visible when you reload Foundry."
       },
+      "showTokenVisionOnHover": {
+        "label": "Show Token Vision on Hover",
+        "hint": "When enabled, hovering over an actor in the roll requests menu will switch the canvas view to that token's vision. Disable this if you prefer manual token selection."
+      },
       "templateAutoTarget": {
         "label": "Template Auto Targeting",
         "hint": "When a template is drawn on canvas, should tokens be automatically targeted / selected?",
@@ -251,10 +254,6 @@
       "tooltipAutoDismiss": {
         "label": "Tooltip Auto-Dismiss (seconds)",
         "hint": "Time in seconds before tooltips automatically disappear. Set to 0 to disable tooltips entirely. Default is 2 seconds."
-      },
-      "teleportAnimationPath": {
-        "label": "Teleport Animation Video",
-        "hint": "Path to the video file to play when teleporting tokens. If JB2A is installed, the blue teleportation animation will be used by default. Leave empty to disable animations."
       },
       "legacyTokenAssociationsMigrated": {
         "label": "Legacy Token Associations Migration Status",
@@ -326,8 +325,6 @@
         "groupSelected": "Create Group",
         "toggleMovement": "Toggle Movement",
         "contestedRoll": "Contested Roll",
-        "placeTokens": "Place Tokens",
-        "teleportTokens": "Teleport Tokens",
         "selectTokens": "Select",
         "removeAssociations": "Remove Associations"
       },
@@ -356,14 +353,9 @@
       },
       "dialogs": {
         "worldSettingsLabel": "World Settings (GM)",
-        "toggleHints": "Toggle Help",
+        "toggleHints": "Toggle Hints",
         "reloadRequiredTitle": "Reload Foundry",
         "reloadRequiredLabel": "A reload is required. Reload now?",
-        "teleportDestinationTitle": "Select Teleport Destination Scene",
-        "teleportDestinationLabel": "Target Scene:",
-        "teleportDestinationButton": "Select Destination",
-        "teleportDestinationHint": "After clicking \"Select Destination\", click on the canvas to choose where to teleport the tokens. Right-click to cancel.",
-        "teleportSameSceneLabel": "{name} (different location)",
         "multipleActors": "Multiple Actors",
         "noCombatActive": "There is no active combat encounter. Would you like to create one before rolling initiative?",
         "rerollInitiativeTitle": "Re-roll Initiative?",

@@ -4,6 +4,7 @@ import { LogUtil } from "../../utils/LogUtil.mjs"
 import { SettingsUtil } from "../../utils/SettingsUtil.mjs";
 import { GeneralUtil } from "../../utils/GeneralUtil.mjs";
 import { IconLayoutUtil } from "../../utils/IconLayoutUtil.mjs";
+import { LibWrapperUtil } from "../../utils/LibWrapperUtil.mjs";
 
 const { FormDataExtended } = foundry.applications.ux;
 
@@ -114,7 +115,7 @@ export class ModuleSettingsMenu extends HandlebarsApplicationMixin(ApplicationV2
     context.isGM = game.user.isGM;
     context.interceptWarning = GeneralUtil.isModuleOn("midi-qol");
     context.interceptWarning = game.i18n.localize("FLASH_ROLLS.notifications.interceptWarning");
-    
+
     return context;
   }
 

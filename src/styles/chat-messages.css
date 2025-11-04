@@ -71,6 +71,32 @@
     &.npc-hidden {
       display: none;
     }
+
+    &.roll-hidden {
+      .actor-summary .roll-result .roll-value {
+        font-size: 0;
+
+        &::before {
+          content: "?";
+          font-size: var(--font-size-20);
+        }
+      }
+
+      .roll-breakdown {
+        display: none !important;
+      }
+    }
+
+    &.npc-name-concealed {
+      .actor-summary .actor-name {
+        font-size: 0;
+
+        &::before {
+          content: "???";
+          font-size: var(--font-size-16);
+        }
+      }
+    }
   }
 
   .actor-image {
@@ -337,6 +363,32 @@
 
     .roll-breakdown {
       display: none !important;
+    }
+  }
+
+  .group-roll-list > .actor-result.roll-hidden {
+    .actor-summary .roll-result .roll-value {
+      font-size: 0;
+
+      &::before {
+        content: "?";
+        font-size: var(--font-size-20);
+      }
+    }
+
+    .roll-breakdown {
+      display: none !important;
+    }
+  }
+
+  .group-roll-list > .actor-result.npc-name-concealed {
+    .actor-summary .actor-info .actor-name {
+      font-size: 0;
+
+      &::before {
+        content: "???";
+        font-size: var(--font-size-16);
+      }
     }
   }
 }

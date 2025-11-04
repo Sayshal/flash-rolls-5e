@@ -57,7 +57,8 @@
       "noActorsSelectedForPlacement": "No actors selected for token placement",
       "tokensTeleported": "Teleported {count} token(s)",
       "teleportCancelled": "Teleport cancelled",
-      "noTokensSelectedForTeleport": "No tokens selected for teleport"
+      "noTokensSelectedForTeleport": "No tokens selected for teleport",
+      "libWrapperRecommended": "Flash Rolls 5e: for optimal compatibility, consider installing the libWrapper module."
     },
     "contextMenu": {
       "addToFavorites": "Add to Flash Token Bar Menu",
@@ -95,6 +96,10 @@
       "groupRollNPCHidden": {
         "label": "Hide NPC rolls in group messages from players",
         "hint": "When enabled, players will not see roll results from actors they don't have observer permission on in group roll messages. GMs always see all results."
+      },
+      "concealNPCNames": {
+        "label": "Conceal NPC Names in Group Rolls",
+        "hint": "When enabled, NPC actor names will be replaced with '???' for players in group roll messages. Only applies to NPCs that are visible (not hidden by the 'Hide NPC rolls' setting). GM always sees the actual names."
       },
       "interceptTidySheetsGroupRolls": {
         "label": "Intercept Tidy5e Sheets Group Rolls",
@@ -183,6 +188,10 @@
       "showMenuOnLoad": {
         "label": "Show Menu on Load",
         "hint": "When enabled, the roll requests menu will automatically be visible when you reload Foundry."
+      },
+      "showTokenVisionOnHover": {
+        "label": "Show Token Vision on Hover",
+        "hint": "When enabled, hovering over an actor in the roll requests menu will switch the canvas view to that token's vision. Disable this if you prefer manual token selection."
       },
       "templateAutoTarget": {
         "label": "Template Auto Targeting",
@@ -356,7 +365,7 @@
       },
       "dialogs": {
         "worldSettingsLabel": "World Settings (GM)",
-        "toggleHints": "Toggle Help",
+        "toggleHints": "Toggle Hints",
         "reloadRequiredTitle": "Reload Foundry",
         "reloadRequiredLabel": "A reload is required. Reload now?",
         "teleportDestinationTitle": "Select Teleport Destination Scene",

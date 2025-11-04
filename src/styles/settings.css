@@ -17,3 +17,16 @@
     border-radius: 6px;
   }
 }
+
+#flash-rolls-settings .form-group.requires-libwrapper {
+  opacity: 0.75;
+  pointer-events: none;
+
+  label, input, select, .range-value {
+    cursor: not-allowed;
+  }
+
+  input, select {
+    background-color: rgba(0, 0, 0, 0.1);
+  }
+}
