@@ -1,6 +1,6 @@
 {
   "name": "flash-rolls-5e",
-  "version": "1.16.0",
+  "version": "1.17.0",
   "description": "A FoundryVTT module for handling roll requests between users",
   "license": "MIT",
   "private": true,
@@ -16,7 +16,7 @@
     "tsc": "tsc"
   },
   "devDependencies": {
-    "@league-of-foundry-developers/foundry-vtt-types": "^12.331.3-beta",
+    "@league-of-foundry-developers/foundry-vtt-types": "^13.346.0-beta.20250812191140",
     "@types/node": "^22.7.5",
     "autoprefixer": "^10.4.20",
     "cssnano": "^7.0.6",

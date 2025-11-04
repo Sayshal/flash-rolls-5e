@@ -12,6 +12,8 @@ import { RollMenuEventManager } from "../managers/roll-menu/RollMenuEventManager
 import { TokenMovementManager } from "../utils/TokenMovementManager.mjs";
 import { RollMenuStateManager } from "../managers/roll-menu/RollMenuStateManager.mjs";
 import { SidebarController } from "../managers/SidebarController.mjs";
+import { TokenPlacementManager } from "../managers/TokenPlacementManager.mjs";
+import { TokenTeleportManager } from "../managers/TokenTeleportManager.mjs";
 
 /**
  * Public API for Flash Token Bar 5e that can be used by other modules
@@ -815,6 +817,51 @@ export class FlashAPI {
       await RollMenuEventManager.openContestedRollDialog(tempMenu);
     } else if (menu && menu.rendered) {
       await RollMenuEventManager.openContestedRollDialog(menu);
+    } else {
+      ui.notifications.warn(game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelected"));
+    }
+  }
+
+  /**
+   * Place tokens for selected actors on the canvas
+   * @param {string[]} actorIds - Array of actor/token IDs to place
+   * @param {Object} [location] - Optional location to place tokens {x: number, y: number}. If not provided, enters interactive placement mode.
+   */
+  static async placeTokens(actorIds, location = null) {
+    const menu = RollRequestsMenu.getInstance();
+
+    if (actorIds && actorIds.length > 0) {
+      if (location && typeof location === 'object' && typeof location.x === 'number' && typeof location.y === 'number') {
+        await TokenPlacementManager.placeTokensAtLocation(actorIds, location);
+      } else {
+        const tempMenu = { selectedActors: new Set(actorIds) };
+        await TokenPlacementManager.placeTokensForSelectedActors(tempMenu);
+      }
+    } else if (menu && menu.rendered) {
+      await TokenPlacementManager.placeTokensForSelectedActors(menu);
+    } else {
+      ui.notifications.warn(game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelected"));
+    }
+  }
+
+  /**
+   * Teleport tokens to a destination scene and location
+   * @param {string[]} actorIds - Array of actor/token IDs to teleport
+   * @param {string|Object} [destinationScene] - Optional scene ID, name, or scene object. If not provided, enters interactive teleport mode.
+   * @param {Object} [centerLocation] - Optional center location {x: number, y: number}. Required if destinationScene is provided.
+   */
+  static async teleportTokens(actorIds, destinationScene = null, centerLocation = null) {
+    const menu = RollRequestsMenu.getInstance();
+
+    if (actorIds && actorIds.length > 0) {
+      if (destinationScene && centerLocation && typeof centerLocation === 'object' && typeof centerLocation.x === 'number' && typeof centerLocation.y === 'number') {
+        await TokenTeleportManager.teleportToDestination(actorIds, destinationScene, centerLocation);
+      } else {
+        const tempMenu = { selectedActors: new Set(actorIds) };
+        await TokenTeleportManager.teleportSelectedTokens(tempMenu);
+      }
+    } else if (menu && menu.rendered) {
+      await TokenTeleportManager.teleportSelectedTokens(menu);
     } else {
       ui.notifications.warn(game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelected"));
     }

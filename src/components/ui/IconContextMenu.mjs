@@ -131,7 +131,21 @@ export class IconContextMenu {
       const addMacrosToFolder = SettingsUtil.get(SETTINGS.addMacrosToFolder.tag);
 
       const iconConfig = getIconConfiguration(iconId, iconType);
-      const selectedActorIds = Array.from(menu?.selectedActors || []);
+      let selectedActorIds = Array.from(menu?.selectedActors || []);
+
+      if (iconId === 'place-tokens') {
+        selectedActorIds = selectedActorIds.map(uniqueId => {
+          const actor = game.actors.get(uniqueId);
+          if (actor) {
+            return actor.id;
+          }
+          const token = canvas.tokens.placeables.find(t => t.id === uniqueId);
+          if (token?.actor) {
+            return token.actor.id;
+          }
+          return uniqueId;
+        });
+      }
 
       let macroCommand = '';
       let macroName = game.i18n.localize(iconConfig.labelKey);
@@ -184,6 +198,12 @@ export class IconContextMenu {
           break;
         case 'contested-roll':
           macroCommand = this._generateActorActionMacro('openContestedRoll', 'Contested Roll', selectedActorIds);
+          break;
+        case 'place-tokens':
+          macroCommand = this._generatePlaceTokensMacro(selectedActorIds);
+          break;
+        case 'teleport-tokens':
+          macroCommand = this._generateTeleportTokensMacro(selectedActorIds);
           break;
         default:
           ui.notifications.warn(`No macro generation configured for icon: ${iconId}`);
@@ -365,6 +385,94 @@ try {
   }
 } catch (error) {
   ui.notifications.error("Failed to execute Toggle Targets: " + error.message);
+}`;
+    }
+  }
+
+  /**
+   * Generate macro command for place tokens action
+   * @param {string[]} actorIds - Selected actor IDs (if any)
+   * @returns {string} Macro command
+   * @private
+   */
+  static _generatePlaceTokensMacro(actorIds) {
+    if (actorIds && actorIds.length > 0) {
+      return `// Flash Token Bar: Place Tokens
+// Uses specific actors: ${actorIds.join(', ')}
+// Optional second parameter: location object {x: number, y: number}
+// Examples:
+//   FlashAPI.placeTokens(${JSON.stringify(actorIds)});                    // Interactive placement
+//   FlashAPI.placeTokens(${JSON.stringify(actorIds)}, {x: 1000, y: 1000}); // Auto-place at coordinates
+
+try {
+  FlashAPI.placeTokens(${JSON.stringify(actorIds)});
+} catch (error) {
+  ui.notifications.error("Failed to execute Place Tokens: " + error.message);
+}`;
+    } else {
+      return `// Flash Token Bar: Place Tokens
+// Uses currently selected actors
+// Optional second parameter: location object {x: number, y: number}
+// Examples:
+//   FlashAPI.placeTokens(actorIds);                    // Interactive placement
+//   FlashAPI.placeTokens(actorIds, {x: 1000, y: 1000}); // Auto-place at coordinates
+
+try {
+  const actorIds = FlashAPI.getSelectedActors();
+  if (actorIds.length === 0) {
+    ui.notifications.warn("No actors selected");
+  } else {
+    FlashAPI.placeTokens(actorIds);
+  }
+} catch (error) {
+  ui.notifications.error("Failed to execute Place Tokens: " + error.message);
+}`;
+    }
+  }
+
+  /**
+   * Generate macro command for teleport tokens action
+   * @param {string[]} actorIds - Selected actor IDs (if any)
+   * @returns {string} Macro command
+   * @private
+   */
+  static _generateTeleportTokensMacro(actorIds) {
+    if (actorIds && actorIds.length > 0) {
+      return `// Flash Token Bar: Teleport Tokens
+// Uses specific actors: ${actorIds.join(', ')}
+// Optional parameters:
+//   destinationScene: Scene ID, name, or scene object
+//   centerLocation: Object {x: number, y: number}
+// Examples:
+//   FlashAPI.teleportTokens(${JSON.stringify(actorIds)});                                    // Interactive teleport
+//   FlashAPI.teleportTokens(${JSON.stringify(actorIds)}, 'sceneId', {x: 1000, y: 1000});     // Auto-teleport by scene ID
+//   FlashAPI.teleportTokens(${JSON.stringify(actorIds)}, 'Scene Name', {x: 1000, y: 1000});  // Auto-teleport by scene name
+
+try {
+  FlashAPI.teleportTokens(${JSON.stringify(actorIds)});
+} catch (error) {
+  ui.notifications.error("Failed to execute Teleport Tokens: " + error.message);
+}`;
+    } else {
+      return `// Flash Token Bar: Teleport Tokens
+// Uses currently selected actors
+// Optional parameters:
+//   destinationScene: Scene ID, name, or scene object
+//   centerLocation: Object {x: number, y: number}
+// Examples:
+//   FlashAPI.teleportTokens(actorIds);                                    // Interactive teleport
+//   FlashAPI.teleportTokens(actorIds, 'sceneId', {x: 1000, y: 1000});     // Auto-teleport by scene ID
+//   FlashAPI.teleportTokens(actorIds, 'Scene Name', {x: 1000, y: 1000});  // Auto-teleport by scene name
+
+try {
+  const actorIds = FlashAPI.getSelectedActors();
+  if (actorIds.length === 0) {
+    ui.notifications.warn("No actors selected");
+  } else {
+    FlashAPI.teleportTokens(actorIds);
+  }
+} catch (error) {
+  ui.notifications.error("Failed to execute Teleport Tokens: " + error.message);
 }`;
     }
   }

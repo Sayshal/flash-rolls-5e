@@ -926,4 +926,91 @@ export class TokenTeleportManager {
   static isTeleporting() {
     return this._isTeleporting;
   }
+
+  /**
+   * Teleport tokens to a specific destination scene and location automatically
+   * @param {string[]} actorIds - Array of actor/token IDs to teleport
+   * @param {string|Object} destinationScene - Scene ID, name, or scene object
+   * @param {Object} centerLocation - Center location {x: number, y: number}
+   */
+  static async teleportToDestination(actorIds, destinationScene, centerLocation) {
+    if (!game.user.isGM) {
+      ui.notifications.warn("Only GMs can teleport tokens");
+      return;
+    }
+
+    if (!actorIds || actorIds.length === 0) {
+      ui.notifications.warn(game.i18n.localize("FLASH_ROLLS.notifications.noTokensSelectedForTeleport"));
+      return;
+    }
+
+    if (!destinationScene || !centerLocation || typeof centerLocation.x !== 'number' || typeof centerLocation.y !== 'number') {
+      ui.notifications.error("Invalid destination scene or location provided for teleportation");
+      return;
+    }
+
+    let targetScene;
+    if (typeof destinationScene === 'string') {
+      targetScene = game.scenes.get(destinationScene) || game.scenes.getName(destinationScene);
+      if (!targetScene) {
+        ui.notifications.error(`Scene "${destinationScene}" not found`);
+        return;
+      }
+    } else if (destinationScene instanceof Scene) {
+      targetScene = destinationScene;
+    } else {
+      ui.notifications.error("Invalid destination scene provided");
+      return;
+    }
+
+    const tokensToTeleport = [];
+    const tokenDataToTeleport = [];
+
+    for (const uniqueId of actorIds) {
+      const actor = getActorData(uniqueId);
+      if (!actor) continue;
+
+      const token = canvas.tokens.placeables.find(t =>
+        t.actor?.id === actor.id || t.id === uniqueId
+      );
+
+      if (token) {
+        tokensToTeleport.push(token);
+        tokenDataToTeleport.push({
+          id: token.id,
+          sceneId: canvas.scene.id,
+          x: token.document.x,
+          y: token.document.y,
+          width: token.document.width,
+          height: token.document.height,
+          documentData: token.document.toObject()
+        });
+      }
+    }
+
+    if (tokensToTeleport.length === 0) {
+      ui.notifications.warn(game.i18n.localize("FLASH_ROLLS.notifications.noTokensSelectedForTeleport"));
+      return;
+    }
+
+    this._tokensToTeleport = tokensToTeleport;
+    this._tokenDataToTeleport = tokenDataToTeleport;
+    this._sourceScene = canvas.scene;
+    this._targetScene = targetScene;
+    this._isTeleporting = true;
+
+    const snapped = targetScene.grid.getSnappedPoint(centerLocation, { mode: CONST.GRID_SNAPPING_MODES.CENTER });
+
+    const sourceGridSize = canvas.scene.grid.size;
+    const boundingBox = this._calculateBoundingBox(tokenDataToTeleport, sourceGridSize);
+    const groupCenterX = boundingBox.x + boundingBox.width / 2;
+    const groupCenterY = boundingBox.y + boundingBox.height / 2;
+
+    if (targetScene.id === canvas.scene.id) {
+      await this._performSameSceneTeleport(snapped, groupCenterX, groupCenterY, sourceGridSize);
+    } else {
+      await targetScene.view();
+      await this._performCrossSceneTeleport(snapped, groupCenterX, groupCenterY, sourceGridSize);
+    }
+  }
 }

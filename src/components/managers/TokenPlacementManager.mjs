@@ -237,9 +237,30 @@ export class TokenPlacementManager {
     this._previewTokens.splice(this._placementIndex, 1);
     this._actorsToPlace.splice(this._placementIndex, 1);
 
-    if (this._previewTokens.length === 0) {
+    if (this._previewTokens.length === 0 || this._placementIndex >= this._previewTokens.length) {
       this._cleanup();
       ui.notifications.info(game.i18n.localize("FLASH_ROLLS.notifications.tokenPlacementCancelled"));
+    } else {
+      this._clearPreviewGraphics();
+    }
+  }
+
+  /**
+   * Clear all preview graphics from canvas
+   */
+  static _clearPreviewGraphics() {
+    if (!canvas.controls?.children) return;
+
+    try {
+      const children = Array.from(canvas.controls.children);
+      for (const child of children) {
+        if (child._flashRollsPlacementPreview) {
+          canvas.controls.removeChild(child);
+          if (child.destroy) child.destroy();
+        }
+      }
+    } catch (error) {
+      LogUtil.warn("Error clearing preview graphics", error);
     }
   }
 
@@ -279,19 +300,7 @@ export class TokenPlacementManager {
 
     this._rightMouseDown = false;
 
-    if (canvas.controls?.children) {
-      try {
-        const children = Array.from(canvas.controls.children);
-        for (const child of children) {
-          if (child._flashRollsPlacementPreview) {
-            canvas.controls.removeChild(child);
-            if (child.destroy) child.destroy();
-          }
-        }
-      } catch (error) {
-        LogUtil.warn("Error clearing preview graphics during cleanup", error);
-      }
-    }
+    this._clearPreviewGraphics();
   }
 
   /**
@@ -300,5 +309,83 @@ export class TokenPlacementManager {
    */
   static isPlacing() {
     return this._isPlacingTokens;
+  }
+
+  /**
+   * Place tokens at a specific location automatically
+   * @param {string[]} actorIds - Array of actor/token IDs to place
+   * @param {Object} location - Location to place tokens {x: number, y: number}
+   */
+  static async placeTokensAtLocation(actorIds, location) {
+    if (!game.user.isGM) {
+      ui.notifications.warn("Only GMs can place tokens");
+      return;
+    }
+
+    if (!actorIds || actorIds.length === 0) {
+      ui.notifications.warn(game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelectedForPlacement"));
+      return;
+    }
+
+    if (!location || typeof location.x !== 'number' || typeof location.y !== 'number') {
+      ui.notifications.error("Invalid location provided for token placement");
+      return;
+    }
+
+    const actorsToPlace = [];
+
+    for (const uniqueId of actorIds) {
+      const actor = getActorData(uniqueId);
+      if (!actor) {
+        LogUtil.warn(`Could not find actor for ID: ${uniqueId}`);
+        continue;
+      }
+
+      if (actor.type === 'group' || actor.type === 'encounter') {
+        const members = actor.system.members || [];
+        for (const member of members) {
+          const memberActor = member.actor || (member.uuid ? await fromUuid(member.uuid) : null);
+          if (memberActor) {
+            actorsToPlace.push(memberActor);
+          }
+        }
+      } else {
+        actorsToPlace.push(actor);
+      }
+    }
+
+    if (actorsToPlace.length === 0) {
+      ui.notifications.warn(game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelectedForPlacement"));
+      LogUtil.warn("No valid actors found for placement", actorIds);
+      return;
+    }
+
+    const snapped = canvas.grid.getSnappedPoint({ x: location.x, y: location.y }, { mode: CONST.GRID_SNAPPING_MODES.CENTER });
+    const gridSize = canvas.grid.size;
+    const tokensCreated = [];
+
+    for (const actor of actorsToPlace) {
+      const tokenData = await actor.getTokenDocument();
+
+      const finalTokenData = {
+        ...tokenData.toObject(),
+        x: snapped.x - (tokenData.width * gridSize) / 2,
+        y: snapped.y - (tokenData.height * gridSize) / 2,
+        alpha: 1
+      };
+
+      try {
+        const created = await canvas.scene.createEmbeddedDocuments('Token', [finalTokenData]);
+        tokensCreated.push(...created);
+      } catch (error) {
+        LogUtil.error("Failed to create token", [error, actor.name]);
+      }
+    }
+
+    if (tokensCreated.length > 0) {
+      ui.notifications.info(game.i18n.format("FLASH_ROLLS.notifications.tokensPlaced", {
+        count: tokensCreated.length
+      }));
+    }
   }
 }
