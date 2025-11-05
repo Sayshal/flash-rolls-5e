@@ -158,12 +158,32 @@ export class FlashAPI {
   
   /**
    * Get currently selected actors from the roll requests menu
+   * @param {boolean} tokenOnly - If true, only return token IDs (filters out actors without tokens on canvas)
    * @returns {string[]} Array of selected actor/token IDs
    */
-  static getSelectedActors() {
+  static getSelectedActors(tokenOnly = false) {
     const menu = RollRequestsMenu.getInstance();
     if (menu && menu.selectedActors) {
-      return Array.from(menu.selectedActors);
+      const selectedIds = Array.from(menu.selectedActors);
+
+      if (!tokenOnly) {
+        return selectedIds;
+      }
+
+      return selectedIds.map(uniqueId => {
+        const token = canvas.tokens.placeables.find(t => t.id === uniqueId);
+        if (token) {
+          return token.id;
+        }
+        const actor = game.actors.get(uniqueId);
+        if (actor) {
+          const actorToken = canvas.tokens.placeables.find(t => t.actor?.id === actor.id);
+          if (actorToken) {
+            return actorToken.id;
+          }
+        }
+        return null;
+      }).filter(id => id !== null);
     }
     return [];
   }

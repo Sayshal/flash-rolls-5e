@@ -147,6 +147,27 @@ export class IconContextMenu {
         });
       }
 
+      if (iconId === 'teleport-tokens') {
+        selectedActorIds = selectedActorIds.map(uniqueId => {
+          const token = canvas.tokens.placeables.find(t => t.id === uniqueId);
+          if (token) {
+            return token.id;
+          }
+          const actor = game.actors.get(uniqueId);
+          if (actor) {
+            const actorToken = canvas.tokens.placeables.find(t => t.actor?.id === actor.id);
+            if (actorToken) {
+              return actorToken.id;
+            }
+          }
+          return null;
+        }).filter(id => id !== null);
+
+        if (selectedActorIds.length === 0) {
+          selectedActorIds = null;
+        }
+      }
+
       let macroCommand = '';
       let macroName = game.i18n.localize(iconConfig.labelKey);
 
@@ -439,7 +460,7 @@ try {
   static _generateTeleportTokensMacro(actorIds) {
     if (actorIds && actorIds.length > 0) {
       return `// Flash Token Bar: Teleport Tokens
-// Uses specific actors: ${actorIds.join(', ')}
+// Uses specific token IDs: ${actorIds.join(', ')}
 // Optional parameters:
 //   destinationScene: Scene ID, name, or scene object
 //   centerLocation: Object {x: number, y: number}
@@ -455,21 +476,21 @@ try {
 }`;
     } else {
       return `// Flash Token Bar: Teleport Tokens
-// Uses currently selected actors
+// Uses currently selected actors (converted to token IDs)
 // Optional parameters:
 //   destinationScene: Scene ID, name, or scene object
 //   centerLocation: Object {x: number, y: number}
 // Examples:
-//   FlashAPI.teleportTokens(actorIds);                                    // Interactive teleport
-//   FlashAPI.teleportTokens(actorIds, 'sceneId', {x: 1000, y: 1000});     // Auto-teleport by scene ID
-//   FlashAPI.teleportTokens(actorIds, 'Scene Name', {x: 1000, y: 1000});  // Auto-teleport by scene name
+//   FlashAPI.teleportTokens(tokenIds);                                    // Interactive teleport
+//   FlashAPI.teleportTokens(tokenIds, 'sceneId', {x: 1000, y: 1000});     // Auto-teleport by scene ID
+//   FlashAPI.teleportTokens(tokenIds, 'Scene Name', {x: 1000, y: 1000});  // Auto-teleport by scene name
 
 try {
-  const actorIds = FlashAPI.getSelectedActors();
-  if (actorIds.length === 0) {
-    ui.notifications.warn("No actors selected");
+  const tokenIds = FlashAPI.getSelectedActors(true);
+  if (tokenIds.length === 0) {
+    ui.notifications.warn("No tokens found for selected actors");
   } else {
-    FlashAPI.teleportTokens(actorIds);
+    FlashAPI.teleportTokens(tokenIds);
   }
 } catch (error) {
   ui.notifications.error("Failed to execute Teleport Tokens: " + error.message);

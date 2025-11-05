@@ -58,7 +58,7 @@
       "tokensTeleported": "Teleported {count} token(s)",
       "teleportCancelled": "Teleport cancelled",
       "teleportReady": "Teleporting {count} token(s). Navigate to desired scene and click canvas to place them. Right-click to cancel.",
-      "noTokensSelectedForTeleport": "No tokens selected for teleport",
+      "noTokensSelectedForTeleport": "No valid tokens selected for teleport",
       "libWrapperRecommended": "Flash Rolls 5e: for optimal compatibility, consider installing the libWrapper module."
     },
     "contextMenu": {

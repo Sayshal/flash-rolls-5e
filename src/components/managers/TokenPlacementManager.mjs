@@ -80,17 +80,19 @@ export class TokenPlacementManager {
     this._previewTokens = [];
 
     for (const actor of this._actorsToPlace) {
-      const tokenData = await actor.getTokenDocument();
+      const baseActor = actor.isToken ? actor.baseActor : actor;
+      const tokenData = await baseActor.getTokenDocument();
 
       const previewData = {
         ...tokenData.toObject(),
         x: 0,
         y: 0,
-        alpha: 0.5
+        alpha: 0.5,
+        actorLink: false
       };
 
       this._previewTokens.push({
-        actor: actor,
+        actor: baseActor,
         data: previewData
       });
     }
@@ -200,7 +202,8 @@ export class TokenPlacementManager {
       ...currentPreview.data,
       x: snapped.x - (currentPreview.data.width * gridSize) / 2,
       y: snapped.y - (currentPreview.data.height * gridSize) / 2,
-      alpha: 1
+      alpha: 1,
+      actorLink: false
     };
 
     try {
@@ -365,27 +368,23 @@ export class TokenPlacementManager {
     const tokensCreated = [];
 
     for (const actor of actorsToPlace) {
-      const tokenData = await actor.getTokenDocument();
+      const baseActor = actor.isToken ? actor.baseActor : actor;
+      const tokenData = await baseActor.getTokenDocument();
 
       const finalTokenData = {
         ...tokenData.toObject(),
         x: snapped.x - (tokenData.width * gridSize) / 2,
         y: snapped.y - (tokenData.height * gridSize) / 2,
-        alpha: 1
+        alpha: 1,
+        actorLink: false
       };
 
       try {
         const created = await canvas.scene.createEmbeddedDocuments('Token', [finalTokenData]);
         tokensCreated.push(...created);
       } catch (error) {
-        LogUtil.error("Failed to create token", [error, actor.name]);
+        LogUtil.error("Failed to create token", [error, baseActor.name]);
       }
-    }
-
-    if (tokensCreated.length > 0) {
-      ui.notifications.info(game.i18n.format("FLASH_ROLLS.notifications.tokensPlaced", {
-        count: tokensCreated.length
-      }));
     }
   }
 }

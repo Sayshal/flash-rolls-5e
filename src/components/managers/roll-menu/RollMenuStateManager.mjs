@@ -338,8 +338,8 @@ export class RollMenuStateManager {
       totalCount = checkboxes.length;
       selectedCount = Array.from(checkboxes).filter(cb => cb.checked).length;
     }
-    
-    if(!!selectAllCheckbox) return;
+
+    if(!selectAllCheckbox) return;
     selectAllCheckbox.checked = selectedCount > 0 && selectedCount === totalCount;
     selectAllCheckbox.indeterminate = selectedCount > 0 && selectedCount < totalCount;
   }

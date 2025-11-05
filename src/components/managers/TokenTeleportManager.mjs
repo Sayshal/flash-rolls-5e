@@ -105,8 +105,9 @@ export class TokenTeleportManager {
 
   /**
    * Enter placement mode and show ghost token preview
+   * @param {boolean} showNotification - Whether to show the ready notification
    */
-  static async _enterPlacementMode() {
+  static async _enterPlacementMode(showNotification = true) {
     if (this._targetScene.id === this._sourceScene.id) {
       const tokens = this._getTokensFromData();
       tokens.forEach(token => {
@@ -121,9 +122,12 @@ export class TokenTeleportManager {
     const tokenCount = this._tokenDataToTeleport?.length || 0;
     const sceneName = this._targetScene.name;
     LogUtil.log(`Teleport ready with ${tokenCount} tokens on scene: ${sceneName}`, this._tokenDataToTeleport);
-    ui.notifications.info(game.i18n.format("FLASH_ROLLS.notifications.teleportReady", {
-      count: tokenCount
-    }));
+
+    if (showNotification) {
+      ui.notifications.info(game.i18n.format("FLASH_ROLLS.notifications.teleportReady", {
+        count: tokenCount
+      }));
+    }
   }
 
   /**
@@ -164,7 +168,7 @@ export class TokenTeleportManager {
     });
 
     setTimeout(async () => {
-      await this._enterPlacementMode();
+      await this._enterPlacementMode(false);
 
       LogUtil.log("_onSceneChange - After re-entering placement mode", {
         hasHandlers: {
@@ -372,7 +376,7 @@ export class TokenTeleportManager {
     if (tokens.length === 0) {
       ui.notifications.warn("No valid tokens found for teleportation");
       this._cleanup();
-      return;
+      return [];
     }
 
     const hideUpdates = this._tokenDataToTeleport.map(tokenData => ({
@@ -399,8 +403,13 @@ export class TokenTeleportManager {
       const newCenterX = destination.x + relativeFromGroupCenterX;
       const newCenterY = destination.y + relativeFromGroupCenterY;
 
-      const newX = newCenterX - tokenWidth / 2;
-      const newY = newCenterY - tokenHeight / 2;
+      const snappedPosition = this._sourceScene.grid.getSnappedPoint(
+        { x: newCenterX, y: newCenterY },
+        { mode: CONST.GRID_SNAPPING_MODES.CENTER }
+      );
+
+      const newX = snappedPosition.x - tokenWidth / 2;
+      const newY = snappedPosition.y - tokenHeight / 2;
 
       updates.push({
         _id: tokenData.id,
@@ -410,12 +419,12 @@ export class TokenTeleportManager {
       });
 
       arrivalPositions.push({
-        x: newCenterX,
-        y: newCenterY
+        x: snappedPosition.x,
+        y: snappedPosition.y
       });
     }
 
-    await this._sourceScene.updateEmbeddedDocuments('Token', updates, { animate: false });
+    await this._sourceScene.updateEmbeddedDocuments('Token', updates, { animate: false, teleport: true, forced: true });
 
     if (animationPath || this._hasJB2A()) {
       await this._playArrivalAnimations(arrivalPositions);
@@ -428,12 +437,11 @@ export class TokenTeleportManager {
 
     await this._sourceScene.updateEmbeddedDocuments('Token', showUpdates, { animate: false });
 
+    const tokenIds = this._tokenDataToTeleport.map(t => t.id);
     const tokenCount = this._tokenDataToTeleport.length;
     this._cleanup();
 
-    ui.notifications.info(game.i18n.format("FLASH_ROLLS.notifications.tokensTeleported", {
-      count: tokenCount
-    }));
+    return tokenIds;
   }
 
   /**
@@ -451,7 +459,7 @@ export class TokenTeleportManager {
     if (tokens.length === 0) {
       ui.notifications.warn("No valid tokens found for teleportation");
       this._cleanup();
-      return;
+      return [];
     }
 
     const hideUpdates = this._tokenDataToTeleport.map(tokenData => ({
@@ -482,11 +490,16 @@ export class TokenTeleportManager {
       const newCenterX = destination.x + (relativeGridX * targetGridSize);
       const newCenterY = destination.y + (relativeGridY * targetGridSize);
 
+      const snappedPosition = this._targetScene.grid.getSnappedPoint(
+        { x: newCenterX, y: newCenterY },
+        { mode: CONST.GRID_SNAPPING_MODES.CENTER }
+      );
+
       const targetTokenWidth = tokenData.width * targetGridSize;
       const targetTokenHeight = tokenData.height * targetGridSize;
 
-      const newX = newCenterX - targetTokenWidth / 2;
-      const newY = newCenterY - targetTokenHeight / 2;
+      const newX = snappedPosition.x - targetTokenWidth / 2;
+      const newY = snappedPosition.y - targetTokenHeight / 2;
 
       const data = foundry.utils.duplicate(tokenData.documentData);
       data.x = newX;
@@ -494,8 +507,8 @@ export class TokenTeleportManager {
 
       tokenCreateData.push(data);
       arrivalPositions.push({
-        x: newCenterX,
-        y: newCenterY
+        x: snappedPosition.x,
+        y: snappedPosition.y
       });
     }
 
@@ -513,11 +526,10 @@ export class TokenTeleportManager {
       hidden: false
     })));
 
+    const tokenIds = createdTokens.map(t => t.id);
     this._cleanup();
 
-    ui.notifications.info(game.i18n.format("FLASH_ROLLS.notifications.tokensTeleported", {
-      count: createdTokens.length
-    }));
+    return tokenIds;
   }
 
   /**
@@ -965,14 +977,10 @@ export class TokenTeleportManager {
 
     const tokensToTeleport = [];
     const tokenDataToTeleport = [];
+    const invalidIds = [];
 
-    for (const uniqueId of actorIds) {
-      const actor = getActorData(uniqueId);
-      if (!actor) continue;
-
-      const token = canvas.tokens.placeables.find(t =>
-        t.actor?.id === actor.id || t.id === uniqueId
-      );
+    for (const tokenId of actorIds) {
+      const token = canvas.tokens.get(tokenId);
 
       if (token) {
         tokensToTeleport.push(token);
@@ -985,6 +993,18 @@ export class TokenTeleportManager {
           height: token.document.height,
           documentData: token.document.toObject()
         });
+      } else {
+        invalidIds.push(tokenId);
+      }
+    }
+
+    if (invalidIds.length > 0) {
+      LogUtil.warn(`Invalid token IDs provided: ${invalidIds.join(', ')}`);
+      if (tokensToTeleport.length === 0) {
+        ui.notifications.error("No valid tokens found. Ensure you're using token IDs, not actor IDs.");
+        return;
+      } else {
+        ui.notifications.warn(`Some token IDs were invalid and skipped. ${tokensToTeleport.length} token(s) will be teleported.`);
       }
     }
 
@@ -1006,11 +1026,29 @@ export class TokenTeleportManager {
     const groupCenterX = boundingBox.x + boundingBox.width / 2;
     const groupCenterY = boundingBox.y + boundingBox.height / 2;
 
+    let teleportedTokenIds = [];
     if (targetScene.id === canvas.scene.id) {
-      await this._performSameSceneTeleport(snapped, groupCenterX, groupCenterY, sourceGridSize);
+      teleportedTokenIds = await this._performSameSceneTeleport(snapped, groupCenterX, groupCenterY, sourceGridSize);
     } else {
       await targetScene.view();
-      await this._performCrossSceneTeleport(snapped, groupCenterX, groupCenterY, sourceGridSize);
+      teleportedTokenIds = await this._performCrossSceneTeleport(snapped, groupCenterX, groupCenterY, sourceGridSize);
+    }
+
+    if (teleportedTokenIds.length > 0) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      const teleportedTokens = teleportedTokenIds
+        .map(id => canvas.tokens.get(id))
+        .filter(t => t);
+
+      if (teleportedTokens.length > 0) {
+        canvas.tokens.releaseAll();
+        teleportedTokens.forEach(token => token.control({ releaseOthers: false }));
+
+        const avgX = teleportedTokens.reduce((sum, t) => sum + t.center.x, 0) / teleportedTokens.length;
+        const avgY = teleportedTokens.reduce((sum, t) => sum + t.center.y, 0) / teleportedTokens.length;
+        await canvas.animatePan({ x: avgX, y: avgY, duration: 250 });
+      }
     }
   }
 }
