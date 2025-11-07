@@ -787,16 +787,16 @@
   color: var(--fr5e-text-color);
 }
 
-#flash-rolls-menu .action-icons label:has(input:checked) .icon-label {
+#flash-rolls-menu .action-icons label:has(input:checked) .flash-icon {
   color: var(--color-warm-2);
 }
 
-#flash-rolls-menu .action-icons .icon-label {
+#flash-rolls-menu .action-icons .flash-icon {
   color: var(--fr5e-text-color);
   transition: color 0.2s ease;
 }
 
-#flash-rolls-menu .action-icons button .icon-label {
+#flash-rolls-menu .action-icons button .flash-icon {
   color: var(--fr5e-text-color);
 }
 

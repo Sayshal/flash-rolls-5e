@@ -155,7 +155,7 @@
 }
 
 /* Icon Label */
-.icon-label {
+.flash-icon {
   flex: 1;
   font-size: 0.9rem;
   color: var(--color-text-primary);
@@ -164,7 +164,8 @@
   text-overflow: ellipsis;
 }
 
-.icon-item.disabled .icon-label {
+
+.icon-item.disabled .flash-icon {
   opacity: 0.7;
 }
 
@@ -197,7 +198,7 @@
     gap: 0.5rem;
   }
 
-  .icon-label {
+  .flash-icon {
     font-size: 0.8rem;
   }
 

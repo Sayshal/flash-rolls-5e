@@ -74,8 +74,8 @@ body:not(.crlngn-ui) #flash-rolls-menu:after {
 #flash-rolls-menu .request-types-accordion {
   position: relative;
   pointer-events: all;
-  width: var(--fr5e-width-regular);
-  min-width: var(--fr5e-width-regular);
+  width: var(--fr5e-width-accordion);
+  min-width: var(--fr5e-width-accordion);
   margin: 0;
   padding: 1em 1em 0.75em 1em;
   max-height: 100%;

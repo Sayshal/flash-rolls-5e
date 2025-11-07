@@ -175,7 +175,7 @@
           <li data-icon-id="{{../id}}" data-icon-type="moduleActions">
             {{#if (eq type "button")}}
               {{#if (eq ../id "lock-menu")}}
-                <i class="icon-option icon fas {{#if ../../actorsLocked}}fa-lock-keyhole{{else}}fa-lock-keyhole-open{{/if}}"
+                <i class="flash-icon icon fas {{#if ../../actorsLocked}}fa-lock-keyhole{{else}}fa-lock-keyhole-open{{/if}}"
                    id="{{element}}"
                    data-tooltip="{{localize tooltipKey}}"
                    data-tooltip-direction="{{#if (eq ../../menuLayout 'horizontal')}}UP{{else}}RIGHT{{/if}}"
@@ -185,7 +185,7 @@
                         data-tooltip="{{localize tooltipKey}}"
                         data-tooltip-direction="{{#if (eq ../../menuLayout 'horizontal')}}UP{{else}}RIGHT{{/if}}"
                         data-tooltip-delay="800">
-                  <i class="icon-label fas {{this.icon}}"></i>
+                  <i class="flash-icon fas {{this.icon}}"></i>
                 </button>
               {{/if}}
             {{else if (eq type "checkbox")}}
@@ -195,7 +195,7 @@
                        {{#if (eq ../id "skip-dialogs")}}{{#if ../../skipRollDialog}}checked{{/if}}{{/if}}
                        {{#if (eq ../id "group-rolls")}}{{#if ../../groupRollsMsgEnabled}}checked{{/if}}{{/if}}
                        {{#if (eq ../id "show-options")}}{{#if ../../showOptionsListOnHover}}checked{{/if}}{{/if}} />
-                <span class="icon-label fas {{this.icon}}"
+                <span class="flash-icon fas {{this.icon}}"
                       data-tooltip="{{localize tooltipKey}}"
                       data-tooltip-direction="{{#if (eq ../../menuLayout 'horizontal')}}UP{{else}}RIGHT{{/if}}"
                       data-tooltip-delay="800"></span>
@@ -225,13 +225,13 @@
                           data-tooltip="{{localize tooltipKey}}"
                           data-tooltip-direction="{{#if (eq ../../menuLayout 'horizontal')}}UP{{else}}RIGHT{{/if}}"
                           data-tooltip-delay="800">
-                    <i class="icon-label fas {{this.icon}}"></i>
+                    <i class="flash-icon fas {{this.icon}}"></i>
                   </button>
                 {{else if (eq type "checkbox")}}
                   <label for="{{this.element}}">
                     <input type="checkbox" name="{{this.element}}" id="{{this.element}}"
                            {{#if (eq ../id "select-all")}}{{#if ../../selectAllOn}}checked{{/if}}{{/if}} />
-                    <span class="icon-label fas {{this.icon}}"
+                    <span class="flash-icon fas {{this.icon}}"
                           data-tooltip="{{localize tooltipKey}}"
                           data-tooltip-direction="{{#if (eq ../../menuLayout 'horizontal')}}UP{{else}}RIGHT{{/if}}"
                           data-tooltip-delay="800"></span>

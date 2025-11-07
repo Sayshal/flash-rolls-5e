@@ -239,7 +239,7 @@
 /* Request Types Accordion - Horizontal Layout */
 #flash-rolls-menu[data-layout="horizontal"] .request-types-accordion {
   width: 100%;
-  min-width: var(--fr5e-width-regular);
+  min-width: var(--fr5e-width-accordion);
   flex-direction: column-reverse;
   position: absolute;
   transform: translateY(-100%);

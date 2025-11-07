@@ -25,8 +25,8 @@
 }
 
 #flash-rolls-menu.compact .request-types-accordion {
-  width: var(--fr5e-width-regular);
-  min-width: var(--fr5e-width-regular);
+  width: var(--fr5e-width-accordion);
+  min-width: var(--fr5e-width-accordion);
   overflow: auto;
   display: flex;
   flex-direction: column;
@@ -115,7 +115,7 @@
   justify-content: center;
 }
 
-#flash-rolls-menu.compact div.main-content > ul.actors > li.options .selection-row span.icon-label {
+#flash-rolls-menu.compact div.main-content > ul.actors > li.options .selection-row span.flash-icon {
   display: flex;
   margin-left: auto;
   align-items: center;
@@ -231,7 +231,7 @@
 /* Horizontal Compact Accordion Width Override */
 #flash-rolls-menu[data-layout="horizontal"].compact .request-types-accordion {
   width: 100%;
-  min-width: var(--fr5e-width-regular);
+  min-width: var(--fr5e-width-accordion);
   flex-direction: column-reverse;
 }
 
