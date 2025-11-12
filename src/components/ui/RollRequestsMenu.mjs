@@ -74,8 +74,6 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
     this.isDragging = false;
     this.isCustomPosition = false;
     this.customPosition = RollMenuDragManager.loadCustomPosition();
-    
-    this._initializeFromSelectedTokens();
   }
 
   static get DEFAULT_OPTIONS() {
@@ -1186,6 +1184,7 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
     
     if (!this.#instance) {
       this.#instance = new RollRequestsMenu();
+      this.#instance._initializeFromSelectedTokens();
       this.#instance.render(true);
     } else {
       if (this.#instance.rendered) {
@@ -1270,6 +1269,7 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
       
       if (!this.#instance) {
         this.#instance = new RollRequestsMenu();
+        this.#instance._initializeFromSelectedTokens();
       } else if (!this.#instance.rendered) {
         this.#instance._initializeFromSelectedTokens();
       }

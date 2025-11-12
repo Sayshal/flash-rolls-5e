@@ -800,7 +800,7 @@ export class ChatMessageManager {
     const showDCToPlayers = SettingsUtil.get(SETTINGS.showGroupDCToPlayers.tag);
     const showResultToPlayers = SettingsUtil.get(SETTINGS.showGroupResultToPlayers.tag);
     const groupRollNPCHidden = SettingsUtil.get(SETTINGS.groupRollNPCHidden.tag);
-    const isGM = game.user.isGM;
+    const isGM = game.user?.isGM === true;
 
     results.forEach(result => {
       result.shouldHide = result.isNPC && groupRollNPCHidden && !isGM;
@@ -1158,7 +1158,7 @@ export class ChatMessageManager {
     flagData.showDCToPlayers = SettingsUtil.get(SETTINGS.showGroupDCToPlayers.tag);
     flagData.showResultToPlayers = SettingsUtil.get(SETTINGS.showGroupResultToPlayers.tag);
     flagData.groupRollNPCHidden = SettingsUtil.get(SETTINGS.groupRollNPCHidden.tag);
-    flagData.isGM = game.user.isGM;
+    flagData.isGM = game.user?.isGM === true;
 
     if (flagData.results) {
       flagData.results.forEach(result => {
@@ -1308,7 +1308,7 @@ export class ChatMessageManager {
     flagData.showDCToPlayers = SettingsUtil.get(SETTINGS.showGroupDCToPlayers.tag);
     flagData.showResultToPlayers = SettingsUtil.get(SETTINGS.showGroupResultToPlayers.tag);
     flagData.groupRollNPCHidden = SettingsUtil.get(SETTINGS.groupRollNPCHidden.tag);
-    flagData.isGM = game.user.isGM;
+    flagData.isGM = game.user?.isGM === true;
     
     // Ensure isNPC flag is set on results if not already present
     if (flagData.results) {

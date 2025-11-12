@@ -1,5 +1,6 @@
 import { MODULE_ID } from '../../constants/General.mjs';
 import { LogUtil } from '../utils/LogUtil.mjs';
+import { LibWrapperUtil } from '../utils/LibWrapperUtil.mjs';
 import { HOOKS_CORE, HOOKS_DND5E } from '../../constants/Hooks.mjs';
 import { getSettings } from '../../constants/Settings.mjs';
 import RollRequestsMenu from '../ui/RollRequestsMenu.mjs';
@@ -35,6 +36,7 @@ export class GroupTokenTracker {
     Hooks.on(HOOKS_CORE.CREATE_TOKEN, this.onCreateToken.bind(this));
     Hooks.on(HOOKS_CORE.DELETE_TOKEN, this.onDeleteToken.bind(this));
     Hooks.on(HOOKS_CORE.DELETE_ACTOR, this.onDeleteActor.bind(this));
+    Hooks.on(HOOKS_CORE.UPDATE_ACTOR, this.onUpdateActor.bind(this));
     Hooks.on(HOOKS_CORE.CANVAS_READY, this.onCanvasReady.bind(this));
     Hooks.on(HOOKS_DND5E.RENDER_GROUP_ACTOR_SHEET, this.onRenderActorSheet.bind(this));
     Hooks.on(HOOKS_DND5E.RENDER_ENCOUNTER_ACTOR_SHEET, this.onRenderActorSheet.bind(this));
@@ -121,42 +123,56 @@ export class GroupTokenTracker {
       }
     });
 
-    Hooks.on(HOOKS_CORE.RENDER_APPLICATION_V2, (app, element, options) => {
-      if (!app.document || (app.document.type !== 'group' && app.document.type !== 'encounter')) return;
-
-      const placeMembersButton = element.querySelector('[data-action="placeMembers"]');
-      if (!placeMembersButton) return;
-
-      placeMembersButton.removeEventListener('click', this._handlePlaceMembersClick);
-      placeMembersButton._groupActor = app.document;
-      placeMembersButton.addEventListener('click', this._handlePlaceMembersClick.bind(this));
-    });
-
-    Hooks.on(HOOKS_CORE.RENDER_APPLICATION, (app, html, data) => {
-      if (!app.actor || (app.actor.type !== 'group' && app.actor.type !== 'encounter')) return;
-
-      const placeMembersButton = html.find('[data-action="placeMembers"]');
-      if (placeMembersButton.length === 0) return;
-
-      placeMembersButton.off('click.groupTokenTracker');
-      placeMembersButton.on('click.groupTokenTracker', async () => {
-        await this._trackPlaceMembers(app.actor);
-      });
-    });
+    this._wrapPlaceMembersMethod();
   }
 
   /**
-   * Handle the placeMembers button click event.
-   * Tracks which group is placing tokens so we can associate them when they're created.
-   *
-   * @param {Event} event - The click event
+   * Wrap the placeMembers method on group/encounter actors to track token placement
    */
-  static async _handlePlaceMembersClick(event) {
-    const groupActor = event.currentTarget._groupActor;
-    LogUtil.log('GroupTokenTracker: placeMembers clicked', [groupActor.name, groupActor, event]);
-    if (!groupActor) return;
-    await this._trackPlaceMembers(groupActor);
+  static _wrapPlaceMembersMethod() {
+    const registered = LibWrapperUtil.register(
+      'CONFIG.Actor.dataModels.group.prototype.placeMembers',
+      async function(wrapped, ...args) {
+        const groupActor = this.parent;
+        await GroupTokenTracker._trackPlaceMembers(groupActor);
+        return wrapped(...args);
+      },
+      'WRAPPER'
+    );
+
+    if (!registered) {
+      LogUtil.log('GroupTokenTracker: libWrapper not available, using fallback wrapping for group.placeMembers');
+      const originalPlaceMembers = CONFIG.Actor.dataModels.group.prototype.placeMembers;
+      CONFIG.Actor.dataModels.group.prototype.placeMembers = async function(...args) {
+        const groupActor = this.parent;
+        await GroupTokenTracker._trackPlaceMembers(groupActor);
+        return originalPlaceMembers.call(this, ...args);
+      };
+    }
+
+    if (CONFIG.Actor.dataModels.encounter) {
+      const registeredEncounter = LibWrapperUtil.register(
+        'CONFIG.Actor.dataModels.encounter.prototype.placeMembers',
+        async function(wrapped, ...args) {
+          const groupActor = this.parent;
+          await GroupTokenTracker._trackPlaceMembers(groupActor);
+          return wrapped(...args);
+        },
+        'WRAPPER'
+      );
+
+      if (!registeredEncounter) {
+        LogUtil.log('GroupTokenTracker: libWrapper not available, using fallback wrapping for encounter.placeMembers');
+        const originalEncounterPlaceMembers = CONFIG.Actor.dataModels.encounter.prototype.placeMembers;
+        CONFIG.Actor.dataModels.encounter.prototype.placeMembers = async function(...args) {
+          const groupActor = this.parent;
+          await GroupTokenTracker._trackPlaceMembers(groupActor);
+          return originalEncounterPlaceMembers.call(this, ...args);
+        };
+      }
+    }
   }
+
 
   /**
    * Track a placeMembers operation for a group actor.
@@ -264,14 +280,19 @@ export class GroupTokenTracker {
       await tokenDoc.unsetFlag(MODULE_ID, 'fromGroupPlacement');
 
       placement.placedTokenCount++;
-      
+
       if (placement.placedTokenCount >= placement.expectedTokenCount) {
         placement.isPlacing = false;  // Stop marking new tokens as from this placement
         LogUtil.log(`GroupTokenTracker: All tokens placed for group ${placement.groupActor.name}, cleaning up`);
         this.pendingPlacements.delete(groupId);
         this.activeAssociations.delete(groupId); // Clean up the cache
+
+        setTimeout(() => {
+          this._reRenderGroupSheets(groupId);
+        }, 100);
+      } else {
+        this._reRenderGroupSheets(groupId);
       }
-    } else {
     }
 
     await this.cleanupDanglingAssociations();
@@ -333,6 +354,78 @@ export class GroupTokenTracker {
   }
 
   /**
+   * Handle actor updates to clean up associations when members are removed from groups
+   */
+  static async onUpdateActor(actor, changes, options, userId) {
+    if (actor.type !== 'group' && actor.type !== 'encounter') return;
+    if (!game.user.isGM) return;
+    if (!changes.system?.members) return;
+
+    LogUtil.log(`GroupTokenTracker: Group/encounter ${actor.name} updated, checking for removed members`);
+
+    const associations = actor.getFlag(MODULE_ID, 'tokenAssociationsByScene');
+    if (!associations) return;
+
+    const currentMemberIds = new Set();
+    if (actor.type === 'group') {
+      for (const member of actor.system.members || []) {
+        if (member.actor?.id) currentMemberIds.add(member.actor.id);
+      }
+    } else {
+      for (const member of actor.system.members || []) {
+        try {
+          const memberActor = await fromUuid(member.uuid);
+          if (memberActor?.id) currentMemberIds.add(memberActor.id);
+        } catch (error) {
+          LogUtil.log(`GroupTokenTracker: Failed to resolve member UUID ${member.uuid}`, error);
+        }
+      }
+    }
+
+    let hasChanges = false;
+    const updatedAssociations = { ...associations };
+
+    for (const [sceneId, sceneAssociations] of Object.entries(updatedAssociations)) {
+      for (const actorId of Object.keys(sceneAssociations)) {
+        if (!currentMemberIds.has(actorId)) {
+          LogUtil.log(`GroupTokenTracker: Member ${actorId} removed from group ${actor.name}, cleaning up associations`);
+
+          const tokenUuids = sceneAssociations[actorId];
+          for (const uuid of tokenUuids) {
+            try {
+              const token = await fromUuid(uuid);
+              if (token) {
+                await token.unsetFlag(MODULE_ID, 'groupId');
+                LogUtil.log(`GroupTokenTracker: Removed groupId flag from token ${token.name}`);
+              }
+            } catch (error) {
+              LogUtil.log(`GroupTokenTracker: Failed to remove flag from token ${uuid}`, error);
+            }
+          }
+
+          delete sceneAssociations[actorId];
+          hasChanges = true;
+        }
+      }
+
+      if (Object.keys(sceneAssociations).length === 0) {
+        delete updatedAssociations[sceneId];
+      }
+    }
+
+    if (hasChanges) {
+      if (Object.keys(updatedAssociations).length === 0) {
+        await actor.unsetFlag(MODULE_ID, 'tokenAssociationsByScene');
+      } else {
+        await actor.setFlag(MODULE_ID, 'tokenAssociationsByScene', updatedAssociations);
+      }
+      LogUtil.log(`GroupTokenTracker: Cleaned up associations for removed members from group ${actor.name}`);
+
+      this._reRenderGroupSheets(actor.id);
+    }
+  }
+
+  /**
    * Handle token deletion to remove it from group associations.
    * When a token is deleted, check if it has a groupId flag indicating it belongs to a group.
    * If so, remove it from the group's tokenAssociationsByScene to keep the associations clean.
@@ -384,14 +477,34 @@ export class GroupTokenTracker {
       await groupActor.setFlag(MODULE_ID, 'tokenAssociationsByScene', associations);
     }
 
-    // Also trigger cleanup of dangling associations
     await this.cleanupDanglingAssociations();
 
-    // Re-render any open sheet for this group to update the UI
-    for (const app of Object.values(ui.windows)) {
-      if (app.document?.id === groupActor.id) {
-        LogUtil.log(`GroupTokenTracker: Re-rendering sheet for ${groupActor.name} after token deletion`);
-        app.render(false);
+    this._reRenderGroupSheets(groupId);
+  }
+
+  /**
+   * Re-render open group/encounter actor sheets to reflect updated token associations
+   */
+  static _reRenderGroupSheets(groupActorId = null) {
+    if (foundry.applications.instances) {
+      for (const app of foundry.applications.instances.values()) {
+        if (app.document?.type === 'group' || app.document?.type === 'encounter') {
+          if (!groupActorId || app.document.id === groupActorId) {
+            LogUtil.log(`GroupTokenTracker: Re-rendering ApplicationV2 sheet for ${app.document.name}`);
+            app.render({ force: true });
+          }
+        }
+      }
+    }
+
+    if (ui.windows) {
+      for (const app of Object.values(ui.windows)) {
+        if (app.document?.type === 'group' || app.document?.type === 'encounter') {
+          if (!groupActorId || app.document.id === groupActorId) {
+            LogUtil.log(`GroupTokenTracker: Re-rendering legacy sheet for ${app.document.name}`);
+            app.render(false);
+          }
+        }
       }
     }
   }
@@ -761,36 +874,73 @@ export class GroupTokenTracker {
    */
   static async onRenderActorSheet(app, element, options) {
     LogUtil.log("onRenderActorSheet",[app, element, options]);
-    
-    if (!app.document || (app.document.type !== 'group' && app.document.type !== 'encounter')) {
-      return;
-    }
-    if (!game.user.isGM) {
+
+    if (!app.document || !game.user.isGM || (app.document.type !== 'group' && app.document.type !== 'encounter')) {
       return;
     }
 
-    let mainContent = element.querySelector('[data-container-id="main"]');
-    if (!mainContent) {
-      const tidyContent = element.dataset.sheetModule==="tidy5e-sheet";// hasAttibute('[data-sheet-module="tidy5e-sheet"]');
-      mainContent = element;
-      LogUtil.log("onRenderActorSheet #1",[mainContent]);
-      if(!mainContent) return;
-    }
-
-    const existingContainers = mainContent.querySelectorAll('.flash5e-token-associations');
-    existingContainers.forEach(c => c.remove());
-    let container;
+    const mainContent = this._getMainContentElement(element);
+    if (!mainContent) return;
 
     const currentScene = game.scenes.current;
-    if (!currentScene) {
-      return;
-    }
-    LogUtil.log("onRenderActorSheet #2",[currentScene]);
+    if (!currentScene) return;
 
-    // Clean up associations for deleted scenes and invalid tokens
-    const associations = app.document.getFlag(MODULE_ID, 'tokenAssociationsByScene') || {};
+    await this._cleanupInvalidAssociations(app.document);
+
+    const totalTokens = this._countValidTokens(app.document, currentScene);
+    const container = this._createTokenAssociationUI(app.document, currentScene, totalTokens);
+
+    this._removeExistingContainers(mainContent);
+    mainContent.appendChild(container);
+  }
+
+  /**
+   * Get the main content element from the sheet, handling different sheet types
+   */
+  static _getMainContentElement(element) {
+    let mainContent = element.querySelector('[data-container-id="main"]');
+    if (!mainContent) {
+      mainContent = element;
+    }
+    return mainContent;
+  }
+
+  /**
+   * Remove any existing token association containers
+   */
+  static _removeExistingContainers(mainContent) {
+    const existingContainers = mainContent.querySelectorAll('.flash5e-token-associations');
+    existingContainers.forEach(c => c.remove());
+  }
+
+  /**
+   * Clean up associations for deleted scenes, invalid tokens, and removed members.
+   * This method validates associations on every sheet render, ensuring:
+   * - Only scenes that still exist are tracked
+   * - Only actors that are still members of the group have associations
+   * - Only valid tokens that exist in their scenes are tracked
+   * Acts as a safety net to catch stale associations that survive reload/sheet changes.
+   */
+  static async _cleanupInvalidAssociations(groupActor) {
+    const associations = groupActor.getFlag(MODULE_ID, 'tokenAssociationsByScene') || {};
     let hasChanges = false;
     LogUtil.log("onRenderActorSheet - tokenAssociationsByScene",[associations]);
+
+    const currentMemberIds = new Set();
+    if (groupActor.type === 'group') {
+      for (const member of groupActor.system.members || []) {
+        if (member.actor?.id) currentMemberIds.add(member.actor.id);
+      }
+    } else {
+      for (const member of groupActor.system.members || []) {
+        try {
+          const memberActor = await fromUuid(member.uuid);
+          if (memberActor?.id) currentMemberIds.add(memberActor.id);
+        } catch (error) {
+          LogUtil.log(`GroupTokenTracker: Failed to resolve member UUID ${member.uuid}`, error);
+        }
+      }
+    }
 
     for (const sceneId of Object.keys(associations)) {
       const scene = game.scenes.get(sceneId);
@@ -803,6 +953,26 @@ export class GroupTokenTracker {
 
       const sceneAssociations = associations[sceneId];
       for (const [actorId, tokenUuids] of Object.entries(sceneAssociations)) {
+        if (!currentMemberIds.has(actorId)) {
+          LogUtil.log(`GroupTokenTracker: Actor ${actorId} is not a member of group ${groupActor.name}, removing stale associations`);
+
+          for (const uuid of tokenUuids) {
+            try {
+              const token = await fromUuid(uuid);
+              if (token) {
+                await token.unsetFlag(MODULE_ID, 'groupId');
+                LogUtil.log(`GroupTokenTracker: Removed groupId flag from token ${token.name}`);
+              }
+            } catch (error) {
+              LogUtil.log(`GroupTokenTracker: Failed to remove flag from token ${uuid}`, error);
+            }
+          }
+
+          delete sceneAssociations[actorId];
+          hasChanges = true;
+          continue;
+        }
+
         const validTokens = tokenUuids.filter(uuid => {
           try {
             const token = fromUuidSync(uuid);
@@ -823,7 +993,6 @@ export class GroupTokenTracker {
         }
       }
 
-      // Remove scene entry if no valid associations remain
       if (Object.keys(sceneAssociations).length === 0) {
         delete associations[sceneId];
         hasChanges = true;
@@ -832,64 +1001,71 @@ export class GroupTokenTracker {
 
     if (hasChanges) {
       if (Object.keys(associations).length === 0) {
-        await app.document.unsetFlag(MODULE_ID, 'tokenAssociationsByScene');
+        await groupActor.unsetFlag(MODULE_ID, 'tokenAssociationsByScene');
       } else {
-        await app.document.setFlag(MODULE_ID, 'tokenAssociationsByScene', associations);
+        await groupActor.setFlag(MODULE_ID, 'tokenAssociationsByScene', associations);
       }
       RollRequestsMenu.refreshIfOpen();
     }
+  }
 
-    await this.checkAndSyncAssociations(app.document, currentScene);
+  /**
+   * Count valid tokens for the group in the current scene
+   */
+  static _countValidTokens(groupActor, scene) {
+    const associations = groupActor.getFlag(MODULE_ID, 'tokenAssociationsByScene') || {};
+    const sceneAssociations = associations[scene.id] || {};
 
-    const updatedAssociations = app.document.getFlag(MODULE_ID, 'tokenAssociationsByScene') || {};
-    const sceneAssociations = updatedAssociations[currentScene.id] || {};
-
-    // Count only valid tokens (that still exist)
     let totalTokens = 0;
     for (const [actorId, tokenUuids] of Object.entries(sceneAssociations)) {
       for (const uuid of tokenUuids) {
         try {
           const token = fromUuidSync(uuid);
-          if (token && token.parent.id === currentScene.id) {
+          if (token && token.parent.id === scene.id) {
             totalTokens++;
           }
         } catch {
         }
       }
     }
+    return totalTokens;
+  }
 
-    container = document.createElement('div');
-    container.classList.add('sheet-body');
-    container.classList.add('flash5e-token-associations');
-    
+  /**
+   * Create the token association UI container with text and buttons
+   */
+  static _createTokenAssociationUI(groupActor, scene, totalTokens) {
+    const container = document.createElement('div');
+    container.classList.add('sheet-body', 'flash5e-token-associations');
+
     if (totalTokens === 0) {
       container.classList.add('no-tokens');
     }
 
     const textDiv = document.createElement('div');
     textDiv.textContent = totalTokens > 0
-      ? game.i18n.format('FLASH_ROLLS.ui.tokenAssociations.associatedTokens', {
-          count: totalTokens
-        })
+      ? game.i18n.format('FLASH_ROLLS.ui.tokenAssociations.associatedTokens', { count: totalTokens })
       : game.i18n.localize('FLASH_ROLLS.ui.tokenAssociations.noTokensInScene');
 
-    const buttonGroup = document.createElement('div');
-    buttonGroup.className = 'button-group';
-
-    const selectButton = document.createElement('button');
-    selectButton.type = 'button';
-    selectButton.className = 'flash5e-select-tokens';
-    selectButton.textContent = game.i18n.localize('FLASH_ROLLS.ui.inputs.selectTokens');
-
-    selectButton.addEventListener('click', async () => {
-      await this.selectGroupTokens(app.document, currentScene);
-    });
-
-    buttonGroup.appendChild(selectButton);
-
     container.appendChild(textDiv);
-    container.appendChild(buttonGroup);
-    mainContent.appendChild(container);
+
+    if (totalTokens > 0) {
+      const buttonGroup = document.createElement('div');
+      buttonGroup.className = 'button-group';
+
+      const selectButton = document.createElement('button');
+      selectButton.type = 'button';
+      selectButton.className = 'flash5e-select-tokens';
+      selectButton.textContent = game.i18n.localize('FLASH_ROLLS.ui.inputs.selectTokens');
+      selectButton.addEventListener('click', async () => {
+        await this.selectGroupTokens(groupActor, scene);
+      });
+
+      buttonGroup.appendChild(selectButton);
+      container.appendChild(buttonGroup);
+    }
+
+    return container;
   }
 
   /**
@@ -988,13 +1164,7 @@ export class GroupTokenTracker {
     RollRequestsMenu.refreshIfOpen();
 
     setTimeout(() => {
-      if (foundry.applications.instances) {
-        for (const app of foundry.applications.instances.values()) {
-          if (app.document?.type === 'group' || app.document?.type === 'encounter') {
-            app.render(false);
-          }
-        }
-      }
+      this._reRenderGroupSheets();
     }, 500);
   }
 
