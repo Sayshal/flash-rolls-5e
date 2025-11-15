@@ -195,13 +195,18 @@ export class MonksActiveTilesIntegration {
         }
       ],
       fn: async (args) => {
-        const { action, tokens } = args;
+        const { action, tokens, tile } = args;
 
-        LogUtil.log("MonksActiveTilesIntegration - args", [args]);
-        LogUtil.log("MonksActiveTilesIntegration - action.data", [action.data]);
-        LogUtil.log("MonksActiveTilesIntegration - tokens", [tokens]);
+        let entities = tokens;
 
-        const actorIds = this._resolveActorIds(action.data.entity, tokens);
+        if (action.data?.entity?.id === 'within' && tile && typeof tile.entitiesWithin === 'function') {
+          const withinEntities = tile.entitiesWithin({ collection: 'tokens' });
+          if (Array.isArray(withinEntities) && withinEntities.length > 0) {
+            entities = withinEntities;
+          }
+        }
+
+        const actorIds = this._resolveActorIds(null, entities);
 
         if (!actorIds || actorIds.length === 0) {
           ui.notifications.warn(game.i18n.localize('FLASH_ROLLS.notifications.noActorsSelected'));
@@ -257,70 +262,51 @@ export class MonksActiveTilesIntegration {
   }
 
   /**
-   * Resolve actor IDs from entity selection and/or tokens
+   * Resolve actor IDs from token documents
    */
-  static _resolveActorIds(entityData, tokens) {
+  static _resolveActorIds(entityData, entities) {
     const actorIds = [];
 
-    LogUtil.log("_resolveActorIds", [entityData, tokens]);
+    LogUtil.log("_resolveActorIds - entities:", [entities]);
+    LogUtil.log("_resolveActorIds - entities type:", [typeof entities]);
+    LogUtil.log("_resolveActorIds - entities length:", [entities?.length]);
 
-    if (entityData) {
-      if (Array.isArray(entityData)) {
-        for (const entity of entityData) {
-          let actorId = null;
+    if (!entities || entities.length === 0) {
+      LogUtil.log("_resolveActorIds - No entities provided");
+      return actorIds;
+    }
 
-          if (entity instanceof Token || entity instanceof TokenDocument) {
-            actorId = entity.actor?.id;
-          } else if (entity instanceof Actor) {
-            actorId = entity.id;
-          } else if (typeof entity === 'object' && entity.id && typeof entity.id === 'string' && entity.id !== 'within') {
-            if (entity.actorId) {
-              actorId = entity.actorId;
-            } else if (entity.actor?.id) {
-              actorId = entity.actor.id;
-            } else if (!['within', 'token', 'players', 'previous'].includes(entity.id)) {
-              actorId = entity.id;
-            }
-          }
+    for (let i = 0; i < entities.length; i++) {
+      const entity = entities[i];
+      LogUtil.log(`_resolveActorIds - Processing entity ${i}:`, [entity, entity?.constructor?.name]);
 
-          if (actorId && !actorIds.includes(actorId)) {
-            actorIds.push(actorId);
-          }
-        }
-      } else if (entityData instanceof Token || entityData instanceof TokenDocument) {
-        const actorId = entityData.actor?.id;
-        if (actorId) actorIds.push(actorId);
-      } else if (entityData instanceof Actor) {
-        actorIds.push(entityData.id);
-      } else if (typeof entityData === 'object' && entityData.id && typeof entityData.id === 'string' && entityData.id !== 'within') {
-        if (entityData.actorId) {
-          actorIds.push(entityData.actorId);
-        } else if (entityData.actor?.id) {
-          actorIds.push(entityData.actor.id);
-        } else if (!['within', 'token', 'players', 'previous'].includes(entityData.id)) {
-          actorIds.push(entityData.id);
-        }
+      let actorId = null;
+
+      if (entity instanceof Token || entity instanceof TokenDocument) {
+        actorId = entity.actor?.id;
+        LogUtil.log(`_resolveActorIds - Token/TokenDocument actor ID:`, [actorId]);
+      } else if (entity instanceof Actor) {
+        actorId = entity.id;
+        LogUtil.log(`_resolveActorIds - Actor ID:`, [actorId]);
+      } else if (entity?.actorId) {
+        actorId = entity.actorId;
+        LogUtil.log(`_resolveActorIds - entity.actorId:`, [actorId]);
+      } else if (entity?.actor?.id) {
+        actorId = entity.actor.id;
+        LogUtil.log(`_resolveActorIds - entity.actor.id:`, [actorId]);
+      } else {
+        LogUtil.log(`_resolveActorIds - Could not resolve actor from entity:`, [entity]);
+      }
+
+      if (actorId && !actorIds.includes(actorId)) {
+        actorIds.push(actorId);
+        LogUtil.log("_resolveActorIds - Added actorId:", [actorId]);
+      } else if (actorId) {
+        LogUtil.log("_resolveActorIds - Skipped duplicate actorId:", [actorId]);
       }
     }
 
-    if (tokens && tokens.length > 0) {
-      for (const token of tokens) {
-        let actorId = null;
-
-        if (token instanceof Token || token instanceof TokenDocument) {
-          actorId = token.actor?.id;
-        } else if (token.actorId) {
-          actorId = token.actorId;
-        } else if (token.actor?.id) {
-          actorId = token.actor.id;
-        }
-
-        if (actorId && !actorIds.includes(actorId)) {
-          actorIds.push(actorId);
-        }
-      }
-    }
-
+    LogUtil.log("_resolveActorIds - Final actorIds:", [actorIds]);
     return actorIds;
   }
 
