@@ -203,6 +203,10 @@ export class GMSkillToolConfigDialog extends GMRollConfigMixin(dnd5e.application
       }]
     };
 
+    if (options.situationalBonus) {
+      rollConfig.rolls[0].data.situational = options.situationalBonus;
+    }
+
     if (options.advantage === true) {
       rollConfig.rolls[0].options.advantage = true;
     } else if (options.disadvantage === true) {

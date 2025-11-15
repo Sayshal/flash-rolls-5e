@@ -164,7 +164,7 @@ export class GMDamageConfigDialog extends GMRollConfigMixin(dnd5e.applications.d
     const normalizedRollType = rollType?.toLowerCase();
     
     const rollConfig = {
-      subject: originalConfig.subject || actor, 
+      subject: originalConfig.subject || actor,
       data: actor.getRollData(),
       critical: originalConfig.critical || {},
       rolls: originalConfig.rolls || [{
@@ -173,8 +173,13 @@ export class GMDamageConfigDialog extends GMRollConfigMixin(dnd5e.applications.d
         options: {}
       }]
     };
+
+    if (options.situationalBonus) {
+      rollConfig.rolls[0].data.situational = options.situationalBonus;
+    }
+
     LogUtil.log('GMDamageConfigDialog, initConfiguration #1', [rollConfig]);
-    
+
     const messageConfig = RollHelpers.createMessageConfig(actor, rollMode);
     LogUtil.log('GMDamageConfigDialog, initConfiguration #2', [messageConfig]);
     

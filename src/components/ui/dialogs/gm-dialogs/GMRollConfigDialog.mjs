@@ -206,8 +206,11 @@ export class GMRollConfigDialog extends GMRollConfigMixin(dnd5e.applications.dic
     const showDC = RollHelpers.shouldShowDC(normalizedRollType);
     const rollClass = RollHelpers.getRollClass(normalizedRollType);
     const rollConfig = RollHelpers.createBaseRollConfig(actor, rollType, rollKey);
-
     const messageConfig = RollHelpers.createMessageConfig(actor, rollMode);
+
+    if (options.situationalBonus) {
+      rollConfig.rolls[0].data.situational = options.situationalBonus;
+    }
 
     if (options.advantage === true) {
       rollConfig.rolls[0].options.advantage = true;

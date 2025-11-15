@@ -63,7 +63,8 @@ export const RollHelpers = {
    * @param {Object} requestData.config - Configuration from the request
    * @param {boolean} [requestData.config.advantage] - Roll with advantage
    * @param {boolean} [requestData.config.disadvantage] - Roll with disadvantage
-   * @param {string} [requestData.config.situational] - Situational bonus formula
+   * @param {string} [requestData.config.situational] - Situational bonus formula (root level)
+   * @param {Array} [requestData.config.rolls] - Rolls array with data.situational (from dialog result)
    * @param {number} [requestData.config.target] - DC value
    * @param {string} [requestData.config.requestedBy] - Name of requester
    * @param {BasicRollConfiguration} rollConfig - Individual roll configuration with parts[], data{}, options{}
@@ -74,7 +75,7 @@ export const RollHelpers = {
    * @returns {BasicRollProcessConfiguration} The process configuration for D&D5e actor roll methods
    */
   buildRollConfig(requestData, rollConfig, additionalConfig = {}) {
-    
+
     // Build BasicRollProcessConfiguration
     const config = {
       rolls: [{
@@ -95,12 +96,16 @@ export const RollHelpers = {
       // ...(requestData.config.rollMode && { rollMode: requestData.config.rollMode }),
       ...additionalConfig
     };
-    
-    const situational = requestData.config.situational;
+
+    let situational = requestData.config.situational;
+    if (!situational && requestData.config.rolls?.[0]?.data?.situational) {
+      situational = requestData.config.rolls[0].data.situational;
+    }
+
     if (situational) {
       this.addSituationalBonus(config, situational);
     }
-    
+
     return this.ensureRollFlags(config, requestData);
   },
 

@@ -211,7 +211,11 @@ export class GMHitDieConfigDialog extends GMRollConfigMixin(dnd5e.applications.d
         }
       }]
     };
-    
+
+    if (options.situationalBonus) {
+      rollConfig.rolls[0].data.situational = options.situationalBonus;
+    }
+
     const messageConfig = RollHelpers.createMessageConfig(actor, rollMode);
     
     const dialogConfig = {

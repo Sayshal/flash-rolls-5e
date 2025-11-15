@@ -35,7 +35,7 @@ export function GMRollConfigMixin(Base) {
     
     /**
      * Build a roll configuration from form data.
-     * Handles situational bonuses, ability selection, and DC values.
+     * Handles ability selection and DC values. Situational bonus is handled by parent class.
      * @param {BasicRollConfiguration} config - Individual roll configuration from the rolls array
      * @param {FormDataExtended} formData - Data from the dialog form
      * @param {number} index - Index of this roll in the rolls array
@@ -47,25 +47,13 @@ export function GMRollConfigMixin(Base) {
       const abilityFromForm = formData?.get("ability");
       const dcFromForm = formData?.get("dc");
 
-      const situational = formData?.get(`roll.${index}.situational`);
-      LogUtil.log('_buildConfig', [situational, formData, config]);
-      if (situational) {
-        if (!config.parts) config.parts = [];
-        config.parts.push("@situational");
-        if (!config.data) config.data = {};
-        config.data.situational = situational;
-      }else if (config.parts) {
-        const idx = config.parts.indexOf("@situational");
-        if (idx !== -1) config.parts.splice(idx, 1);
-      }
-      
       if (abilityFromForm) {
         config.ability = abilityFromForm;
         this.config.ability = abilityFromForm;
       }
 
       const result = super._buildConfig(config, formData, index);
-      
+
       if (dcFromForm) {
         const dcValue = parseInt(dcFromForm);
         if (!isNaN(dcValue)) {
@@ -76,7 +64,7 @@ export function GMRollConfigMixin(Base) {
         result.options = result.options || {};
         result.options.target = this.dcValue;
       }
-      
+
       LogUtil.log(`${this.constructor.name}._buildConfig`, [this.config, formData, result]);
       return result;
     }
