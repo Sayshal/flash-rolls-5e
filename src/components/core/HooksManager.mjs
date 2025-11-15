@@ -25,6 +25,7 @@ import { TooltipUtil } from "../utils/TooltipUtil.mjs";
 import { UpdateNewsUtil } from "../utils/UpdateNewsUtil.mjs";
 import { MidiActivityManager } from "../managers/MidiActivityManager.mjs";
 import { LibWrapperUtil } from "../utils/LibWrapperUtil.mjs";
+import { MonksActiveTilesIntegration } from "../integrations/MonksActiveTilesIntegration.mjs";
 
 /**
  * Utility class for managing all module hooks in one place
@@ -198,6 +199,7 @@ export class HooksManager {
     SettingsUtil.registerSettings();
     DiceConfigUtil.initialize();
     this._registerHook(HOOKS_CORE.RENDER_CHAT_MESSAGE, ChatMessageManager.onRenderChatMessage.bind(ChatMessageManager));
+    MonksActiveTilesIntegration.initialize();
   }
   
   /**

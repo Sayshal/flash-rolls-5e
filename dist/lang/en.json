@@ -444,6 +444,26 @@
       "damage": "Damage Roll",
       "itemsave": "Save (Item)",
       "hitdie": "Hit Die"
+    },
+    "tiles": {
+      "entity": "Actors",
+      "dc": "Difficulty Class (DC)",
+      "advantage": "Advantage/Disadvantage",
+      "bonus": "Situational Bonus",
+      "bonusHelp": "Enter a bonus/penalty (e.g., '+2', '-1', '1d4')",
+      "advantageOptions": {
+        "normal": "Normal",
+        "advantage": "Advantage",
+        "disadvantage": "Disadvantage"
+      },
+      "requestRoll": {
+        "name": "Request Roll",
+        "requestType": "Roll Type",
+        "rollKey": "Specific Roll",
+        "rollKeyHelp": "Enter the specific roll key (e.g., 'acr' for Acrobatics, 'str' for Strength). Leave empty for rolls that don't require a key (like Initiative).",
+        "entityHelp": "Select which actors should make the roll",
+        "skipRollDialog": "Skip Roll Dialog"
+      }
     }
   }
 }

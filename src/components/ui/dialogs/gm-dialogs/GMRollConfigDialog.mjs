@@ -195,7 +195,7 @@ export class GMRollConfigDialog extends GMRollConfigMixin(dnd5e.applications.dic
     if (!actors) return null;
     
     const actor = actors[0];
-    LogUtil.log('GMRollConfigDialog, initConfiguration', []);
+    LogUtil.log('GMRollConfigDialog.initConfiguration', [rollType, rollKey, options]);
     
     const normalizedRollType = rollType?.toLowerCase();
     
@@ -206,7 +206,14 @@ export class GMRollConfigDialog extends GMRollConfigMixin(dnd5e.applications.dic
     const showDC = RollHelpers.shouldShowDC(normalizedRollType);
     const rollClass = RollHelpers.getRollClass(normalizedRollType);
     const rollConfig = RollHelpers.createBaseRollConfig(actor, rollType, rollKey);
+
     const messageConfig = RollHelpers.createMessageConfig(actor, rollMode);
+
+    if (options.advantage === true) {
+      rollConfig.rolls[0].options.advantage = true;
+    } else if (options.disadvantage === true) {
+      rollConfig.rolls[0].options.disadvantage = true;
+    }
     
     const dialogConfig = {
       options: {

@@ -172,7 +172,7 @@ export class GMSkillToolConfigDialog extends GMRollConfigMixin(dnd5e.application
     if (!actors) return null;
     
     const actor = actors[0];
-    LogUtil.log('GMSkillToolConfigDialog, initConfiguration', []);
+    LogUtil.log('GMSkillToolConfigDialog.initConfiguration', [rollType, rollKey, options]);
     
     const normalizedRollType = rollType?.toLowerCase();
     const SETTINGS = getSettings();
@@ -202,7 +202,13 @@ export class GMSkillToolConfigDialog extends GMRollConfigMixin(dnd5e.application
         options: {}
       }]
     };
-    
+
+    if (options.advantage === true) {
+      rollConfig.rolls[0].options.advantage = true;
+    } else if (options.disadvantage === true) {
+      rollConfig.rolls[0].options.disadvantage = true;
+    }
+
     if (normalizedRollType === ROLL_TYPES.SKILL) {
       rollConfig.skill = rollKey;
     } else if (normalizedRollType === ROLL_TYPES.TOOL) {

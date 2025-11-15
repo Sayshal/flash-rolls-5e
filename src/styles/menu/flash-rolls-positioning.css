@@ -72,7 +72,7 @@ body.crlngn-tabs #flash-rolls-menu.docked-right {
   --offset: 0px;
 }
 
-#flash-rolls-menu.docked-bottom.offset {
+body:not(.chat-input-hidden) #flash-rolls-menu.docked-bottom.offset {
   transform: translate(var(--offset, 0px), -10px) !important;
 }
 
@@ -87,10 +87,6 @@ body.crlngn-tabs #flash-rolls-menu.docked-right {
 
 #flash-rolls-menu.docked-bottom > * {
   pointer-events: all;
-}
-
-body.flash-sidebar-expanded #flash-rolls-menu.docked-bottom {
-  /* Placeholder for future sidebar expanded styles */
 }
 
 /* Near Snap Indicator */

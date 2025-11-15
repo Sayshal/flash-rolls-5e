@@ -46,8 +46,8 @@ export function GMRollConfigMixin(Base) {
     _buildConfig(config, formData, index) {
       const abilityFromForm = formData?.get("ability");
       const dcFromForm = formData?.get("dc");
-      
-      const situational = formData?.get(`rolls.${index}.situational`);
+
+      const situational = formData?.get(`roll.${index}.situational`);
       LogUtil.log('_buildConfig', [situational, formData, config]);
       if (situational) {
         if (!config.parts) config.parts = [];
@@ -63,7 +63,7 @@ export function GMRollConfigMixin(Base) {
         config.ability = abilityFromForm;
         this.config.ability = abilityFromForm;
       }
-      
+
       const result = super._buildConfig(config, formData, index);
       
       if (dcFromForm) {
@@ -89,7 +89,7 @@ export function GMRollConfigMixin(Base) {
      * @override
      */
     _onChangeForm(formConfig, event) {
-      LogUtil.log(`_onChangeForm`, [event.target.value]);
+      LogUtil.log(`_onChangeForm`, [event.target?.value]);
       super._onChangeForm(formConfig, event);
 
       const sendRequestCheckbox = this.element.querySelector('input[name="flash5e-send-request"]');

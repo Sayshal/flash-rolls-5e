@@ -32,6 +32,7 @@ export class RollMenuConfig {
       confirmedSkipDialog = RollHelpers.shouldSkipRollDialog(sendAsRequest, {isPC: pcActors.length > 0, isNPC: npcActors.length > 0});
     }
 
+    LogUtil.log('getRollConfiguration', [configOverrides]);
     if (!confirmedSkipDialog && rollMethodName !== ROLL_TYPES.CUSTOM) {
       let DialogClass;
       if ([ROLL_TYPES.SKILL, ROLL_TYPES.TOOL].includes(rollMethodName)) {
@@ -41,12 +42,17 @@ export class RollMenuConfig {
       } else {
         DialogClass = GMRollConfigDialog;
       }
+
       const config = await DialogClass.initConfiguration(actors, rollMethodName, rollKey, {
         confirmedSkipDialog,
         sendRequest: sendAsRequest===true || (sendAsRequest===undefined && rollRequestsEnabled) || false,
-        ...configOverrides
+        ...configOverrides,
+        advantage: configOverrides.advantage === true,
+        disadvantage: configOverrides.disadvantage === true,
+        situationalBonus: configOverrides.situationalBonus
       });
-      LogUtil.log('getRollConfiguration', [config, configOverrides]);
+      LogUtil.log('getRollConfiguration B', [config]);
+      
 
       if (config && configOverrides.groupRollId) {
         config.groupRollId = configOverrides.groupRollId;
@@ -61,8 +67,9 @@ export class RollMenuConfig {
           data: configOverrides.situationalBonus ? { situational: configOverrides.situationalBonus } : {},
           options: configOverrides.dc ? { target: configOverrides.dc } : {}
         }],
-        advantage: configOverrides.advantage || false,
-        disadvantage: configOverrides.disadvantage || false,
+        advantage: configOverrides.advantage === true,
+        disadvantage: configOverrides.disadvantage === true,
+        situationalBonus: configOverrides.situationalBonus,
         rollMode: configOverrides.rollMode || game.settings.get("core", "rollMode"),
         chatMessage: true,
         isRollRequest: false,
