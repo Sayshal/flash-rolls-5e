@@ -33,10 +33,19 @@ export class RollMenuDragManager {
   
   /**
    * Handle drag start
-   * @param {MouseEvent} event 
-   * @param {RollRequestsMenu} menu 
+   * @param {MouseEvent} event
+   * @param {RollRequestsMenu} menu
    */
   static async handleDragStart(event, menu) {
+    const SETTINGS = getSettings();
+    const lockMenuPosition = SettingsUtil.get(SETTINGS.lockMenuPosition.tag);
+
+    if (lockMenuPosition && menu.isLocked) {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+
     event.preventDefault();
     event.stopPropagation();
 

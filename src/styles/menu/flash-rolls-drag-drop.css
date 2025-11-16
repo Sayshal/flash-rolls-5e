@@ -47,6 +47,16 @@
   cursor: grabbing;
 }
 
+/* Position Locked State */
+#flash-rolls-menu.position-locked .drag-handle {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+#flash-rolls-menu.position-locked .drag-handle:hover {
+  opacity: 0.5;
+}
+
 /* Actor Drag Wrapper */
 .actor-drag-wrapper {
   align-items: flex-start;

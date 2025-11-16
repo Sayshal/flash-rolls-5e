@@ -1,7 +1,7 @@
 {
-  "id": "1.14.0",
-  "title": "Updates on Flash Token Bar",
-  "content": "<p>Version 1.14.0:</p>\n<ul><li><b>Compatibility with Tidy5e</b> You can now make group roll requests from Tidy5e Group/Encounter Sheets. Tidy sheets will now also trigger token associations.</li></ul>\n<p>Version 1.13.2:</p>\n<ul><li><b>Compatibility with Midi-QoL</b> Previously, you were recommended to not use the setting that sends roll requests from character sheets with Midi-QoL. Now, this setting should also work fine with Midi, so you can send requests to players for attack, damage and spell rolls. </li></ul>\n<p><b>If you like this module, consider supporting me on <a href='https://www.patreon.com/carolingiandev/membership'>Patreon</a>.</b></p><p>Join the discussion on <a href='https://discord.gg/P5ygvHXE3R'>Discord</a> or visit the <a href='https://github.com/crlngn/flash-rolls-5e/releases'>Github repository</a>.</p>",
+  "id": "1.18.3",
+  "title": "New Features on Flash Token Bar",
+  "content": "<p>Version 1.18.x:</p>\n<ul><li><b>Transformations!</b> The new Transformation icon (frog) allows you to polymorph tokens into creatures.</li><li><b>Monk's Active Tiles integration</b> If you have the module installed you'll see Flash Token Bar actions available, or use a macro with 'Run Macro' if you prefer.</li><li>Added setting to lock position of menu when lock is active</li></ul>\n<p>Version 1.17.x:</p>\n<ul><li><b>Teleport and Place Tokens</b> Teleport icon allows you to quickly grab a group of tokens and place in new location or scene; Place Tokens icon creates duplicates of the selected actors</li></ul>\n\n<p>1.16.x and 1.15.x:</p>\n<ul><li>Added libwrapper support and result concealment on individual blind/private rolls in group rolls</li></ul>\n<p><b>If you like this module, consider supporting me on <a href='https://www.patreon.com/carolingiandev/membership'>Patreon</a>.</b></p><p>Join the discussion on <a href='https://discord.gg/P5ygvHXE3R'>Discord</a> or visit the <a href='https://github.com/crlngn/flash-rolls-5e/releases'>Github repository</a>.</p>",
   "imageUrl": "",
-  "videoUrl": "https://raw.githubusercontent.com/crlngn/flash-rolls-5e/main/demo/midi-pass-template.mp4"
+  "videoUrl": "https://raw.githubusercontent.com/crlngn/flash-rolls-5e/main/demo/transform-and-matt.mp4"
 }

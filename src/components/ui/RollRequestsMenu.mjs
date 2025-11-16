@@ -162,9 +162,16 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
       }else{
         menu.classList.remove("compact");
       }
-      
+
       const menuLayout = SettingsUtil.get(SETTINGS.menuLayout.tag);
       menu.setAttribute("data-layout", menuLayout);
+
+      const lockMenuPosition = SettingsUtil.get(SETTINGS.lockMenuPosition.tag);
+      if (lockMenuPosition && this.isLocked) {
+        menu.classList.add('position-locked');
+      } else {
+        menu.classList.remove('position-locked');
+      }
     }
     
     RollMenuDragManager.applyCustomPosition(this, this.customPosition);

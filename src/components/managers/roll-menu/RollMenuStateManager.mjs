@@ -132,6 +132,17 @@ export class RollMenuStateManager {
       lockIcon.classList.remove('fa-lock-keyhole', 'fa-lock-keyhole-open');
       lockIcon.classList.add(menu.isLocked ? 'fa-lock-keyhole' : 'fa-lock-keyhole-open');
     }
+
+    const SETTINGS = getSettings();
+    const lockMenuPosition = SettingsUtil.get(SETTINGS.lockMenuPosition.tag);
+
+    if (lockMenuPosition && menu.element) {
+      if (menu.isLocked) {
+        menu.element.classList.add('position-locked');
+      } else {
+        menu.element.classList.remove('position-locked');
+      }
+    }
   }
 
   /**

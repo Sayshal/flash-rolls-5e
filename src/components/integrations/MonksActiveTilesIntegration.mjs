@@ -695,7 +695,15 @@ export class MonksActiveTilesIntegration {
           return `<div>Revert Transformation</div>`;
         }
 
-        const targetUuid = action.data?.targetActorUuid?.trim();
+        let targetUuid = null;
+        if (action.data?.targetActorUuid) {
+          if (typeof action.data.targetActorUuid === 'string') {
+            targetUuid = action.data.targetActorUuid.trim() || null;
+          } else if (action.data.targetActorUuid.id) {
+            targetUuid = action.data.targetActorUuid.id;
+          }
+        }
+
         const preset = action.data?.preset || 'polymorph';
 
         let targetText = 'selection dialog';

@@ -66,7 +66,8 @@ export const getSettings = () => {
         'menuLayout',
         'menuIconsLayout',
         'maxIconsPerRow',
-        'teleportAnimationPath'
+        'teleportAnimationPath',
+        'lockMenuPosition'
       ],
       default: {
         showMenuOnLoad: false,
@@ -75,7 +76,8 @@ export const getSettings = () => {
         menuLayout: "vertical",
         menuIconsLayout: iconsMenuDefault,
         maxIconsPerRow: 5,
-        teleportAnimationPath: ''
+        teleportAnimationPath: '',
+        lockMenuPosition: false
       },
       scope: SETTING_SCOPE.world,
       config: false,
@@ -378,13 +380,24 @@ export const getSettings = () => {
       tag: "menu-layout",
       label: game.i18n.localize("FLASH_ROLLS.settings.menuLayout.label"),
       hint: game.i18n.localize("FLASH_ROLLS.settings.menuLayout.hint"),
-      propType: String, 
+      propType: String,
       inputType: SETTING_INPUT.select,
       choices: {
         "vertical": game.i18n.localize("FLASH_ROLLS.settings.menuLayout.choices.vertical"),
         "horizontal": game.i18n.localize("FLASH_ROLLS.settings.menuLayout.choices.horizontal")
       },
       default: "vertical",
+      scope: SETTING_SCOPE.world,
+      config: false
+    },
+
+    lockMenuPosition: {
+      tag: "lock-menu-position",
+      label: game.i18n.localize("FLASH_ROLLS.settings.lockMenuPosition.label"),
+      hint: game.i18n.localize("FLASH_ROLLS.settings.lockMenuPosition.hint"),
+      propType: Boolean,
+      inputType: SETTING_INPUT.checkbox,
+      default: false,
       scope: SETTING_SCOPE.world,
       config: false
     },

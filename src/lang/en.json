@@ -275,6 +275,10 @@
         "label": "Teleport Animation Video",
         "hint": "Path to the video file to play when teleporting tokens. If JB2A is installed, the blue teleportation animation will be used by default. Leave empty to disable animations."
       },
+      "lockMenuPosition": {
+        "label": "Prevent Menu Drag When Locked",
+        "hint": "When enabled, toggling the 'Lock Menu' icon will also prevent the menu from being dragged to a new position. The menu will remain fixed in place until unlocked."
+      },
       "legacyTokenAssociationsMigrated": {
         "label": "Legacy Token Associations Migration Status",
         "hint": "Internal flag tracking whether legacy token associations have been migrated to the new scene-based format."

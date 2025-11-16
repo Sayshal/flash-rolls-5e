@@ -11,6 +11,12 @@
   </div>
 
   <div class="form-group">
+    <label for="lockMenuPosition">{{fields.lockMenuPosition.label}}</label>
+    <input type="checkbox" name="lockMenuPosition" id="lockMenuPosition" {{#if lockMenuPosition}}checked{{/if}} />
+    <p class="hint">{{fields.lockMenuPosition.hint}}</p>
+  </div>
+
+  <div class="form-group">
     <label for="showTokenVisionOnHover">{{fields.showTokenVisionOnHover.label}}</label>
     <input type="checkbox" name="showTokenVisionOnHover" id="showTokenVisionOnHover" {{#if showTokenVisionOnHover}}checked{{/if}} />
     <p class="hint">{{fields.showTokenVisionOnHover.hint}}</p>
