@@ -45,7 +45,7 @@ export class RollMenuConfig {
 
       const config = await DialogClass.initConfiguration(actors, rollMethodName, rollKey, {
         confirmedSkipDialog,
-        sendRequest: sendAsRequest===true || (sendAsRequest===undefined && rollRequestsEnabled) || false,
+        sendRequest: rollRequestsEnabled && (sendAsRequest===true || (sendAsRequest===undefined && pcActors.length > 0)),
         ...configOverrides,
         advantage: configOverrides.advantage === true,
         disadvantage: configOverrides.disadvantage === true,
@@ -74,7 +74,7 @@ export class RollMenuConfig {
         chatMessage: true,
         isRollRequest: false,
         skipRollDialog: true,
-        sendRequest: configOverrides.hasOwnProperty('sendAsRequest') ? configOverrides.sendAsRequest : (rollRequestsEnabled && pcActors.length > 0)
+        sendRequest: rollRequestsEnabled && (configOverrides.hasOwnProperty('sendAsRequest') ? configOverrides.sendAsRequest : (pcActors.length > 0))
       };
 
       if (configOverrides.dc) {

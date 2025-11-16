@@ -98,12 +98,23 @@ export const RollHelpers = {
     };
 
     let situational = requestData.config.situational;
-    if (!situational && requestData.config.rolls?.[0]?.data?.situational) {
-      situational = requestData.config.rolls[0].data.situational;
-    }
+    const alreadyInRolls = requestData.config.rolls?.[0]?.data?.situational;
 
-    if (situational) {
-      this.addSituationalBonus(config, situational);
+    if (game.user.isGM) {
+      if (!situational && alreadyInRolls) {
+        situational = alreadyInRolls;
+      }
+      if (situational) {
+        this.addSituationalBonus(config, situational);
+      }
+    } else {
+      if (alreadyInRolls) {
+        if (!config.rolls[0].data.situational) {
+          config.rolls[0].data.situational = alreadyInRolls;
+        }
+      } else if (situational) {
+        this.addSituationalBonus(config, situational);
+      }
     }
 
     return this.ensureRollFlags(config, requestData);

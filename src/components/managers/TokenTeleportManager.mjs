@@ -379,11 +379,11 @@ export class TokenTeleportManager {
       return [];
     }
 
-    const hideUpdates = this._tokenDataToTeleport.map(tokenData => ({
+    const fadeUpdates = this._tokenDataToTeleport.map(tokenData => ({
       _id: tokenData.id,
-      hidden: true
+      alpha: 0.3
     }));
-    await this._sourceScene.updateEmbeddedDocuments('Token', hideUpdates, { animate: false });
+    await this._sourceScene.updateEmbeddedDocuments('Token', fadeUpdates, { animate: false });
 
     if (animationPath || this._hasJB2A()) {
       await this._playDepartureAnimations(tokens);
@@ -415,7 +415,7 @@ export class TokenTeleportManager {
         _id: tokenData.id,
         x: newX,
         y: newY,
-        hidden: true
+        alpha: 0.3
       });
 
       arrivalPositions.push({
@@ -432,7 +432,7 @@ export class TokenTeleportManager {
 
     const showUpdates = this._tokenDataToTeleport.map(tokenData => ({
       _id: tokenData.id,
-      hidden: false
+      alpha: 1
     }));
 
     await this._sourceScene.updateEmbeddedDocuments('Token', showUpdates, { animate: false });
@@ -462,11 +462,11 @@ export class TokenTeleportManager {
       return [];
     }
 
-    const hideUpdates = this._tokenDataToTeleport.map(tokenData => ({
+    const fadeUpdates = this._tokenDataToTeleport.map(tokenData => ({
       _id: tokenData.id,
-      hidden: true
+      alpha: 0.3
     }));
-    await this._sourceScene.updateEmbeddedDocuments('Token', hideUpdates, { animate: false });
+    await this._sourceScene.updateEmbeddedDocuments('Token', fadeUpdates, { animate: false });
 
     if (animationPath || this._hasJB2A()) {
       await this._playDepartureAnimations(tokens);
@@ -514,7 +514,7 @@ export class TokenTeleportManager {
 
     const createdTokens = await this._targetScene.createEmbeddedDocuments('Token', tokenCreateData.map(data => ({
       ...data,
-      hidden: true
+      alpha: 0.3
     })));
 
     if (animationPath || this._hasJB2A()) {
@@ -523,7 +523,7 @@ export class TokenTeleportManager {
 
     await this._targetScene.updateEmbeddedDocuments('Token', createdTokens.map(t => ({
       _id: t.id,
-      hidden: false
+      alpha: 1
     })));
 
     const tokenIds = createdTokens.map(t => t.id);
@@ -582,6 +582,7 @@ export class TokenTeleportManager {
           .scale(0.5)
           .fadeIn(100)
           .fadeOut(200)
+          .forUsers(game.users.map(u => u.id))
           .play();
       }
 
@@ -612,6 +613,7 @@ export class TokenTeleportManager {
           .scale(0.5)
           .fadeIn(100)
           .fadeOut(200)
+          .forUsers(game.users.map(u => u.id))
           .play();
       }
 

@@ -23,8 +23,13 @@ export class MonksActiveTilesIntegration {
 
       app.registerTileGroup(MODULE_ID, 'Flash Rolls 5e');
       this._registerRequestRollAction(app);
+      this._registerHealAllAction(app);
+      this._registerKillAllAction(app);
+      this._registerOpenSheetsAction(app);
+      this._registerToggleMovementAction(app);
+      this._registerTeleportTokensAction(app);
 
-      LogUtil.log('MonksActiveTilesIntegration: Flash Rolls action registered successfully');
+      LogUtil.log('MonksActiveTilesIntegration: Flash Rolls actions registered successfully');
     });
   }
 
@@ -257,6 +262,285 @@ export class MonksActiveTilesIntegration {
         const skipDialog = action.data?.skipRollDialog ? ' [Skip Dialog]' : '';
 
         return `<div>Request <span class="value">${typeName}${rollKeyName}</span>${dc}${advLabel ? ' ' + advLabel : ''}${bonus}${skipDialog}</div>`;
+      }
+    });
+  }
+
+  /**
+   * Register Heal All tile action
+   */
+  static _registerHealAllAction(app) {
+    app.registerTileAction(MODULE_ID, 'heal-all', {
+      name: 'Heal All',
+      group: MODULE_ID,
+      ctrls: [
+        {
+          id: 'entity',
+          name: 'Actors',
+          type: 'select',
+          subtype: 'entity',
+          options: { show: ['token', 'within', 'players', 'previous'] },
+          restrict: (entity) => {
+            return entity instanceof foundry.canvas.placeables.Token;
+          },
+          defaultType: 'tokens'
+        }
+      ],
+      fn: async (args) => {
+        const { action, tokens, tile } = args;
+
+        let entities = tokens;
+
+        if (action.data?.entity?.id === 'within' && tile && typeof tile.entitiesWithin === 'function') {
+          const withinEntities = tile.entitiesWithin({ collection: 'tokens' });
+          if (Array.isArray(withinEntities) && withinEntities.length > 0) {
+            entities = withinEntities;
+          }
+        }
+
+        const actorIds = this._resolveActorIds(null, entities);
+
+        if (!actorIds || actorIds.length === 0) {
+          ui.notifications.warn(game.i18n.localize('FLASH_ROLLS.notifications.noActorsSelected'));
+          return {};
+        }
+
+        await FlashAPI.healAll(actorIds);
+        return {};
+      },
+      content: async (trigger, action) => {
+        return `<div>Heal all actors</div>`;
+      }
+    });
+  }
+
+  /**
+   * Register Kill All tile action
+   */
+  static _registerKillAllAction(app) {
+    app.registerTileAction(MODULE_ID, 'kill-all', {
+      name: 'Kill All',
+      group: MODULE_ID,
+      ctrls: [
+        {
+          id: 'entity',
+          name: 'Actors',
+          type: 'select',
+          subtype: 'entity',
+          options: { show: ['token', 'within', 'players', 'previous'] },
+          restrict: (entity) => {
+            return entity instanceof foundry.canvas.placeables.Token;
+          },
+          defaultType: 'tokens'
+        }
+      ],
+      fn: async (args) => {
+        const { action, tokens, tile } = args;
+
+        let entities = tokens;
+
+        if (action.data?.entity?.id === 'within' && tile && typeof tile.entitiesWithin === 'function') {
+          const withinEntities = tile.entitiesWithin({ collection: 'tokens' });
+          if (Array.isArray(withinEntities) && withinEntities.length > 0) {
+            entities = withinEntities;
+          }
+        }
+
+        const actorIds = this._resolveActorIds(null, entities);
+
+        if (!actorIds || actorIds.length === 0) {
+          ui.notifications.warn(game.i18n.localize('FLASH_ROLLS.notifications.noActorsSelected'));
+          return {};
+        }
+
+        await FlashAPI.killAll(actorIds);
+        return {};
+      },
+      content: async (trigger, action) => {
+        return `<div>Kill all actors</div>`;
+      }
+    });
+  }
+
+  /**
+   * Register Open Sheets tile action
+   */
+  static _registerOpenSheetsAction(app) {
+    app.registerTileAction(MODULE_ID, 'open-sheets', {
+      name: 'Open Character Sheets',
+      group: MODULE_ID,
+      ctrls: [
+        {
+          id: 'entity',
+          name: 'Actors',
+          type: 'select',
+          subtype: 'entity',
+          options: { show: ['token', 'within', 'players', 'previous'] },
+          restrict: (entity) => {
+            return entity instanceof foundry.canvas.placeables.Token;
+          },
+          defaultType: 'tokens'
+        }
+      ],
+      fn: async (args) => {
+        const { action, tokens, tile } = args;
+
+        let entities = tokens;
+
+        if (action.data?.entity?.id === 'within' && tile && typeof tile.entitiesWithin === 'function') {
+          const withinEntities = tile.entitiesWithin({ collection: 'tokens' });
+          if (Array.isArray(withinEntities) && withinEntities.length > 0) {
+            entities = withinEntities;
+          }
+        }
+
+        const actorIds = this._resolveActorIds(null, entities);
+
+        if (!actorIds || actorIds.length === 0) {
+          ui.notifications.warn(game.i18n.localize('FLASH_ROLLS.notifications.noActorsSelected'));
+          return {};
+        }
+
+        await FlashAPI.openSheets(actorIds);
+        return {};
+      },
+      content: async (trigger, action) => {
+        return `<div>Open character sheets</div>`;
+      }
+    });
+  }
+
+  /**
+   * Register Toggle Movement tile action
+   */
+  static _registerToggleMovementAction(app) {
+    app.registerTileAction(MODULE_ID, 'toggle-movement', {
+      name: 'Toggle Movement',
+      group: MODULE_ID,
+      ctrls: [
+        {
+          id: 'entity',
+          name: 'Actors',
+          type: 'select',
+          subtype: 'entity',
+          options: { show: ['token', 'within', 'players', 'previous'] },
+          restrict: (entity) => {
+            return entity instanceof foundry.canvas.placeables.Token;
+          },
+          defaultType: 'tokens'
+        }
+      ],
+      fn: async (args) => {
+        const { action, tokens, tile } = args;
+
+        let entities = tokens;
+
+        if (action.data?.entity?.id === 'within' && tile && typeof tile.entitiesWithin === 'function') {
+          const withinEntities = tile.entitiesWithin({ collection: 'tokens' });
+          if (Array.isArray(withinEntities) && withinEntities.length > 0) {
+            entities = withinEntities;
+          }
+        }
+
+        const actorIds = this._resolveActorIds(null, entities);
+
+        if (!actorIds || actorIds.length === 0) {
+          ui.notifications.warn(game.i18n.localize('FLASH_ROLLS.notifications.noActorsSelected'));
+          return {};
+        }
+
+        await FlashAPI.toggleMovement(actorIds);
+        return {};
+      },
+      content: async (trigger, action) => {
+        return `<div>Toggle movement</div>`;
+      }
+    });
+  }
+
+  /**
+   * Register Teleport Tokens tile action
+   */
+  static _registerTeleportTokensAction(app) {
+    app.registerTileAction(MODULE_ID, 'teleport-tokens', {
+      name: 'Teleport Tokens',
+      group: MODULE_ID,
+      ctrls: [
+        {
+          id: 'entity',
+          name: 'Actors',
+          type: 'select',
+          subtype: 'entity',
+          options: { show: ['token', 'within', 'players', 'previous'] },
+          restrict: (entity) => {
+            return entity instanceof foundry.canvas.placeables.Token;
+          },
+          defaultType: 'tokens'
+        },
+        {
+          id: 'location',
+          name: 'Select Coordinates',
+          type: 'select',
+          subtype: 'either',
+          options: { show: ['token', 'previous', 'tagger', 'origin'] },
+          restrict: (entity, document) => {
+            return (entity instanceof foundry.canvas.placeables.Tile && document.parent.id == entity.parent.id) || document.parent.id == entity.id;
+          },
+          required: true
+        },
+        {
+          id: 'snap',
+          name: 'Snap to Grid',
+          type: 'checkbox',
+          defvalue: true
+        }
+      ],
+      fn: async (args) => {
+        const { action, tokens, tile } = args;
+
+        let entities = tokens;
+
+        if (action.data?.entity?.id === 'within' && tile && typeof tile.entitiesWithin === 'function') {
+          const withinEntities = tile.entitiesWithin({ collection: 'tokens' });
+          if (Array.isArray(withinEntities) && withinEntities.length > 0) {
+            entities = withinEntities;
+          }
+        }
+
+        const tokenIds = [];
+        for (const entity of entities) {
+          if (entity instanceof Token || entity instanceof TokenDocument) {
+            tokenIds.push(entity.id);
+          } else if (entity?.id) {
+            tokenIds.push(entity.id);
+          }
+        }
+
+        if (!tokenIds || tokenIds.length === 0) {
+          ui.notifications.warn(game.i18n.localize('FLASH_ROLLS.notifications.noActorsSelected'));
+          return {};
+        }
+
+        const snap = action.data?.snap ?? true;
+        const location = action.data?.location;
+
+        await FlashAPI.teleportTokens({ tokenIds, snap, location });
+        return {};
+      },
+      content: async (trigger, action) => {
+        const location = action.data?.location;
+        let locationText = 'coordinates';
+
+        if (location?.id === 'previous') {
+          locationText = 'previous location';
+        } else if (location?.id === 'origin') {
+          locationText = 'trigger origin';
+        } else if (location?.id) {
+          locationText = location.id;
+        }
+
+        const snap = action.data?.snap ?? true;
+        return `<div>Teleport tokens to <span class="value">${locationText}</span>${snap ? ' (snap to grid)' : ''}</div>`;
       }
     });
   }
