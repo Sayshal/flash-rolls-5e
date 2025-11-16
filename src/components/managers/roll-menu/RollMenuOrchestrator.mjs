@@ -84,7 +84,8 @@ export class RollMenuOrchestrator {
     // Create group message FIRST so individual rolls can update it
     // Skip if groupRollId already exists (e.g., from contested rolls where the group message was already created)
     const groupMessageAlreadyExists = groupRollId && ChatMessageManager.groupRollMessages.has(groupRollId);
-    if (groupRollsMsgEnabled && allActors.length > 1 && !groupMessageAlreadyExists) {
+    const shouldCreateGroupMessage = groupRollsMsgEnabled && !groupMessageAlreadyExists && (allActors.length > 1 || config.groupRollId);
+    if (shouldCreateGroupMessage) {
       await ChatMessageManager.createGroupRollMessage(
         allActorEntries,
         rollMethodName,

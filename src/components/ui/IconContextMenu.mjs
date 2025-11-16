@@ -226,6 +226,9 @@ export class IconContextMenu {
         case 'teleport-tokens':
           macroCommand = this._generateTeleportTokensMacro(selectedActorIds);
           break;
+        case 'transform':
+          macroCommand = this._generateTransformActorsMacro(selectedActorIds);
+          break;
         default:
           ui.notifications.warn(`No macro generation configured for icon: ${iconId}`);
           return;
@@ -494,6 +497,54 @@ try {
   }
 } catch (error) {
   ui.notifications.error("Failed to execute Teleport Tokens: " + error.message);
+}`;
+    }
+  }
+
+  /**
+   * Generate macro command for transform actors
+   * @param {string[]} actorIds - Selected actor IDs
+   * @returns {string} Macro command
+   * @private
+   */
+  static _generateTransformActorsMacro(actorIds) {
+    if (actorIds && actorIds.length > 0) {
+      return `// Flash Token Bar: Transform Actors
+// targetActorUuid: UUID of actor to transform into (shows dialog if omitted)
+// options: Object with preset ('wildshape', 'polymorph', 'appearance'), settings, and renderSheet
+// Example - transformation into specific actor as wildshape:
+// FlashAPI.transformActors(actorIds, 'Compendium.dnd5e.monsters.Actor.xyz', { preset: 'wildshape' });
+
+// Option 1: Use specific actors
+const actorIds = ${JSON.stringify(actorIds)};
+// Option 2: Use currently selected actors in Flash Token Bar menu
+// const actorIds = FlashAPI.getSelectedActors();
+
+try {
+  FlashAPI.transformActors(actorIds);
+} catch (error) {
+  ui.notifications.error("Failed to execute Transform Actors: " + error.message);
+}`;
+    } else {
+      return `// Flash Token Bar: Transform Actors
+// targetActorUuid: UUID of actor to transform into (shows dialog if omitted)
+// options: Object with preset ('wildshape', 'polymorph', 'appearance'), settings, and renderSheet
+// Example - transformation into specific actor as wildshape:
+// FlashAPI.transformActors(actorIds, 'Compendium.dnd5e.monsters.Actor.xyz', { preset: 'wildshape' });
+
+try {
+  // Option 1: Use currently selected actors in Flash Token Bar menu
+  const actorIds = FlashAPI.getSelectedActors();
+  // Option 2: Use specific actors
+  // const actorIds = ["8sKqJT1gcAUvko53","6xvOSmZnNUcP5Gyh"];
+
+  if (actorIds.length === 0) {
+    ui.notifications.warn("No actors selected");
+  } else {
+    FlashAPI.transformActors(actorIds);
+  }
+} catch (error) {
+  ui.notifications.error("Failed to execute Transform Actors: " + error.message);
 }`;
     }
   }

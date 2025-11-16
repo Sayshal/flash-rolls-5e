@@ -14,6 +14,7 @@ import { RollMenuStateManager } from "../managers/roll-menu/RollMenuStateManager
 import { SidebarController } from "../managers/SidebarController.mjs";
 import { TokenPlacementManager } from "../managers/TokenPlacementManager.mjs";
 import { TokenTeleportManager } from "../managers/TokenTeleportManager.mjs";
+import { TransformationManager } from "../managers/TransformationManager.mjs";
 
 /**
  * Public API for Flash Token Bar 5e that can be used by other modules
@@ -882,6 +883,46 @@ export class FlashAPI {
       }
     } else if (menu && menu.rendered) {
       await TokenTeleportManager.teleportSelectedTokens(menu);
+    } else {
+      ui.notifications.warn(game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelected"));
+    }
+  }
+
+  /**
+   * Transform actors into a target actor
+   * @param {string[]} actorIds - Array of actor/token IDs to transform
+   * @param {string} [targetActorUuid] - UUID of actor to transform into (shows dialog if omitted)
+   * @param {Object} [options] - Transformation options
+   * @param {string} [options.preset] - Preset name: "wildshape", "polymorph", or "custom"
+   * @param {Object} [options.settings] - Custom TransformationSetting configuration
+   * @param {boolean} [options.renderSheet=false] - Show actor sheet after transformation
+   * @returns {Promise<void>}
+   */
+  static async transformActors(actorIds, targetActorUuid = null, options = {}) {
+    const menu = RollRequestsMenu.getInstance();
+
+    if (actorIds && actorIds.length > 0) {
+      await TransformationManager.transformActors(actorIds, targetActorUuid, options);
+    } else if (menu && menu.rendered) {
+      await TransformationManager.transformSelectedActors(menu);
+    } else {
+      ui.notifications.warn(game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelected"));
+    }
+  }
+
+  /**
+   * Revert transformed actors to original form
+   * @param {string[]} actorIds - Array of actor/token IDs to revert
+   * @returns {Promise<void>}
+   */
+  static async revertTransformation(actorIds) {
+    const menu = RollRequestsMenu.getInstance();
+
+    if (actorIds && actorIds.length > 0) {
+      await TransformationManager.revertTransformation(actorIds);
+    } else if (menu && menu.rendered) {
+      const selectedActorIds = Array.from(menu.selectedActors);
+      await TransformationManager.revertTransformation(selectedActorIds);
     } else {
       ui.notifications.warn(game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelected"));
     }

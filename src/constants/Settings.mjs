@@ -586,6 +586,16 @@ export const getSettings = () => {
       default: false,
       scope: SETTING_SCOPE.world,
       config: false
+    },
+
+    transformFavorites: {
+      tag: "transform-favorites",
+      label: "Transformation Favorites",
+      hint: "Stores favorite transformation targets",
+      propType: Array,
+      default: [],
+      scope: SETTING_SCOPE.world,
+      config: false
     }
   };
 };

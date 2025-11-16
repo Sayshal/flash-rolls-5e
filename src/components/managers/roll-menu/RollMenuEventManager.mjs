@@ -164,6 +164,10 @@ export class RollMenuEventManager {
       this.teleportTokensForSelected(menu);
     });
 
+    html.querySelector('#flash5e-transform')?.addEventListener('click', () => {
+      this.transformSelectedActors(menu);
+    });
+
     const navButtons = html.querySelectorAll('.actor-actions-nav');
     navButtons.forEach(button => {
       button.addEventListener('click', (event) => {
@@ -1357,5 +1361,14 @@ export class RollMenuEventManager {
   static async teleportTokensForSelected(menu) {
     const { TokenTeleportManager } = await import('../TokenTeleportManager.mjs');
     await TokenTeleportManager.teleportSelectedTokens(menu);
+  }
+
+  /**
+   * Transform selected actors into another actor
+   * @param {RollRequestsMenu} menu - The menu instance
+   */
+  static async transformSelectedActors(menu) {
+    const { TransformationManager } = await import('../TransformationManager.mjs');
+    await TransformationManager.transformSelectedActors(menu);
   }
 }

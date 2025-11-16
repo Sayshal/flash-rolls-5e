@@ -1,0 +1,100 @@
+<div class="transformation-dialog-content scrollable">
+  
+  <div class="form-group header">
+    <h2>
+      {{localize "FLASH_ROLLS.ui.dialogs.transformation.title"}}
+
+      {{#if selectedActor}}
+         <span>{{selectedActor.name}}</span>
+      {{/if}}
+        <span>
+          <button type="button" class="select-actor-btn" title="{{localize 'FLASH_ROLLS.ui.dialogs.transformation.browseActors'}}">
+            <i class="fa-solid fa-search"></i>
+            {{localize "FLASH_ROLLS.ui.dialogs.transformation.pickCreature"}}
+          </button>
+        </span>
+    </h2>
+    <div class="selected-actor-preview">
+      {{#if selectedActor}}
+      <div class="actor-image-container"{{#if selectedActor}} data-tooltip="{{selectedActor.name}}" data-tooltip-direction="UP"{{/if}}>
+        <img src="{{selectedActor.img}}" alt="{{selectedActor.name}}" />
+
+        {{#if selectedActor}}
+        <button type="button" class="toggle-favorite-btn" data-uuid="{{selectedActor.uuid}}" data-is-favorite="{{selectedActor.isFavorite}}">
+          <i class="fa-solid fa-bookmark {{#unless selectedActor.isFavorite}}faded{{/unless}}"></i>
+        </button>
+        {{/if}}
+      </div>
+      {{else}}
+      <div class="actor-image-placeholder">
+        <i class="fa-solid fa-search"></i>
+      </div> 
+      {{/if}}
+      {{!-- {{localize "FLASH_ROLLS.ui.dialogs.transformation.targetActor"}} --}}
+      
+    </div>
+
+    {{!-- <button type="button" class="select-actor-btn full-width" title="{{localize 'FLASH_ROLLS.ui.dialogs.transformation.browseActors'}}">
+      <i class="fa-solid fa-search"></i>
+      {{localize "FLASH_ROLLS.ui.dialogs.transformation.pickCreature"}}
+    </button> --}}
+  </div>
+
+    <div class="form-group column favorites-section">
+    <label>{{localize "FLASH_ROLLS.ui.dialogs.transformation.favorites"}}</label>
+    {{#if favorites.length}}
+    <div class="favorites-list">
+      {{#each favorites}}
+      <div class="favorite-item" data-uuid="{{uuid}}">
+        <img src="{{img}}" alt="{{name}}" />
+        <span>{{name}}</span>
+        <button type="button" class="toggle-favorite-btn" data-uuid="{{uuid}}" title="{{localize 'FLASH_ROLLS.ui.dialogs.transformation.removeFromFavorites'}}">
+          <i class="fa-solid fa-bookmark"></i>
+        </button>
+      </div>
+      {{/each}}
+    </div>
+    {{else}}
+    <p class="favorites-empty">{{localize "FLASH_ROLLS.ui.dialogs.transformation.favoritesEmpty"}}</p>
+    {{/if}}
+  </div>
+
+  <div class="form-group column">
+    <label>{{localize "FLASH_ROLLS.ui.dialogs.transformation.preset"}}</label>
+    <select name="preset" class="preset-selector">
+      {{#each presets}}
+      <option value="{{value}}" {{#if (eq ../selectedPreset value)}}selected{{/if}}>
+        {{localize label}}
+      </option>
+      {{/each}}
+    </select>
+    {{#each presets}}
+    {{#if (eq value ../selectedPreset)}}
+    <p class="preset-description">{{localize description}}</p>
+    {{/if}}
+    {{/each}}
+  </div>
+
+  {{#if showCustomSettings}}
+  <div class="form-group custom-settings column">
+    <label>{{localize "FLASH_ROLLS.ui.dialogs.transformation.customSettings"}}</label>
+    <div class="setting-checkboxes">
+      <label><input type="checkbox" name="keep-mental" checked /> {{localize "FLASH_ROLLS.ui.dialogs.transformation.settings.keepMental"}}</label>
+      <label><input type="checkbox" name="keep-physical" /> {{localize "FLASH_ROLLS.ui.dialogs.transformation.settings.keepPhysical"}}</label>
+      <label><input type="checkbox" name="keep-saves" /> {{localize "FLASH_ROLLS.ui.dialogs.transformation.settings.keepSaves"}}</label>
+      <label><input type="checkbox" name="keep-skills" /> {{localize "FLASH_ROLLS.ui.dialogs.transformation.settings.keepSkills"}}</label>
+      <label><input type="checkbox" name="keep-spells" /> {{localize "FLASH_ROLLS.ui.dialogs.transformation.settings.keepSpells"}}</label>
+      <label><input type="checkbox" name="keep-items" /> {{localize "FLASH_ROLLS.ui.dialogs.transformation.settings.keepItems"}}</label>
+      <label><input type="checkbox" name="keep-hp" /> {{localize "FLASH_ROLLS.ui.dialogs.transformation.settings.keepHP"}}</label>
+      <label><input type="checkbox" name="transform-tokens" checked /> {{localize "FLASH_ROLLS.ui.dialogs.transformation.settings.transformTokens"}}</label>
+    </div>
+  </div>
+  {{/if}}
+
+  <div class="form-group">
+    <label>
+      <input type="checkbox" name="renderSheet" />
+      {{localize "FLASH_ROLLS.ui.dialogs.transformation.renderSheet"}}
+    </label>
+  </div>
+</div>

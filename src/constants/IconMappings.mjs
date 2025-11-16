@@ -174,6 +174,15 @@ export const ACTOR_ACTION_ICONS = {
     element: "flash5e-contested-roll",
     type: "button",
     cssClass: "bulk-action"
+  },
+  "transform": {
+    id: "transform",
+    icon: "fa-frog",
+    labelKey: "FLASH_ROLLS.ui.inputs.transform",
+    tooltipKey: "FLASH_ROLLS.ui.inputs.transform",
+    element: "flash5e-transform",
+    type: "button",
+    cssClass: "bulk-action"
   }
 };
 
@@ -224,13 +233,14 @@ export function getDefaultIconLayout() {
       { id: "toggle-targets", icon: "fa-crosshairs", enabled: true, order: 2 },
       { id: "remove-status", icon: "fa-sparkles", enabled: true, order: 3 },
       { id: "teleport-tokens", icon: "fa-person-to-portal", enabled: true, order: 4 },
-      { id: "place-tokens", icon: "fa-location-dot", enabled: true, order: 5 },
-      { id: "contested-roll", icon: "fa-swords", enabled: true, order: 6 },
-      { id: "group-selected", icon: "fa-users-medical", enabled: true, order: 7 },
-      { id: "movement", icon: "fa-person-walking", enabled: true, order: 8 },
-      { id: "heal-all", icon: "fa-heart-pulse", enabled: true, order: 9 },
-      { id: "kill-all", icon: "fa-skull", enabled: true, order: 10 },
-      { id: "open-sheets", icon: "fa-square-user", enabled: true, order: 11 }
+      { id: "transform", icon: "fa-frog", enabled: true, order: 5 },
+      { id: "place-tokens", icon: "fa-location-dot", enabled: true, order: 6 },
+      { id: "contested-roll", icon: "fa-swords", enabled: true, order: 7 },
+      { id: "group-selected", icon: "fa-users-medical", enabled: true, order: 8 },
+      { id: "movement", icon: "fa-person-walking", enabled: true, order: 9 },
+      { id: "heal-all", icon: "fa-heart-pulse", enabled: true, order: 10 },
+      { id: "kill-all", icon: "fa-skull", enabled: true, order: 11 },
+      { id: "open-sheets", icon: "fa-square-user", enabled: true, order: 12 }
     ]
   };
 }

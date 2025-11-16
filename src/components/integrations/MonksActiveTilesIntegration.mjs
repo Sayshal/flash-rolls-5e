@@ -1,12 +1,15 @@
 import { MODULE_ID, ROLL_TYPES, ROLL_REQUEST_OPTIONS } from '../../constants/General.mjs';
 import { LogUtil } from '../utils/LogUtil.mjs';
 import { FlashAPI } from '../core/FlashAPI.mjs';
+import { getActorData } from '../helpers/Helpers.mjs';
 
 /**
  * Integration with Monk's Active Tiles module
  * Registers Flash Rolls 5e actions for use in tile triggers
  */
 export class MonksActiveTilesIntegration {
+
+  static _pendingGroupRolls = new Map();
 
   /**
    * Initialize the integration with Monk's Active Tiles
@@ -28,6 +31,7 @@ export class MonksActiveTilesIntegration {
       this._registerOpenSheetsAction(app);
       this._registerToggleMovementAction(app);
       this._registerTeleportTokensAction(app);
+      this._registerTransformActorsAction(app);
 
       LogUtil.log('MonksActiveTilesIntegration: Flash Rolls actions registered successfully');
     });
@@ -218,14 +222,39 @@ export class MonksActiveTilesIntegration {
           return {};
         }
 
+        const groupRollId = this._generateGroupRollId(tile, action);
+
+        if (this._pendingGroupRolls.has(groupRollId)) {
+          const pending = this._pendingGroupRolls.get(groupRollId);
+          for (const actorId of actorIds) {
+            if (!pending.actorIds.includes(actorId)) {
+              pending.actorIds.push(actorId);
+            }
+          }
+          LogUtil.log("MonksActiveTilesIntegration - Added actors to pending group roll", [groupRollId, pending.actorIds]);
+          return {};
+        }
+
+        this._pendingGroupRolls.set(groupRollId, {
+          actorIds: [...actorIds],
+          action: action,
+          tile: tile
+        });
+
+        await new Promise(resolve => setTimeout(resolve, 50));
+
+        const pending = this._pendingGroupRolls.get(groupRollId);
+        this._pendingGroupRolls.delete(groupRollId);
+
         const options = {
           requestType: action.data.requestType,
-          actorIds: actorIds,
+          actorIds: pending.actorIds,
           dc: action.data.dc,
           advantage: action.data.advantage === 'advantage' ? true : false,
           disadvantage: action.data.advantage === 'disadvantage' ? true : false,
           skipRollDialog: action.data.skipRollDialog || false,
-          sendAsRequest: true
+          sendAsRequest: true,
+          groupRollId: groupRollId
         };
 
         if (action.data.rollKey) {
@@ -236,9 +265,10 @@ export class MonksActiveTilesIntegration {
           options.situationalBonus = action.data.bonus;
         }
 
-        LogUtil.log("MonksActiveTilesIntegration - options", [options]);
+        LogUtil.log("MonksActiveTilesIntegration - Requesting group roll", [groupRollId, pending.actorIds, options]);
 
         await FlashAPI.requestRoll(options);
+
         return {};
       },
       content: async (trigger, action) => {
@@ -546,6 +576,144 @@ export class MonksActiveTilesIntegration {
   }
 
   /**
+   * Register Transform Actors tile action
+   */
+  static _registerTransformActorsAction(app) {
+    app.registerTileAction(MODULE_ID, 'transform-actors', {
+      name: game.i18n.localize('FLASH_ROLLS.ui.dialogs.transformation.matt.action'),
+      group: MODULE_ID,
+      ctrls: [
+        {
+          id: 'entity',
+          name: game.i18n.localize('FLASH_ROLLS.ui.dialogs.transformation.matt.actors'),
+          type: 'select',
+          subtype: 'entity',
+          options: { show: ['token', 'within', 'players', 'previous'] },
+          restrict: (entity) => {
+            return entity instanceof foundry.canvas.placeables.Token;
+          },
+          defaultType: 'tokens'
+        },
+        {
+          id: 'targetActorUuid',
+          name: game.i18n.localize('FLASH_ROLLS.ui.dialogs.transformation.matt.targetCreature'),
+          type: 'select',
+          subtype: 'entity',
+          options: { show: ['actor'] },
+          restrict: (entity) => {
+            return entity instanceof Actor;
+          },
+          required: false,
+          help: game.i18n.localize('FLASH_ROLLS.ui.dialogs.transformation.matt.targetCreatureHelp')
+        },
+        {
+          id: 'preset',
+          name: game.i18n.localize('FLASH_ROLLS.ui.dialogs.transformation.matt.preset'),
+          type: 'list',
+          list: () => {
+            return {
+              'polymorph': game.i18n.localize('FLASH_ROLLS.ui.dialogs.transformation.presets.polymorph'),
+              'wildshape': game.i18n.localize('FLASH_ROLLS.ui.dialogs.transformation.presets.wildshape'),
+              'appearance': game.i18n.localize('FLASH_ROLLS.ui.dialogs.transformation.presets.appearance'),
+              'custom': game.i18n.localize('FLASH_ROLLS.ui.dialogs.transformation.presets.custom')
+            };
+          },
+          defvalue: 'polymorph'
+        },
+        {
+          id: 'revert',
+          name: game.i18n.localize('FLASH_ROLLS.ui.dialogs.transformation.matt.revert'),
+          type: 'checkbox',
+          defvalue: false
+        }
+      ],
+      fn: async (args) => {
+        const { action, tokens, tile } = args;
+
+        let entities = tokens;
+
+        if (action.data?.entity?.id === 'within' && tile && typeof tile.entitiesWithin === 'function') {
+          const withinEntities = tile.entitiesWithin({ collection: 'tokens' });
+          if (Array.isArray(withinEntities) && withinEntities.length > 0) {
+            entities = withinEntities;
+          }
+        }
+
+        const actorIds = this._resolveActorIds(null, entities);
+
+        if (!actorIds || actorIds.length === 0) {
+          ui.notifications.warn(game.i18n.localize('FLASH_ROLLS.notifications.noActorsSelected'));
+          return {};
+        }
+
+        const actors = actorIds.map(id => getActorData(id)).filter(a => a);
+
+        if (action.data?.revert) {
+          const transformedActorIds = actors
+            .filter(a => a.getFlag("dnd5e", "isPolymorphed"))
+            .map(a => {
+              const token = canvas.tokens.placeables.find(t => t.actor === a);
+              return token ? token.document.id : a.id;
+            });
+
+          if (transformedActorIds.length > 0) {
+            await FlashAPI.revertTransformation(transformedActorIds);
+          }
+        } else {
+          const nonTransformedActorIds = actors
+            .filter(a => !a.getFlag("dnd5e", "isPolymorphed"))
+            .map(a => {
+              const token = canvas.tokens.placeables.find(t => t.actor === a);
+              return token ? token.document.id : a.id;
+            });
+
+          if (nonTransformedActorIds.length === 0) {
+            return {};
+          }
+
+          let targetUuid = null;
+          if (action.data?.targetActorUuid) {
+            if (typeof action.data.targetActorUuid === 'string') {
+              targetUuid = action.data.targetActorUuid.trim() || null;
+            } else if (action.data.targetActorUuid.id) {
+              const entity = await fromUuid(action.data.targetActorUuid.id);
+              targetUuid = entity?.uuid || null;
+            }
+          }
+          const preset = action.data?.preset || 'polymorph';
+          const skipRevertCheck = true;
+
+          await FlashAPI.transformActors(nonTransformedActorIds, targetUuid, { preset, skipRevertCheck });
+        }
+
+        return {};
+      },
+      content: async (trigger, action) => {
+        const isRevert = action.data?.revert;
+
+        if (isRevert) {
+          return `<div>Revert Transformation</div>`;
+        }
+
+        const targetUuid = action.data?.targetActorUuid?.trim();
+        const preset = action.data?.preset || 'polymorph';
+
+        let targetText = 'selection dialog';
+        if (targetUuid) {
+          try {
+            const targetActor = await fromUuid(targetUuid);
+            targetText = targetActor?.name || 'Unknown Actor';
+          } catch (e) {
+            targetText = 'Invalid UUID';
+          }
+        }
+
+        return `<div>Transform to <span class="value">${targetText}</span> (${preset})</div>`;
+      }
+    });
+  }
+
+  /**
    * Resolve actor IDs from token documents
    */
   static _resolveActorIds(entityData, entities) {
@@ -562,31 +730,26 @@ export class MonksActiveTilesIntegration {
 
     for (let i = 0; i < entities.length; i++) {
       const entity = entities[i];
-      LogUtil.log(`_resolveActorIds - Processing entity ${i}:`, [entity, entity?.constructor?.name]);
 
       let actorId = null;
 
-      if (entity instanceof Token || entity instanceof TokenDocument) {
+      if (entity instanceof TokenDocument || entity?.documentName === 'Token') {
         actorId = entity.actor?.id;
-        LogUtil.log(`_resolveActorIds - Token/TokenDocument actor ID:`, [actorId]);
+      } else if (entity instanceof foundry.canvas.placeables.Token) {
+        actorId = entity.document?.actor?.id || entity.actor?.id;
       } else if (entity instanceof Actor) {
         actorId = entity.id;
-        LogUtil.log(`_resolveActorIds - Actor ID:`, [actorId]);
       } else if (entity?.actorId) {
         actorId = entity.actorId;
-        LogUtil.log(`_resolveActorIds - entity.actorId:`, [actorId]);
       } else if (entity?.actor?.id) {
         actorId = entity.actor.id;
-        LogUtil.log(`_resolveActorIds - entity.actor.id:`, [actorId]);
       } else {
         LogUtil.log(`_resolveActorIds - Could not resolve actor from entity:`, [entity]);
       }
 
       if (actorId && !actorIds.includes(actorId)) {
         actorIds.push(actorId);
-        LogUtil.log("_resolveActorIds - Added actorId:", [actorId]);
       } else if (actorId) {
-        LogUtil.log("_resolveActorIds - Skipped duplicate actorId:", [actorId]);
       }
     }
 
@@ -649,5 +812,19 @@ export class MonksActiveTilesIntegration {
       default:
         return '';
     }
+  }
+
+  /**
+   * Generate a stable groupRollId for tile actions to combine simultaneous triggers
+   * @param {Object} tile - The triggering tile
+   * @param {Object} action - The action being executed
+   * @returns {string} Stable groupRollId
+   */
+  static _generateGroupRollId(tile, action) {
+    if (!tile?.id) {
+      return foundry.utils.randomID();
+    }
+    const timestamp = Math.floor(Date.now() / 100);
+    return `matt-${tile.id}-${action._id || 'action'}-${timestamp}`;
   }
 }

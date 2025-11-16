@@ -10,6 +10,7 @@
 @import './settings-interface.css';
 @import './contested-roll-dialog.css';
 @import './token-associations.css';
+@import './transform-dialog.css';
 
 body{
   --current-sidebar-width: 0px;

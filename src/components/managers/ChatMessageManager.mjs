@@ -732,6 +732,101 @@ export class ChatMessageManager {
     LogUtil.log('ChatMessageManager.createGroupRollMessage', [actorEntries.length, rollType, rollKey, groupRollId]);
 
     const validEntries = actorEntries.filter(entry => entry && entry.actor);
+
+    let existingMessage = this.groupRollMessages.get(groupRollId);
+    if (!existingMessage) {
+      const messages = game.messages.contents;
+      existingMessage = messages.find(m =>
+        m.getFlag(MODULE_ID, 'groupRollId') === groupRollId &&
+        m.getFlag(MODULE_ID, 'isGroupRoll')
+      );
+      if (existingMessage) {
+        this.groupRollMessages.set(groupRollId, existingMessage);
+      }
+    }
+
+    if (existingMessage) {
+      LogUtil.log('createGroupRollMessage - Found existing message, merging actors', [groupRollId]);
+      const pendingData = this.pendingRolls.get(groupRollId);
+      const existingActorIds = new Set(pendingData?.actorEntries.map(e => e.actorId) || []);
+      const newEntries = validEntries.filter(entry => !existingActorIds.has(entry.actor.id));
+
+      if (newEntries.length === 0) {
+        LogUtil.log('createGroupRollMessage - All actors already in group, skipping');
+        return existingMessage;
+      }
+
+      const newEntriesData = newEntries.map(entry => ({ actorId: entry.actor.id, uniqueId: entry.uniqueId, tokenId: entry.tokenId }));
+      const mergedEntries = [...(pendingData?.actorEntries || []), ...newEntriesData];
+
+      if (pendingData) {
+        pendingData.actorEntries = mergedEntries;
+      }
+
+      const existingFlagData = existingMessage.getFlag(MODULE_ID, 'rollData');
+
+      const SETTINGS = getSettings();
+      const groupRollNPCHidden = SettingsUtil.get(SETTINGS.groupRollNPCHidden.tag);
+      const isGM = game.user?.isGM === true;
+
+      const newResults = newEntries.map(entry => {
+        const result = {
+          actorId: entry.actor.id,
+          uniqueId: entry.uniqueId,
+          tokenId: entry.tokenId,
+          actorImg: entry.actor.img || entry.actor.prototypeToken?.texture?.src || 'icons/svg/mystery-man.svg',
+          actorName: entry.tokenId ?
+            (canvas.tokens?.get(entry.tokenId)?.name || entry.actor.name) :
+            entry.actor.name,
+          isNPC: entry.actor.type === 'npc' || !entry.actor.hasPlayerOwner,
+          rolled: false,
+          showDice: true,
+          total: null,
+          success: false,
+          failure: false,
+          rollTypeFlavor: existingFlagData?.flavor || ''
+        };
+
+        result.shouldHide = result.isNPC && groupRollNPCHidden && !isGM;
+        result.rollMode = CONST.DICE_ROLL_MODES.PUBLIC;
+        const hasPermission = entry.actor.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.LIMITED);
+
+        if (isGM) {
+          result.shouldHideRoll = false;
+        } else if (result.rollMode === CONST.DICE_ROLL_MODES.BLIND) {
+          result.shouldHideRoll = true;
+        } else if (result.rollMode === CONST.DICE_ROLL_MODES.PRIVATE || result.rollMode === CONST.DICE_ROLL_MODES.SELF) {
+          result.shouldHideRoll = !hasPermission;
+        } else {
+          result.shouldHideRoll = false;
+        }
+
+        return result;
+      });
+
+      const updatedData = {
+        ...existingFlagData,
+        results: [...existingFlagData.results, ...newResults]
+      };
+
+      const templatePath = updatedData.isContestedRoll
+        ? 'modules/flash-rolls-5e/templates/chat-msg-contested-roll.hbs'
+        : this.templatePath;
+
+      await existingMessage.update({
+        content: await GeneralUtil.renderTemplate(templatePath, updatedData),
+        flags: {
+          [MODULE_ID]: {
+            rollData: updatedData,
+            isGroupRoll: true,
+            groupRollId: groupRollId
+          }
+        }
+      });
+
+      return existingMessage;
+    }
+
     const data = this.buildGroupRollData(actorEntries, rollType, rollKey, config, null);
     if (!data) {
       LogUtil.error('createGroupRollMessage - Failed to build group roll data');
