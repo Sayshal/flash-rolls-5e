@@ -843,7 +843,10 @@ export class ChatMessageManager {
       results: new Map()
     });
 
-    const message = await this.postGroupMessage(data, CONST.DICE_ROLL_MODES.PUBLIC);
+    const hasAnyPC = validEntries.some(entry => entry.actor.hasPlayerOwner);
+    const rollMode = hasAnyPC ? CONST.DICE_ROLL_MODES.PUBLIC : game.settings.get("core", "rollMode");
+
+    const message = await this.postGroupMessage(data, rollMode);
     return message;
   }
   
