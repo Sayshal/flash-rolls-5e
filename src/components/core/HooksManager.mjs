@@ -155,7 +155,7 @@ export class HooksManager {
       }
     });
 
-    // Add "Show NPCs to Players" option  
+    // Add "Show NPCs to Players" option
     contextOptions.push({
       name: game.i18n.localize("FLASH_ROLLS.contextMenu.showNPCsToPlayers"),
       icon: '<i class="fas fa-eye"></i>',
@@ -165,7 +165,7 @@ export class HooksManager {
         if (message) {
           const SETTINGS = getSettings();
           const globalHidden = SettingsUtil.get(SETTINGS.groupRollNPCHidden.tag);
-          
+
           if (globalHidden) {
             message.setFlag(MODULE_ID, 'npcHiddenOverride', false);
           } else {
@@ -179,13 +179,34 @@ export class HooksManager {
         if (!messageId) return false;
         const message = game.messages.get(messageId);
         if (!message || !message.getFlag(MODULE_ID, 'isGroupRoll')) return false;
-        
+
         const SETTINGS = getSettings();
         const globalHidden = SettingsUtil.get(SETTINGS.groupRollNPCHidden.tag);
         const messageHidden = message.getFlag(MODULE_ID, 'npcHiddenOverride');
         const currentlyHidden = messageHidden !== undefined ? messageHidden : globalHidden;
-        
+
         return currentlyHidden;
+      }
+    });
+
+    contextOptions.push({
+      name: game.i18n.localize("FLASH_ROLLS.contextMenu.showAllResultsToPlayers"),
+      icon: '<i class="fas fa-eye"></i>',
+      callback: li => {
+        const messageId = li.dataset.messageId;
+        const message = game.messages.get(messageId);
+        if (message) {
+          message.setFlag(MODULE_ID, 'showAllResultsToPlayers', true);
+        }
+      },
+      condition: li => {
+        const messageId = li.dataset.messageId;
+        if (!messageId) return false;
+        const message = game.messages.get(messageId);
+        if (!message || !message.getFlag(MODULE_ID, 'isGroupRoll')) return false;
+
+        const showAllResults = message.getFlag(MODULE_ID, 'showAllResultsToPlayers');
+        return !showAllResults;
       }
     });
   }

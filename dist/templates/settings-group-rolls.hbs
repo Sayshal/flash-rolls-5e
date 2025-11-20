@@ -9,6 +9,12 @@
     <input type="checkbox" name="groupRollsMsgEnabled" id="groupRollsMsgEnabled" {{#if groupRollsMsgEnabled}}checked{{/if}} />
     <p class="hint">{{fields.groupRollsMsgEnabled.hint}}</p>
   </div>
+  
+  <div class="form-group">
+    <label for="disableDialogInPlayerGroupRoll">{{fields.disableDialogInPlayerGroupRoll.label}}</label>
+    <input type="checkbox" name="disableDialogInPlayerGroupRoll" id="disableDialogInPlayerGroupRoll" {{#if disableDialogInPlayerGroupRoll}}checked{{/if}} />
+    <p class="hint">{{fields.disableDialogInPlayerGroupRoll.hint}}</p>
+  </div>
 
   <div class="form-group">
     <label for="groupRollResultMode">{{fields.groupRollResultMode.label}}</label>
@@ -51,4 +57,5 @@
     <input type="checkbox" name="interceptTidySheetsGroupRolls" id="interceptTidySheetsGroupRolls" {{#if interceptTidySheetsGroupRolls}}checked{{/if}} />
     <p class="hint">{{fields.interceptTidySheetsGroupRolls.hint}}</p>
   </div>
+
 </section>

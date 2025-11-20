@@ -85,7 +85,7 @@ export const getSettings = () => {
     },
 
     groupRollsSettings: {
-      tag: "flash5e-group-rolls-settings", 
+      tag: "flash5e-group-rolls-settings",
       label: game.i18n.localize("FLASH_ROLLS.settings.moduleSettingsMenu.label"),
       title: game.i18n.localize("FLASH_ROLLS.settings.moduleSettingsMenu.title"),
       hint: game.i18n.localize("FLASH_ROLLS.settings.moduleSettingsMenu.hint"),
@@ -97,7 +97,8 @@ export const getSettings = () => {
         'showGroupResultToPlayers',
         'groupRollNPCHidden',
         'concealNPCNames',
-        'interceptTidySheetsGroupRolls'
+        'interceptTidySheetsGroupRolls',
+        'disableDialogInPlayerGroupRoll'
       ],
       default: {
         groupRollsMsgEnabled: true,
@@ -106,11 +107,12 @@ export const getSettings = () => {
         showGroupResultToPlayers: true,
         groupRollNPCHidden: true,
         concealNPCNames: false,
-        interceptTidySheetsGroupRolls: true
+        interceptTidySheetsGroupRolls: true,
+        disableDialogInPlayerGroupRoll: false
       },
       scope: SETTING_SCOPE.world,
-      config: false, 
-      requiresReload: false 
+      config: false,
+      requiresReload: false
     },
 
     rollRequestsSettings: {
@@ -193,6 +195,17 @@ export const getSettings = () => {
       propType: Boolean,
       inputType: SETTING_INPUT.checkbox,
       default: true,
+      scope: SETTING_SCOPE.world,
+      config: false
+    },
+
+    disableDialogInPlayerGroupRoll: {
+      tag: "disable-dialog-in-player-group-roll",
+      label: game.i18n.localize("FLASH_ROLLS.settings.disableDialogInPlayerGroupRoll.label"),
+      hint: game.i18n.localize("FLASH_ROLLS.settings.disableDialogInPlayerGroupRoll.hint"),
+      propType: Boolean,
+      inputType: SETTING_INPUT.checkbox,
+      default: false,
       scope: SETTING_SCOPE.world,
       config: false
     },

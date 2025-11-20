@@ -194,6 +194,7 @@ export class ChatMessageManager {
       const globalHidden = SettingsUtil.get(SETTINGS.groupRollNPCHidden.tag);
       const messageHidden = message.getFlag(MODULE_ID, 'npcHiddenOverride');
       const isGM = game.user.isGM;
+      const showAllResultsToPlayers = message.getFlag(MODULE_ID, 'showAllResultsToPlayers');
 
       const shouldHideNPCs = (messageHidden !== undefined ? messageHidden : globalHidden) && !isGM;
 
@@ -216,7 +217,7 @@ export class ChatMessageManager {
             const hasPermission = actor?.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER);
 
             let shouldHideRoll;
-            if (isGM) {
+            if (isGM || showAllResultsToPlayers) {
               shouldHideRoll = false;
             } else if (rollMode === CONST.DICE_ROLL_MODES.BLIND) {
               shouldHideRoll = true;
@@ -226,7 +227,7 @@ export class ChatMessageManager {
               shouldHideRoll = false;
             }
 
-            LogUtil.log("onRenderChatMessage - Roll visibility", [result.actorName, "rollMode:", rollMode, "isGM:", isGM, "hasPermission:", hasPermission, "shouldHideRoll:", shouldHideRoll]);
+            LogUtil.log("onRenderChatMessage - Roll visibility", [result.actorName, "rollMode:", rollMode, "isGM:", isGM, "showAllResultsToPlayers:", showAllResultsToPlayers, "hasPermission:", hasPermission, "shouldHideRoll:", shouldHideRoll]);
 
             if (shouldHideRoll) {
               element.classList.add('roll-hidden');
@@ -565,21 +566,37 @@ export class ChatMessageManager {
         const dc = dataset.dc ? parseInt(dataset.dc) : null;
         
         LogUtil.log('Rollable dice clicked', [rollType, rollKey, actorId, groupRollId]);
-        
+
+        const { areKeysPressed } = game.dnd5e.utils || {};
+        let hasAdvantage = false;
+        let hasDisadvantage = false;
+        let skipNormal = false;
+
+        if (areKeysPressed) {
+          skipNormal = areKeysPressed(event, "skipDialogNormal");
+          hasAdvantage = areKeysPressed(event, "skipDialogAdvantage");
+          hasDisadvantage = areKeysPressed(event, "skipDialogDisadvantage");
+        } else {
+          skipNormal = event.shiftKey;
+          hasAdvantage = event.altKey;
+          hasDisadvantage = event.ctrlKey || event.metaKey;
+        }
+
+        const shouldSkipDialog = skipNormal || hasAdvantage || hasDisadvantage;
+
         const requestData = {
           rollKey: rollKey,
           groupRollId: groupRollId,
           config: {
-            advantage: false,
-            disadvantage: false,
+            advantage: hasAdvantage && !hasDisadvantage,
+            disadvantage: hasDisadvantage && !hasAdvantage,
             target: dc,
             rollMode: game.settings.get("core", "rollMode")
           }
         };
-        
-        // Dialog configuration - show dialog for rolls
+
         const dialogConfig = {
-          configure: true,
+          configure: !shouldSkipDialog,
           isRollRequest: true
         };
         
@@ -655,7 +672,8 @@ export class ChatMessageManager {
     const groupFooter = html.querySelector('.group-roll-footer');
     if (groupFooter) {
       const showResultToPlayers = groupFooter.dataset.showToPlayers === 'true';
-      if (!game.user.isGM && !showResultToPlayers) {
+      const showAllResultsToPlayers = message.getFlag(MODULE_ID, 'showAllResultsToPlayers');
+      if (!game.user.isGM && !showResultToPlayers && !showAllResultsToPlayers) {
         groupFooter.style.display = 'none';
       }
     }

@@ -148,15 +148,23 @@ export class RollRequestManager {
       const normalizedRollType = requestData.rollType?.toLowerCase();
       LogUtil.log('executePlayerRollRequest - normalized roll type', [normalizedRollType]);
 
+      const isGroupRoll = !!requestData.groupRollId;
+      const disableDialogInPlayerGroupRoll = SettingsUtil.get(SETTINGS.disableDialogInPlayerGroupRoll.tag);
+      const shouldCancelRoll = isGroupRoll && disableDialogInPlayerGroupRoll && !game.user.isGM;
+
+      if (shouldCancelRoll) {
+        LogUtil.log('executePlayerRollRequest - Canceling player roll for group roll (player can use chat card button)', [actor.name]);
+        return;
+      }
+
       const rollConfig = requestData.rollProcessConfig.rolls?.[0] || {
         parts: [],
         data: {},
         options: {}
       };
 
-      const shouldSkipDialog = false;
       const dialogConfig = {
-        configure: !shouldSkipDialog
+        configure: true
       };
 
       const rollModeFromGM = requestData.rollProcessConfig.rollMode;

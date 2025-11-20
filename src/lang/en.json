@@ -77,7 +77,8 @@
       "blockFromMenu": "Remove from Favorites",
       "unblockFromMenu": "Unblock from Menu",
       "showNPCsToPlayers": "Show NPCs to Players",
-      "hideNPCsFromPlayers": "Hide NPCs from Players"
+      "hideNPCsFromPlayers": "Hide NPCs from Players",
+      "showAllResultsToPlayers": "Show All Results to Players"
     },
     "chat": {
       "requestedBy": "[Requested by {gm}]"
@@ -114,6 +115,10 @@
       "interceptTidySheetsGroupRolls": {
         "label": "Intercept Tidy5e Sheets Group Rolls",
         "hint": "When enabled, group skill rolls from Tidy5e Sheets will use Flash Rolls' group roll system instead of the default chat prompt. Requires Tidy5e Sheets module."
+      },
+      "disableDialogInPlayerGroupRoll": {
+        "label": "Disable Player Side Dialog in Group Rolls",
+        "hint": "This prevents roll dialogs from popping up for each player when receiving group requests from GM. When enabled, players must click the roll button on the group roll chat card to roll manually. Only disables dialogs in group rolls."
       },
       "groupRollResultMode": {
         "label": "Group Roll Result Mode",
