@@ -3,6 +3,7 @@ import { MODULE_ID } from '../../constants/General.mjs';
 import { getActorData } from '../helpers/Helpers.mjs';
 import { SettingsUtil } from '../utils/SettingsUtil.mjs';
 import { getSettings } from '../../constants/Settings.mjs';
+import { GeneralUtil } from '../utils/GeneralUtil.mjs';
 
 /**
  * Manages token teleportation functionality
@@ -32,17 +33,17 @@ export class TokenTeleportManager {
    */
   static async teleportSelectedTokens(menu) {
     if (!game.user.isGM) {
-      ui.notifications.warn("Only GMs can teleport tokens");
+      GeneralUtil.notify('warn',"Only GMs can teleport tokens");
       return;
     }
 
     if (menu.selectedActors.size === 0) {
-      ui.notifications.warn(game.i18n.localize("FLASH_ROLLS.notifications.noTokensSelectedForTeleport"));
+      GeneralUtil.notify('warn',game.i18n.localize("FLASH_ROLLS.notifications.noTokensSelectedForTeleport"));
       return;
     }
 
     if (this._isTeleporting) {
-      ui.notifications.warn("Teleportation already in progress");
+      GeneralUtil.notify('warn',"Teleportation already in progress");
       return;
     }
 
@@ -71,7 +72,7 @@ export class TokenTeleportManager {
     }
 
     if (tokensToTeleport.length === 0) {
-      ui.notifications.warn(game.i18n.localize("FLASH_ROLLS.notifications.noTokensSelectedForTeleport"));
+      GeneralUtil.notify('warn',game.i18n.localize("FLASH_ROLLS.notifications.noTokensSelectedForTeleport"));
       return;
     }
 
@@ -124,7 +125,7 @@ export class TokenTeleportManager {
     LogUtil.log(`Teleport ready with ${tokenCount} tokens on scene: ${sceneName}`, this._tokenDataToTeleport);
 
     if (showNotification) {
-      ui.notifications.info(game.i18n.format("FLASH_ROLLS.notifications.teleportReady", {
+      GeneralUtil.notify('info',game.i18n.format("FLASH_ROLLS.notifications.teleportReady", {
         count: tokenCount
       }));
     }
@@ -206,7 +207,7 @@ export class TokenTeleportManager {
         event.stopPropagation();
         LogUtil.log("Cancelling teleport via ESC key");
         this._cleanup();
-        ui.notifications.info(game.i18n.localize("FLASH_ROLLS.notifications.teleportCancelled"));
+        GeneralUtil.notify('info',game.i18n.localize("FLASH_ROLLS.notifications.teleportCancelled"));
       }
     };
 
@@ -374,7 +375,7 @@ export class TokenTeleportManager {
 
     const tokens = this._getTokensFromData();
     if (tokens.length === 0) {
-      ui.notifications.warn("No valid tokens found for teleportation");
+      GeneralUtil.notify('warn',"No valid tokens found for teleportation");
       this._cleanup();
       return [];
     }
@@ -424,7 +425,7 @@ export class TokenTeleportManager {
       });
     }
 
-    await this._sourceScene.updateEmbeddedDocuments('Token', updates, { animate: false, teleport: true, forced: true });
+    await this._sourceScene.updateEmbeddedDocuments('Token', updates, { animate: false, teleport: true });
 
     if (animationPath || this._hasJB2A()) {
       await this._playArrivalAnimations(arrivalPositions);
@@ -457,7 +458,7 @@ export class TokenTeleportManager {
 
     const tokens = this._getTokensFromData();
     if (tokens.length === 0) {
-      ui.notifications.warn("No valid tokens found for teleportation");
+      GeneralUtil.notify('warn',"No valid tokens found for teleportation");
       this._cleanup();
       return [];
     }
@@ -541,7 +542,7 @@ export class TokenTeleportManager {
   static async _playTeleportAnimations(tokens, destination, center) {
     await this._playDepartureAnimations(tokens);
 
-    await new Promise(resolve => setTimeout(resolve, 300));
+    await new Promise(resolve => setTimeout(resolve, 100));
 
     const arrivalPositions = tokens.map(token => {
       const relativeX = token.document.x - center.x;
@@ -580,13 +581,13 @@ export class TokenTeleportManager {
           .file(animationPath)
           .atLocation({ x: centerX, y: centerY })
           .scale(0.5)
-          .fadeIn(100)
-          .fadeOut(200)
+          .fadeIn(50)
+          .fadeOut(100)
           .forUsers(game.users.map(u => u.id))
           .play();
       }
 
-      await new Promise(resolve => setTimeout(resolve, 800));
+      await new Promise(resolve => setTimeout(resolve, 400));
     }
   }
 
@@ -611,13 +612,13 @@ export class TokenTeleportManager {
           .file(animationPath)
           .atLocation(pos)
           .scale(0.5)
-          .fadeIn(100)
-          .fadeOut(200)
+          .fadeIn(50)
+          .fadeOut(100)
           .forUsers(game.users.map(u => u.id))
           .play();
       }
 
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 250));
     }
   }
 
@@ -765,7 +766,7 @@ export class TokenTeleportManager {
     event.stopPropagation();
     LogUtil.log("Cancelling teleport via right-click");
     this._cleanup();
-    ui.notifications.info(game.i18n.localize("FLASH_ROLLS.notifications.teleportCancelled"));
+    GeneralUtil.notify('info', game.i18n.localize("FLASH_ROLLS.notifications.teleportCancelled"));
   }
 
   /**
@@ -949,12 +950,24 @@ export class TokenTeleportManager {
    */
   static async teleportToDestination(actorIds, destinationScene, centerLocation) {
     if (!game.user.isGM) {
-      ui.notifications.warn("Only GMs can teleport tokens");
+      GeneralUtil.notify('warn',"Only GMs can teleport tokens");
       return;
     }
 
+    if (this._isPerformingTeleport) {
+      LogUtil.log('Teleport already in progress, queueing...');
+      await new Promise(resolve => {
+        const checkInterval = setInterval(() => {
+          if (!this._isPerformingTeleport) {
+            clearInterval(checkInterval);
+            resolve();
+          }
+        }, 50);
+      });
+    }
+
     if (!actorIds || actorIds.length === 0) {
-      ui.notifications.warn(game.i18n.localize("FLASH_ROLLS.notifications.noTokensSelectedForTeleport"));
+      GeneralUtil.notify('warn',game.i18n.localize("FLASH_ROLLS.notifications.noTokensSelectedForTeleport"));
       return;
     }
 
@@ -1006,12 +1019,12 @@ export class TokenTeleportManager {
         ui.notifications.error("No valid tokens found. Ensure you're using token IDs, not actor IDs.");
         return;
       } else {
-        ui.notifications.warn(`Some token IDs were invalid and skipped. ${tokensToTeleport.length} token(s) will be teleported.`);
+        GeneralUtil.notify('warn',`Some token IDs were invalid and skipped. ${tokensToTeleport.length} token(s) will be teleported.`);
       }
     }
 
     if (tokensToTeleport.length === 0) {
-      ui.notifications.warn(game.i18n.localize("FLASH_ROLLS.notifications.noTokensSelectedForTeleport"));
+      GeneralUtil.notify('warn',game.i18n.localize("FLASH_ROLLS.notifications.noTokensSelectedForTeleport"));
       return;
     }
 
@@ -1020,6 +1033,7 @@ export class TokenTeleportManager {
     this._sourceScene = canvas.scene;
     this._targetScene = targetScene;
     this._isTeleporting = true;
+    this._isPerformingTeleport = true;
 
     const snapped = targetScene.grid.getSnappedPoint(centerLocation, { mode: CONST.GRID_SNAPPING_MODES.CENTER });
 
@@ -1029,15 +1043,21 @@ export class TokenTeleportManager {
     const groupCenterY = boundingBox.y + boundingBox.height / 2;
 
     let teleportedTokenIds = [];
-    if (targetScene.id === canvas.scene.id) {
-      teleportedTokenIds = await this._performSameSceneTeleport(snapped, groupCenterX, groupCenterY, sourceGridSize);
-    } else {
-      await targetScene.view();
-      teleportedTokenIds = await this._performCrossSceneTeleport(snapped, groupCenterX, groupCenterY, sourceGridSize);
+    try {
+      if (targetScene.id === canvas.scene.id) {
+        teleportedTokenIds = await this._performSameSceneTeleport(snapped, groupCenterX, groupCenterY, sourceGridSize);
+      } else {
+        await targetScene.view();
+        teleportedTokenIds = await this._performCrossSceneTeleport(snapped, groupCenterX, groupCenterY, sourceGridSize);
+      }
+    } catch (error) {
+      LogUtil.error("Error during teleportation", [error]);
+      this._cleanup();
+      throw error;
     }
 
     if (teleportedTokenIds.length > 0) {
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 50));
 
       const teleportedTokens = teleportedTokenIds
         .map(id => canvas.tokens.get(id))
@@ -1049,7 +1069,7 @@ export class TokenTeleportManager {
 
         const avgX = teleportedTokens.reduce((sum, t) => sum + t.center.x, 0) / teleportedTokens.length;
         const avgY = teleportedTokens.reduce((sum, t) => sum + t.center.y, 0) / teleportedTokens.length;
-        await canvas.animatePan({ x: avgX, y: avgY, duration: 250 });
+        await canvas.animatePan({ x: avgX, y: avgY, duration: 150 });
       }
     }
   }

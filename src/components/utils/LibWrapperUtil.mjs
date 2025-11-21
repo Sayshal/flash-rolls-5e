@@ -2,6 +2,7 @@ import { MODULE_ID } from '../../constants/General.mjs';
 import { LogUtil } from './LogUtil.mjs';
 import { getSettings } from '../../constants/Settings.mjs';
 import { SettingsUtil } from './SettingsUtil.mjs';
+import { GeneralUtil } from './GeneralUtil.mjs';
 
 /**
  * Utility for managing libWrapper integrations
@@ -110,7 +111,7 @@ export class LibWrapperUtil {
     const alreadyShown = SettingsUtil.get(SETTINGS.libWrapperNotificationShown.tag);
 
     if (!alreadyShown) {
-      ui.notifications.info(
+      GeneralUtil.notify('info',
         game.i18n.localize('FLASH_ROLLS.notifications.libWrapperRecommended'),
         { permanent: true, console: false }
       );

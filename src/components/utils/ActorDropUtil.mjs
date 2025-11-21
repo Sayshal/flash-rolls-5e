@@ -1,6 +1,7 @@
 import { LogUtil } from '../utils/LogUtil.mjs';
 import { isPlayerOwned } from '../helpers/Helpers.mjs';
 import { ActorStatusManager } from '../managers/ActorStatusManager.mjs';
+import { GeneralUtil } from '../utils/GeneralUtil.mjs';
 
 /**
  * Handles drag and drop of actors from the directory into the Flash Token Bar menu
@@ -105,7 +106,7 @@ export class ActorDropUtil {
 
       const actor = await this.getActorFromDragData(dragData);
       if (!actor) {
-        ui.notifications.warn(game.i18n.localize("FLASH_ROLLS.notifications.actorNotFound") || "Actor not found");
+        GeneralUtil.notify('warn',game.i18n.localize("FLASH_ROLLS.notifications.actorNotFound") || "Actor not found");
         return;
       }
       
@@ -195,7 +196,7 @@ export class ActorDropUtil {
     const isFavorite = ActorStatusManager.isFavorite(actor);
     
     if (isFavorite && !isBlocked) {
-      ui.notifications.info(game.i18n.format("FLASH_ROLLS.notifications.actorAlreadyAdded", { 
+      GeneralUtil.notify('info',game.i18n.format("FLASH_ROLLS.notifications.actorAlreadyAdded", { 
         actor: actor.name 
       }) || `${actor.name} is already in the menu`);
       return;

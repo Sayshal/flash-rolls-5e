@@ -1,5 +1,6 @@
 import { LogUtil } from '../../utils/LogUtil.mjs';
 import { getActorData } from '../../helpers/Helpers.mjs';
+import { GeneralUtil } from '../../utils/GeneralUtil.mjs';
 
 /**
  * Handles status effects in the Roll Requests Menu
@@ -14,12 +15,12 @@ export class RollMenuStatusManager {
   static async applyStatusToSelected(statusEffectId, menu) {
     const statusEffect = CONFIG.statusEffects.find(effect => effect.id === statusEffectId);
     if (!statusEffect) {
-      ui.notifications.warn(`Status effect "${statusEffectId}" not found`);
+      GeneralUtil.notify('warn', `Status effect "${statusEffectId}" not found`);
       return;
     }
 
     if (menu.selectedActors.size === 0) {
-      ui.notifications.warn("No actors selected");
+      GeneralUtil.notify('warn', "No actors selected");
       return;
     }
 
@@ -37,7 +38,7 @@ export class RollMenuStatusManager {
 
     if (successCount > 0) {
       const statusName = statusEffect.name || statusEffect.label || statusEffect.id;
-      ui.notifications.info(`Applied "${statusName}" to ${successCount}/${totalCount} actors`);
+      GeneralUtil.notify('info', `Applied "${statusName}" to ${successCount}/${totalCount} actors`);
     }
   }
 
@@ -104,12 +105,12 @@ export class RollMenuStatusManager {
   static async removeStatusFromSelected(statusEffectId, menu) {
     const statusEffect = CONFIG.statusEffects.find(effect => effect.id === statusEffectId);
     if (!statusEffect) {
-      ui.notifications.warn(`Status effect "${statusEffectId}" not found`);
+      GeneralUtil.notify('warn', `Status effect "${statusEffectId}" not found`);
       return;
     }
 
     if (menu.selectedActors.size === 0) {
-      ui.notifications.warn("No actors selected");
+      GeneralUtil.notify('warn', "No actors selected");
       return;
     }
 
@@ -127,7 +128,7 @@ export class RollMenuStatusManager {
 
     if (successCount > 0) {
       const statusName = statusEffect.name || statusEffect.label || statusEffect.id;
-      ui.notifications.info(`Removed "${statusName}" from ${successCount}/${totalCount} actors`);
+      GeneralUtil.notify('info', `Removed "${statusName}" from ${successCount}/${totalCount} actors`);
     }
   }
 
@@ -177,12 +178,12 @@ export class RollMenuStatusManager {
   static async toggleStatusOnSelected(statusEffectId, menu) {
     const statusEffect = CONFIG.statusEffects.find(effect => effect.id === statusEffectId);
     if (!statusEffect) {
-      ui.notifications.warn(`Status effect "${statusEffectId}" not found`);
+      GeneralUtil.notify('warn', `Status effect "${statusEffectId}" not found`);
       return;
     }
 
     if (menu.selectedActors.size === 0) {
-      ui.notifications.warn("No actors selected");
+      GeneralUtil.notify('warn', "No actors selected");
       return;
     }
 

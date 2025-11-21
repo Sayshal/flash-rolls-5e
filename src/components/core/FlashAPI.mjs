@@ -15,6 +15,7 @@ import { SidebarController } from "../managers/SidebarController.mjs";
 import { TokenPlacementManager } from "../managers/TokenPlacementManager.mjs";
 import { TokenTeleportManager } from "../managers/TokenTeleportManager.mjs";
 import { TransformationManager } from "../managers/TransformationManager.mjs";
+import { GeneralUtil } from "../utils/GeneralUtil.mjs";
 
 /**
  * Public API for Flash Token Bar 5e that can be used by other modules
@@ -76,7 +77,7 @@ export class FlashAPI {
       const normalizedRequestType = rollOption.name;
       
       if (actorIds.length === 0) {
-        ui.notifications.warn(game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelected"));
+        GeneralUtil.notify('warn', game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelected"));
         return;
       }
       
@@ -112,7 +113,7 @@ export class FlashAPI {
       // Show notification for invalid actors but continue with valid ones
       if (invalidActorIds.length > 0) {
         const invalidIds = invalidActorIds.join(', ');
-        ui.notifications.info(game.i18n.format("FLASH_ROLLS.notifications.invalidActorIds", {
+        GeneralUtil.notify('info', game.i18n.format("FLASH_ROLLS.notifications.invalidActorIds", {
           numIds: invalidActorIds.length,
           invalidIds: invalidIds
         }));
@@ -221,7 +222,7 @@ export class FlashAPI {
       rollOption = rollRequestOptions.find(option => option.name === requestType);
     }
     if (!rollOption) {
-      ui.notifications.warn(`Unknown request type: ${requestType}`);
+      GeneralUtil.notify('warn', `Unknown request type: ${requestType}`);
       return;
     }
     
@@ -277,7 +278,7 @@ export class FlashAPI {
     };
     
     const macro = await Macro.create(macroDocumentData);
-    ui.notifications.info(game.i18n.format("FLASH_ROLLS.notifications.macroCreated", {
+    GeneralUtil.notify('info', game.i18n.format("FLASH_ROLLS.notifications.macroCreated", {
       macroName: macro.name
     }));
     
@@ -307,7 +308,7 @@ export class FlashAPI {
         LogUtil.log('Created Flash Token Bar macro folder', [folder]);
       } catch (error) {
         LogUtil.error('Failed to create Flash Token Bar macro folder:', [error]);
-        ui.notifications.warn('Failed to create Flash Token Bar macro folder. Macro will be created without folder organization.');
+        GeneralUtil.notify('warn', 'Failed to create Flash Token Bar macro folder. Macro will be created without folder organization.');
         return null;
       }
     }
@@ -612,7 +613,7 @@ export class FlashAPI {
   static async selectAllActors(tab) {
     const menu = RollRequestsMenu.getInstance();
     if (!menu || !menu.rendered) {
-      ui.notifications.warn(game.i18n.localize("FLASH_ROLLS.notifications.menuNotOpen"));
+      GeneralUtil.notify('warn', game.i18n.localize("FLASH_ROLLS.notifications.menuNotOpen"));
       return;
     }
 
@@ -637,7 +638,7 @@ export class FlashAPI {
   static async filterActors(filters) {
     const menu = RollRequestsMenu.getInstance();
     if (!menu || !menu.rendered) {
-      ui.notifications.warn(game.i18n.localize("FLASH_ROLLS.notifications.menuNotOpen"));
+      GeneralUtil.notify('warn', game.i18n.localize("FLASH_ROLLS.notifications.menuNotOpen"));
       return;
     }
 
@@ -764,7 +765,7 @@ export class FlashAPI {
       }
 
       if (totalRemoved > 0) {
-        ui.notifications.info(`Removed ${totalRemoved} status effects`);
+        GeneralUtil.notify('info', `Removed ${totalRemoved} status effects`);
       }
     } else if (menu && menu.rendered) {
       await RollMenuEventManager.removeAllStatusEffectsFromSelected(menu);
@@ -805,7 +806,7 @@ export class FlashAPI {
     } else if (menu && menu.rendered) {
       await RollMenuEventManager.createGroupFromSelected(menu);
     } else {
-      ui.notifications.warn(game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelected"));
+      GeneralUtil.notify('warn', game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelected"));
     }
   }
 
@@ -822,7 +823,7 @@ export class FlashAPI {
     } else if (menu && menu.rendered) {
       await TokenMovementManager.toggleMovementForSelected(menu);
     } else {
-      ui.notifications.warn(game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelected"));
+      GeneralUtil.notify('warn', game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelected"));
     }
   }
 
@@ -839,7 +840,7 @@ export class FlashAPI {
     } else if (menu && menu.rendered) {
       await RollMenuEventManager.openContestedRollDialog(menu);
     } else {
-      ui.notifications.warn(game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelected"));
+      GeneralUtil.notify('warn', game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelected"));
     }
   }
 
@@ -861,7 +862,7 @@ export class FlashAPI {
     } else if (menu && menu.rendered) {
       await TokenPlacementManager.placeTokensForSelectedActors(menu);
     } else {
-      ui.notifications.warn(game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelected"));
+      GeneralUtil.notify('warn', game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelected"));
     }
   }
 
@@ -884,7 +885,7 @@ export class FlashAPI {
     } else if (menu && menu.rendered) {
       await TokenTeleportManager.teleportSelectedTokens(menu);
     } else {
-      ui.notifications.warn(game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelected"));
+      GeneralUtil.notify('warn', game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelected"));
     }
   }
 
@@ -906,7 +907,7 @@ export class FlashAPI {
     } else if (menu && menu.rendered) {
       await TransformationManager.transformSelectedActors(menu);
     } else {
-      ui.notifications.warn(game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelected"));
+      GeneralUtil.notify('warn', game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelected"));
     }
   }
 
@@ -924,7 +925,7 @@ export class FlashAPI {
       const selectedActorIds = Array.from(menu.selectedActors);
       await TransformationManager.revertTransformation(selectedActorIds);
     } else {
-      ui.notifications.warn(game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelected"));
+      GeneralUtil.notify('warn', game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelected"));
     }
   }
 }

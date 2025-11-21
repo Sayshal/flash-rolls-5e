@@ -10,6 +10,7 @@ import { ChatMessageManager } from '../ChatMessageManager.mjs';
 import { RollMenuConfig } from './RollMenuConfig.mjs';
 import { OfflinePlayerManager } from './OfflinePlayerManager.mjs';
 import { RollMenuExecutor } from './RollMenuExecutor.mjs';
+import { GeneralUtil } from '../../utils/GeneralUtil.mjs';
 
 /**
  * Utility class for orchestrating roll requests and execution
@@ -314,8 +315,10 @@ export class RollMenuOrchestrator {
     
     switch(rollMethodName) {
       case ROLL_TYPES.CUSTOM:
-        rollKey = await RollMenuConfig.handleCustomRoll();
-        if (!rollKey) return null;
+        if (!rollKey) {
+          rollKey = await RollMenuConfig.handleCustomRoll();
+          if (!rollKey) return null;
+        }
         break;
         
       case ROLL_TYPES.INITIATIVE:
@@ -400,7 +403,7 @@ export class RollMenuOrchestrator {
     }
     
     if (actorsWithoutTokens.length > 0) {
-      ui.notifications.info(game.i18n.format("FLASH_ROLLS.notifications.actorsSkippedInitiative", {
+      GeneralUtil.notify('info', game.i18n.format("FLASH_ROLLS.notifications.actorsSkippedInitiative", {
         actors: actorsWithoutTokens.join(", ")
       }) || `Initiative skipped for actors without tokens: ${actorsWithoutTokens.join(", ")}`);
     }

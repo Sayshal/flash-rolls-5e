@@ -79,5 +79,11 @@
     <input type="number" name="tooltipAutoDismiss_value" class="range-value-input" value="{{tooltipAutoDismiss}}" />
     <p class="hint">{{{fields.tooltipAutoDismiss.hint}}}</p>
   </div>
+
+  <div class="form-group">
+    <label for="disableNotifications">{{fields.disableNotifications.label}}</label>
+    <input type="checkbox" name="disableNotifications" id="disableNotifications" {{#if disableNotifications}}checked{{/if}} />
+    <p class="hint">{{{fields.disableNotifications.hint}}}</p>
+  </div>
   
 </section>

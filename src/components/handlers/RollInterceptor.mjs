@@ -690,7 +690,7 @@ export class RollInterceptor {
     
     // Owner is active, send the request
     SocketUtil.execForUser('handleRollRequest', owner.id, requestData);
-    ui.notifications.info(game.i18n.format('FLASH_ROLLS.notifications.rollRequestSent', { 
+    GeneralUtil.notify('info',game.i18n.format('FLASH_ROLLS.notifications.rollRequestSent', { 
       player: owner?.name || 'Unknown',
       actor: actor.name || 'Unknown' 
     }));

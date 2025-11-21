@@ -137,7 +137,7 @@ export class HooksManager {
         const message = game.messages.get(messageId);
         if (message) {
           message.setFlag(MODULE_ID, 'npcHiddenOverride', true);
-          ui.notifications.info(game.i18n.localize("FLASH_ROLLS.notifications.npcHiddenFromPlayers"));
+          GeneralUtil.notify('info', game.i18n.localize("FLASH_ROLLS.notifications.npcHiddenFromPlayers"));
         }
       },
       condition: li => {
@@ -171,7 +171,7 @@ export class HooksManager {
           } else {
             message.unsetFlag(MODULE_ID, 'npcHiddenOverride');
           }
-          ui.notifications.info(game.i18n.localize("FLASH_ROLLS.notifications.npcVisibleToPlayers"));
+          GeneralUtil.notify('info', game.i18n.localize("FLASH_ROLLS.notifications.npcVisibleToPlayers"));
         }
       },
       condition: li => {
@@ -527,7 +527,7 @@ export class HooksManager {
     const targets = message.querySelectorAll("[data-target-uuid]");
     
     if (targets.length === 0) {
-      ui.notifications.warn(game.i18n.localize("FLASH_ROLLS.notifications.noTargetedTokens"));
+      GeneralUtil.notify('warn', game.i18n.localize("FLASH_ROLLS.notifications.noTargetedTokens"));
       return;
     }
 
@@ -660,7 +660,7 @@ export class HooksManager {
     LogUtil.log('Movement check result:', { isMovementAllowed, user: user.name, token: tokenDoc.name });
 
     if (!isMovementAllowed) {
-      ui.notifications.warn(game.i18n.localize("FLASH_ROLLS.notifications.movementRestricted"));
+      GeneralUtil.notify('warn', game.i18n.localize("FLASH_ROLLS.notifications.movementRestricted"));
       LogUtil.log('Movement blocked for token:', tokenDoc.name);
       return false;
     }

@@ -6,6 +6,7 @@ import { SettingsUtil } from '../../utils/SettingsUtil.mjs';
 import { MODULE_ID } from '../../../constants/General.mjs';
 import { TokenMovementManager } from '../../utils/TokenMovementManager.mjs';
 import { IconContextMenu } from '../../ui/IconContextMenu.mjs';
+import { GeneralUtil } from '../../utils/GeneralUtil.mjs';
 
 /**
  * Handles Roll Requests Menu event listeners
@@ -736,7 +737,7 @@ export class RollMenuEventManager {
         game.user.targets.forEach(token => {
           token.setTarget(false, { releaseOthers: false });
         });
-        ui.notifications.info(`Cleared ${targetCount} target(s)`);
+        GeneralUtil.notify('info', `Cleared ${targetCount} target(s)`);
       }
     }
   }
@@ -822,7 +823,7 @@ export class RollMenuEventManager {
    */
   static async removeAllStatusEffectsFromSelected(menu) {
     if (menu.selectedActors.size === 0) {
-      ui.notifications.warn("No actors selected");
+      GeneralUtil.notify('warn', "No actors selected");
       return;
     }
 
@@ -851,9 +852,9 @@ export class RollMenuEventManager {
     }
     
     if (totalRemoved > 0) {
-      ui.notifications.info(`Removed ${totalRemoved} status effects from ${totalActors} actor(s)`);
+      GeneralUtil.notify('info', `Removed ${totalRemoved} status effects from ${totalActors} actor(s)`);
     } else {
-      ui.notifications.info(`No status effects to remove from selected actors`);
+      GeneralUtil.notify('info', `No status effects to remove from selected actors`);
     }
   }
 
@@ -1158,7 +1159,7 @@ export class RollMenuEventManager {
    */
   static async createGroupFromSelected(menu) {
     if (menu.selectedActors.size === 0) {
-      ui.notifications.warn("No actors selected");
+      GeneralUtil.notify('warn', "No actors selected");
       return;
     }
 
@@ -1215,7 +1216,7 @@ export class RollMenuEventManager {
     }
 
     if (actorGroups.size === 0) {
-      ui.notifications.warn("No valid actors found");
+      GeneralUtil.notify('warn', "No valid actors found");
       return;
     }
 
@@ -1270,7 +1271,7 @@ export class RollMenuEventManager {
         const memberSummary = Array.from(actorGroups.values()).map(({ actor, count }) =>
           count > 1 ? `${actor.name} (x${count})` : actor.name
         ).join(", ");
-        ui.notifications.info(`Created ${actorType} "${newActor.name}" (${totalSelectedCount} tokens, ${actorGroups.size} unique: ${memberSummary})`);
+        GeneralUtil.notify('info', `Created ${actorType} "${newActor.name}" (${totalSelectedCount} tokens, ${actorGroups.size} unique: ${memberSummary})`);
 
         LogUtil.log(`createGroupFromSelected - Created ${actorType}:`, {
           newActor,
@@ -1289,7 +1290,7 @@ export class RollMenuEventManager {
       }
     } catch (error) {
       LogUtil.error("Failed to create group/encounter actor:", error);
-      ui.notifications.warn(`Failed to create ${actorType}: ${error.message}`);
+      GeneralUtil.notify('warn', `Failed to create ${actorType}: ${error.message}`);
     }
   }
 
@@ -1309,7 +1310,7 @@ export class RollMenuEventManager {
     const menuToUse = menu || this.activeMenu;
 
     if (!menuToUse || menuToUse.selectedActors.size === 0) {
-      ui.notifications.warn(game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelected"));
+      GeneralUtil.notify('warn', game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelected"));
       return;
     }
 
@@ -1330,12 +1331,12 @@ export class RollMenuEventManager {
     }
 
     if (actors.length === 0) {
-      ui.notifications.warn(game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelected"));
+      GeneralUtil.notify('warn', game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelected"));
       return;
     }
 
     if (actors.length < 2) {
-      ui.notifications.warn(game.i18n.localize("FLASH_ROLLS.notifications.twoActorsRequired"));
+      GeneralUtil.notify('warn', game.i18n.localize("FLASH_ROLLS.notifications.twoActorsRequired"));
       return;
     }
 

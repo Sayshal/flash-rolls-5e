@@ -2,6 +2,18 @@ import { MODULE_ID, ROLL_TYPES, ROLL_REQUEST_OPTIONS } from '../../constants/Gen
 import { LogUtil } from '../utils/LogUtil.mjs';
 import { FlashAPI } from '../core/FlashAPI.mjs';
 import { getActorData } from '../helpers/Helpers.mjs';
+import { TokenTeleportManager } from '../managers/TokenTeleportManager.mjs';
+import { GeneralUtil } from '../utils/GeneralUtil.mjs';
+
+const DICE_OPTIONS = {
+  'd4': 'd4',
+  'd6': 'd6',
+  'd8': 'd8',
+  'd10': 'd10',
+  'd12': 'd12',
+  'd20': 'd20',
+  'd100': 'd100'
+};
 
 /**
  * Integration with Monk's Active Tiles module
@@ -12,7 +24,6 @@ export class MonksActiveTilesIntegration {
   static _pendingGroupRolls = new Map();
 
   /**
-   * Initialize the integration with Monk's Active Tiles
    * Registers tile group and single unified roll request action
    */
   static initialize() {
@@ -28,12 +39,10 @@ export class MonksActiveTilesIntegration {
       this._registerRequestRollAction(app);
       this._registerHealAllAction(app);
       this._registerKillAllAction(app);
-      this._registerOpenSheetsAction(app);
+      // this._registerOpenSheetsAction(app);
       this._registerToggleMovementAction(app);
       this._registerTeleportTokensAction(app);
       this._registerTransformActorsAction(app);
-
-      LogUtil.log('MonksActiveTilesIntegration: Flash Rolls actions registered successfully');
     });
   }
 
@@ -42,7 +51,7 @@ export class MonksActiveTilesIntegration {
    */
   static _registerRequestRollAction(app) {
     app.registerTileAction(MODULE_ID, 'request-roll', {
-      name: 'Request Roll',
+      name: game.i18n.localize('FLASH_ROLLS.ui.dialogs.matt.actions.requestRoll'),
       group: MODULE_ID,
       ctrls: [
         {
@@ -78,16 +87,7 @@ export class MonksActiveTilesIntegration {
               rollKeySelect.empty();
 
               if (requestType === ROLL_TYPES.CUSTOM) {
-                const diceOptions = {
-                  'd4': 'd4',
-                  'd6': 'd6',
-                  'd8': 'd8',
-                  'd10': 'd10',
-                  'd12': 'd12',
-                  'd20': 'd20',
-                  'd100': 'd100'
-                };
-                for (const [key, label] of Object.entries(diceOptions)) {
+                for (const [key, label] of Object.entries(DICE_OPTIONS)) {
                   rollKeySelect.append($('<option>', { value: key, text: label }));
                 }
               } else if (option && option.subList) {
@@ -126,15 +126,7 @@ export class MonksActiveTilesIntegration {
             if (!requestType) return {};
 
             if (requestType === ROLL_TYPES.CUSTOM) {
-              return {
-                'd4': 'd4',
-                'd6': 'd6',
-                'd8': 'd8',
-                'd10': 'd10',
-                'd12': 'd12',
-                'd20': 'd20',
-                'd100': 'd100'
-              };
+              return DICE_OPTIONS;
             }
 
             const option = Object.values(ROLL_REQUEST_OPTIONS).find(opt => opt.name === requestType);
@@ -206,6 +198,11 @@ export class MonksActiveTilesIntegration {
       fn: async (args) => {
         const { action, tokens, tile } = args;
 
+        if (TokenTeleportManager._isTeleporting) {
+          LogUtil.log('MATT Action - Skipping action because teleportation is in progress');
+          return {};
+        }
+
         let entities = tokens;
 
         if (action.data?.entity?.id === 'within' && tile && typeof tile.entitiesWithin === 'function') {
@@ -213,12 +210,21 @@ export class MonksActiveTilesIntegration {
           if (Array.isArray(withinEntities) && withinEntities.length > 0) {
             entities = withinEntities;
           }
+        } else if (action.data?.entity?.id === 'players') {
+          entities = canvas.tokens.placeables.filter(t => t.actor?.hasPlayerOwner);
+        } else if (action.data?.entity?.id && typeof action.data.entity.id === 'string' &&
+                   !['tokens', 'within', 'players', 'previous'].includes(action.data.entity.id)) {
+          const entityId = action.data.entity.id;
+          const resolvedEntity = await fromUuid(entityId);
+          if (resolvedEntity) {
+            entities = [resolvedEntity];
+          }
         }
 
         const actorIds = this._resolveActorIds(null, entities);
 
         if (!actorIds || actorIds.length === 0) {
-          ui.notifications.warn(game.i18n.localize('FLASH_ROLLS.notifications.noActorsSelected'));
+          GeneralUtil.notify('warn',game.i18n.localize('FLASH_ROLLS.ui.dialogs.matt.warnings.noActorsFound'));
           return {};
         }
 
@@ -231,7 +237,6 @@ export class MonksActiveTilesIntegration {
               pending.actorIds.push(actorId);
             }
           }
-          LogUtil.log("MonksActiveTilesIntegration - Added actors to pending group roll", [groupRollId, pending.actorIds]);
           return {};
         }
 
@@ -252,7 +257,7 @@ export class MonksActiveTilesIntegration {
           dc: action.data.dc,
           advantage: action.data.advantage === 'advantage' ? true : false,
           disadvantage: action.data.advantage === 'disadvantage' ? true : false,
-          skipRollDialog: action.data.skipRollDialog || false,
+          skipRollDialog: action.data.skipRollDialog === true,
           sendAsRequest: true,
           groupRollId: groupRollId
         };
@@ -264,9 +269,6 @@ export class MonksActiveTilesIntegration {
         if (action.data.bonus) {
           options.situationalBonus = action.data.bonus;
         }
-
-        LogUtil.log("MonksActiveTilesIntegration - Requesting group roll", [groupRollId, pending.actorIds, options]);
-
         await FlashAPI.requestRoll(options);
 
         return {};
@@ -297,11 +299,11 @@ export class MonksActiveTilesIntegration {
   }
 
   /**
-   * Register Heal All tile action
+   * Register Full Heal tile action
    */
   static _registerHealAllAction(app) {
     app.registerTileAction(MODULE_ID, 'heal-all', {
-      name: 'Heal All',
+      name: game.i18n.localize('FLASH_ROLLS.ui.dialogs.matt.actions.healAll'),
       group: MODULE_ID,
       ctrls: [
         {
@@ -319,6 +321,11 @@ export class MonksActiveTilesIntegration {
       fn: async (args) => {
         const { action, tokens, tile } = args;
 
+        if (TokenTeleportManager._isTeleporting) {
+          LogUtil.log('MATT Action - Skipping action because teleportation is in progress');
+          return {};
+        }
+
         let entities = tokens;
 
         if (action.data?.entity?.id === 'within' && tile && typeof tile.entitiesWithin === 'function') {
@@ -326,12 +333,21 @@ export class MonksActiveTilesIntegration {
           if (Array.isArray(withinEntities) && withinEntities.length > 0) {
             entities = withinEntities;
           }
+        } else if (action.data?.entity?.id === 'players') {
+          entities = canvas.tokens.placeables.filter(t => t.actor?.hasPlayerOwner);
+        } else if (action.data?.entity?.id && typeof action.data.entity.id === 'string' &&
+                   !['tokens', 'within', 'players', 'previous'].includes(action.data.entity.id)) {
+          const entityId = action.data.entity.id;
+          const resolvedEntity = await fromUuid(entityId);
+          if (resolvedEntity) {
+            entities = [resolvedEntity];
+          }
         }
 
         const actorIds = this._resolveActorIds(null, entities);
 
         if (!actorIds || actorIds.length === 0) {
-          ui.notifications.warn(game.i18n.localize('FLASH_ROLLS.notifications.noActorsSelected'));
+          GeneralUtil.notify('warn',game.i18n.localize('FLASH_ROLLS.ui.dialogs.matt.warnings.noActorsFound'));
           return {};
         }
 
@@ -339,7 +355,7 @@ export class MonksActiveTilesIntegration {
         return {};
       },
       content: async (trigger, action) => {
-        return `<div>Heal all actors</div>`;
+        return `<div>${game.i18n.localize('FLASH_ROLLS.ui.dialogs.matt.content.healAll')}</div>`;
       }
     });
   }
@@ -349,7 +365,7 @@ export class MonksActiveTilesIntegration {
    */
   static _registerKillAllAction(app) {
     app.registerTileAction(MODULE_ID, 'kill-all', {
-      name: 'Kill All',
+      name: game.i18n.localize('FLASH_ROLLS.ui.dialogs.matt.actions.killAll'),
       group: MODULE_ID,
       ctrls: [
         {
@@ -367,6 +383,11 @@ export class MonksActiveTilesIntegration {
       fn: async (args) => {
         const { action, tokens, tile } = args;
 
+        if (TokenTeleportManager._isTeleporting) {
+          LogUtil.log('MATT Action - Skipping action because teleportation is in progress');
+          return {};
+        }
+
         let entities = tokens;
 
         if (action.data?.entity?.id === 'within' && tile && typeof tile.entitiesWithin === 'function') {
@@ -374,12 +395,21 @@ export class MonksActiveTilesIntegration {
           if (Array.isArray(withinEntities) && withinEntities.length > 0) {
             entities = withinEntities;
           }
+        } else if (action.data?.entity?.id === 'players') {
+          entities = canvas.tokens.placeables.filter(t => t.actor?.hasPlayerOwner);
+        } else if (action.data?.entity?.id && typeof action.data.entity.id === 'string' &&
+                   !['tokens', 'within', 'players', 'previous'].includes(action.data.entity.id)) {
+          const entityId = action.data.entity.id;
+          const resolvedEntity = await fromUuid(entityId);
+          if (resolvedEntity) {
+            entities = [resolvedEntity];
+          }
         }
 
         const actorIds = this._resolveActorIds(null, entities);
 
         if (!actorIds || actorIds.length === 0) {
-          ui.notifications.warn(game.i18n.localize('FLASH_ROLLS.notifications.noActorsSelected'));
+          GeneralUtil.notify('warn',game.i18n.localize('FLASH_ROLLS.ui.dialogs.matt.warnings.noActorsFound'));
           return {};
         }
 
@@ -387,7 +417,7 @@ export class MonksActiveTilesIntegration {
         return {};
       },
       content: async (trigger, action) => {
-        return `<div>Kill all actors</div>`;
+        return `<div>${game.i18n.localize('FLASH_ROLLS.ui.dialogs.matt.content.killAll')}</div>`;
       }
     });
   }
@@ -397,7 +427,7 @@ export class MonksActiveTilesIntegration {
    */
   static _registerOpenSheetsAction(app) {
     app.registerTileAction(MODULE_ID, 'open-sheets', {
-      name: 'Open Character Sheets',
+      name: game.i18n.localize('FLASH_ROLLS.ui.dialogs.matt.actions.openSheets'),
       group: MODULE_ID,
       ctrls: [
         {
@@ -415,6 +445,11 @@ export class MonksActiveTilesIntegration {
       fn: async (args) => {
         const { action, tokens, tile } = args;
 
+        if (TokenTeleportManager._isTeleporting) {
+          LogUtil.log('MATT Action - Skipping action because teleportation is in progress');
+          return {};
+        }
+
         let entities = tokens;
 
         if (action.data?.entity?.id === 'within' && tile && typeof tile.entitiesWithin === 'function') {
@@ -422,12 +457,21 @@ export class MonksActiveTilesIntegration {
           if (Array.isArray(withinEntities) && withinEntities.length > 0) {
             entities = withinEntities;
           }
+        } else if (action.data?.entity?.id === 'players') {
+          entities = canvas.tokens.placeables.filter(t => t.actor?.hasPlayerOwner);
+        } else if (action.data?.entity?.id && typeof action.data.entity.id === 'string' &&
+                   !['tokens', 'within', 'players', 'previous'].includes(action.data.entity.id)) {
+          const entityId = action.data.entity.id;
+          const resolvedEntity = await fromUuid(entityId);
+          if (resolvedEntity) {
+            entities = [resolvedEntity];
+          }
         }
 
         const actorIds = this._resolveActorIds(null, entities);
 
         if (!actorIds || actorIds.length === 0) {
-          ui.notifications.warn(game.i18n.localize('FLASH_ROLLS.notifications.noActorsSelected'));
+          GeneralUtil.notify('warn',game.i18n.localize('FLASH_ROLLS.ui.dialogs.matt.warnings.noActorsFound'));
           return {};
         }
 
@@ -435,7 +479,7 @@ export class MonksActiveTilesIntegration {
         return {};
       },
       content: async (trigger, action) => {
-        return `<div>Open character sheets</div>`;
+        return `<div>${game.i18n.localize('FLASH_ROLLS.ui.dialogs.matt.content.openSheets')}</div>`;
       }
     });
   }
@@ -445,7 +489,7 @@ export class MonksActiveTilesIntegration {
    */
   static _registerToggleMovementAction(app) {
     app.registerTileAction(MODULE_ID, 'toggle-movement', {
-      name: 'Toggle Movement',
+      name: game.i18n.localize('FLASH_ROLLS.ui.dialogs.matt.actions.toggleMovement'),
       group: MODULE_ID,
       ctrls: [
         {
@@ -463,6 +507,11 @@ export class MonksActiveTilesIntegration {
       fn: async (args) => {
         const { action, tokens, tile } = args;
 
+        if (TokenTeleportManager._isTeleporting) {
+          LogUtil.log('MATT Action - Skipping action because teleportation is in progress');
+          return {};
+        }
+
         let entities = tokens;
 
         if (action.data?.entity?.id === 'within' && tile && typeof tile.entitiesWithin === 'function') {
@@ -470,12 +519,21 @@ export class MonksActiveTilesIntegration {
           if (Array.isArray(withinEntities) && withinEntities.length > 0) {
             entities = withinEntities;
           }
+        } else if (action.data?.entity?.id === 'players') {
+          entities = canvas.tokens.placeables.filter(t => t.actor?.hasPlayerOwner);
+        } else if (action.data?.entity?.id && typeof action.data.entity.id === 'string' &&
+                   !['tokens', 'within', 'players', 'previous'].includes(action.data.entity.id)) {
+          const entityId = action.data.entity.id;
+          const resolvedEntity = await fromUuid(entityId);
+          if (resolvedEntity) {
+            entities = [resolvedEntity];
+          }
         }
 
         const actorIds = this._resolveActorIds(null, entities);
 
         if (!actorIds || actorIds.length === 0) {
-          ui.notifications.warn(game.i18n.localize('FLASH_ROLLS.notifications.noActorsSelected'));
+          GeneralUtil.notify('warn',game.i18n.localize('FLASH_ROLLS.ui.dialogs.matt.warnings.noActorsFound'));
           return {};
         }
 
@@ -483,7 +541,7 @@ export class MonksActiveTilesIntegration {
         return {};
       },
       content: async (trigger, action) => {
-        return `<div>Toggle movement</div>`;
+        return `<div>${game.i18n.localize('FLASH_ROLLS.ui.dialogs.matt.content.toggleMovement')}</div>`;
       }
     });
   }
@@ -493,7 +551,7 @@ export class MonksActiveTilesIntegration {
    */
   static _registerTeleportTokensAction(app) {
     app.registerTileAction(MODULE_ID, 'teleport-tokens', {
-      name: 'Teleport Tokens',
+      name: game.i18n.localize('FLASH_ROLLS.ui.dialogs.matt.actions.teleportTokens'),
       group: MODULE_ID,
       ctrls: [
         {
@@ -512,11 +570,12 @@ export class MonksActiveTilesIntegration {
           name: 'Select Coordinates',
           type: 'select',
           subtype: 'either',
-          options: { show: ['token', 'previous', 'tagger', 'origin'] },
+          options: { show: ['either', 'tile', 'previous'] },
           restrict: (entity, document) => {
-            return (entity instanceof foundry.canvas.placeables.Tile && document.parent.id == entity.parent.id) || document.parent.id == entity.id;
+            return (entity instanceof foundry.canvas.placeables.Tile || entity instanceof Scene);
           },
-          required: true
+          required: true,
+          placeholder: 'Select a location'
         },
         {
           id: 'snap',
@@ -526,20 +585,39 @@ export class MonksActiveTilesIntegration {
         }
       ],
       fn: async (args) => {
-        const { action, tokens, tile } = args;
+        const { action, tokens, tile, value } = args;
 
-        let entities = tokens;
+        LogUtil.log('MATT Teleport - Initial args:', [{
+          actionEntityId: action.data?.entity?.id,
+          tokensCount: tokens?.length,
+          valueTokensCount: value?.tokens?.length
+        }]);
+
+        let entities = [];
 
         if (action.data?.entity?.id === 'within' && tile && typeof tile.entitiesWithin === 'function') {
           const withinEntities = tile.entitiesWithin({ collection: 'tokens' });
-          if (Array.isArray(withinEntities) && withinEntities.length > 0) {
-            entities = withinEntities;
+
+          const tileObject = tile.document ? tile : canvas.tiles.get(tile.id);
+          entities = this._filterTokensWithinTileBounds(withinEntities, tileObject);
+        } else if (action.data?.entity?.id === 'players') {
+          entities = canvas.tokens.placeables.filter(t => t.actor?.hasPlayerOwner);
+        } else if (action.data?.entity?.id && typeof action.data.entity.id === 'string' &&
+                   !['tokens', 'within', 'players', 'previous'].includes(action.data.entity.id)) {
+          const entityId = action.data.entity.id;
+          const resolvedEntity = await fromUuid(entityId);
+          if (resolvedEntity) {
+            entities = [resolvedEntity];
           }
+        } else if (value?.tokens && Array.isArray(value.tokens) && value.tokens.length > 0) {
+          entities = value.tokens;
+        } else if (tokens && Array.isArray(tokens) && tokens.length > 0) {
+          entities = tokens;
         }
 
         const tokenIds = [];
         for (const entity of entities) {
-          if (entity instanceof Token || entity instanceof TokenDocument) {
+          if (entity instanceof foundry.canvas.placeables.Token || entity instanceof TokenDocument) {
             tokenIds.push(entity.id);
           } else if (entity?.id) {
             tokenIds.push(entity.id);
@@ -547,14 +625,96 @@ export class MonksActiveTilesIntegration {
         }
 
         if (!tokenIds || tokenIds.length === 0) {
-          ui.notifications.warn(game.i18n.localize('FLASH_ROLLS.notifications.noActorsSelected'));
+          GeneralUtil.notify('warn',game.i18n.localize('FLASH_ROLLS.ui.dialogs.matt.warnings.noActorsFound'));
           return {};
         }
 
-        const snap = action.data?.snap ?? true;
-        const location = action.data?.location;
+        const locationData = action.data?.location;
 
-        await FlashAPI.teleportTokens({ tokenIds, snap, location });
+        if (!locationData) {
+          await FlashAPI.teleportTokens(tokenIds);
+          return {};
+        }
+
+        let centerLocation;
+        let sceneId = locationData.sceneId || null;
+        let selectedTile = null;
+
+        if (value?.stopdata?.tile) {
+          selectedTile = value.stopdata.tile;
+          sceneId = selectedTile.document?.parent?.id || canvas.scene.id;
+        } else if (locationData.id && typeof locationData.id === 'string' && !locationData.x && !locationData.y) {
+          const entity = await fromUuid(locationData.id);
+          if (entity instanceof foundry.canvas.placeables.Tile) {
+            selectedTile = entity;
+            sceneId = entity.document.parent?.id || canvas.scene.id;
+          }
+        }
+
+        if (!selectedTile) {
+          if (locationData.x !== undefined && locationData.y !== undefined) {
+            centerLocation = { x: locationData.x, y: locationData.y };
+          } else if (value?.location) {
+            centerLocation = { x: value.location.x, y: value.location.y };
+            if (value.location.sceneId) {
+              sceneId = value.location.sceneId;
+            }
+          }
+
+          if (!centerLocation) {
+            LogUtil.warn('No valid location coordinates found, entering interactive mode', locationData);
+            await FlashAPI.teleportTokens(tokenIds);
+            return {};
+          }
+        }
+
+        const targetScene = sceneId ? game.scenes.get(sceneId) : canvas.scene;
+        if (!targetScene) {
+          ui.notifications.error(`Scene not found: ${sceneId}`);
+          return {};
+        }
+
+        const shouldSnap = action.data?.snap !== false;
+
+        if (selectedTile) {
+          const tileDoc = selectedTile.document;
+          const tileBounds = {
+            x: tileDoc.x,
+            y: tileDoc.y,
+            width: tileDoc.width,
+            height: tileDoc.height
+          };
+
+          const tokenData = [];
+          for (const tokenId of tokenIds) {
+            const token = canvas.tokens.get(tokenId);
+            if (!token) continue;
+
+            const tokenWidth = token.document.width * targetScene.grid.size;
+            const tokenHeight = token.document.height * targetScene.grid.size;
+
+            const maxX = tileBounds.x + tileBounds.width - tokenWidth;
+            const maxY = tileBounds.y + tileBounds.height - tokenHeight;
+
+            const randomX = tileBounds.x + Math.random() * (maxX - tileBounds.x);
+            const randomY = tileBounds.y + Math.random() * (maxY - tileBounds.y);
+
+            let finalLocation = { x: randomX, y: randomY };
+
+            if (shouldSnap) {
+              finalLocation = targetScene.grid.getSnappedPoint(finalLocation, { mode: CONST.GRID_SNAPPING_MODES.CENTER });
+            }
+
+            tokenData.push({ tokenId, finalLocation });
+          }
+
+          for (const { tokenId, finalLocation } of tokenData) {
+            await FlashAPI.teleportTokens([tokenId], targetScene, finalLocation);
+          }
+        } else {
+          await FlashAPI.teleportTokens(tokenIds, targetScene, centerLocation);
+        }
+
         return {};
       },
       content: async (trigger, action) => {
@@ -569,8 +729,20 @@ export class MonksActiveTilesIntegration {
           locationText = location.id;
         }
 
+        let sceneText = '';
+        if (location?.sceneId && location.sceneId !== canvas.scene?.id) {
+          const scene = game.scenes.get(location.sceneId);
+          sceneText = scene ? ` in <span class="value">${scene.name}</span>` : ' in Unknown Scene';
+        }
+
         const snap = action.data?.snap ?? true;
-        return `<div>Teleport tokens to <span class="value">${locationText}</span>${snap ? ' (snap to grid)' : ''}</div>`;
+        const snapText = snap ? ' (snap to grid)' : '';
+
+        return `<div>${game.i18n.format('FLASH_ROLLS.ui.dialogs.matt.content.teleport', {
+          location: `<span class="value">${locationText}</span>`,
+          scene: sceneText,
+          snap: snapText
+        })}</div>`;
       }
     });
   }
@@ -580,12 +752,12 @@ export class MonksActiveTilesIntegration {
    */
   static _registerTransformActorsAction(app) {
     app.registerTileAction(MODULE_ID, 'transform-actors', {
-      name: game.i18n.localize('FLASH_ROLLS.ui.dialogs.transformation.matt.action'),
+      name: game.i18n.localize('FLASH_ROLLS.ui.dialogs.matt.actions.transformActors'),
       group: MODULE_ID,
       ctrls: [
         {
           id: 'entity',
-          name: game.i18n.localize('FLASH_ROLLS.ui.dialogs.transformation.matt.actors'),
+          name: game.i18n.localize('FLASH_ROLLS.ui.dialogs.matt.transform.actors'),
           type: 'select',
           subtype: 'entity',
           options: { show: ['token', 'within', 'players', 'previous'] },
@@ -596,7 +768,7 @@ export class MonksActiveTilesIntegration {
         },
         {
           id: 'targetActorUuid',
-          name: game.i18n.localize('FLASH_ROLLS.ui.dialogs.transformation.matt.targetCreature'),
+          name: game.i18n.localize('FLASH_ROLLS.ui.dialogs.matt.transform.targetCreature'),
           type: 'select',
           subtype: 'entity',
           options: { show: ['actor'] },
@@ -604,11 +776,11 @@ export class MonksActiveTilesIntegration {
             return entity instanceof Actor;
           },
           required: false,
-          help: game.i18n.localize('FLASH_ROLLS.ui.dialogs.transformation.matt.targetCreatureHelp')
+          help: 'Leave empty to show selection dialog'
         },
         {
           id: 'preset',
-          name: game.i18n.localize('FLASH_ROLLS.ui.dialogs.transformation.matt.preset'),
+          name: game.i18n.localize('FLASH_ROLLS.ui.dialogs.matt.transform.preset'),
           type: 'list',
           list: () => {
             return {
@@ -622,13 +794,18 @@ export class MonksActiveTilesIntegration {
         },
         {
           id: 'revert',
-          name: game.i18n.localize('FLASH_ROLLS.ui.dialogs.transformation.matt.revert'),
+          name: game.i18n.localize('FLASH_ROLLS.ui.dialogs.matt.transform.revert'),
           type: 'checkbox',
           defvalue: false
         }
       ],
       fn: async (args) => {
         const { action, tokens, tile } = args;
+
+        if (TokenTeleportManager._isTeleporting) {
+          LogUtil.log('MATT Action - Skipping action because teleportation is in progress');
+          return {};
+        }
 
         let entities = tokens;
 
@@ -637,37 +814,54 @@ export class MonksActiveTilesIntegration {
           if (Array.isArray(withinEntities) && withinEntities.length > 0) {
             entities = withinEntities;
           }
+        } else if (action.data?.entity?.id === 'players') {
+          entities = canvas.tokens.placeables.filter(t => t.actor?.hasPlayerOwner);
+        } else if (action.data?.entity?.id && typeof action.data.entity.id === 'string' &&
+                   !['tokens', 'within', 'players', 'previous'].includes(action.data.entity.id)) {
+          const entityId = action.data.entity.id;
+          const resolvedEntity = await fromUuid(entityId);
+          if (resolvedEntity) {
+            entities = [resolvedEntity];
+          }
         }
 
-        const actorIds = this._resolveActorIds(null, entities);
+        const tokenDocs = [];
+        for (const entity of entities) {
+          let tokenDoc = null;
+          if (entity instanceof TokenDocument) {
+            tokenDoc = entity;
+          } else if (entity instanceof foundry.canvas.placeables.Token) {
+            tokenDoc = entity.document;
+          } else if (entity instanceof Actor) {
+            const token = canvas.tokens.placeables.find(t => t.actor?.id === entity.id);
+            if (token) tokenDoc = token.document;
+          }
+          if (tokenDoc && !tokenDocs.includes(tokenDoc)) {
+            tokenDocs.push(tokenDoc);
+          }
+        }
 
-        if (!actorIds || actorIds.length === 0) {
-          ui.notifications.warn(game.i18n.localize('FLASH_ROLLS.notifications.noActorsSelected'));
+        if (!tokenDocs || tokenDocs.length === 0) {
+          GeneralUtil.notify('warn',game.i18n.localize('FLASH_ROLLS.ui.dialogs.matt.warnings.noActorsFound'));
           return {};
         }
 
-        const actors = actorIds.map(id => getActorData(id)).filter(a => a);
+        const actors = tokenDocs.map(td => td.actor).filter(a => a);
 
         if (action.data?.revert) {
-          const transformedActorIds = actors
-            .filter(a => a.getFlag("dnd5e", "isPolymorphed"))
-            .map(a => {
-              const token = canvas.tokens.placeables.find(t => t.actor === a);
-              return token ? token.document.id : a.id;
-            });
+          const transformedTokenDocIds = tokenDocs
+            .filter(td => td.actor?.getFlag("dnd5e", "isPolymorphed"))
+            .map(td => td.id);
 
-          if (transformedActorIds.length > 0) {
-            await FlashAPI.revertTransformation(transformedActorIds);
+          if (transformedTokenDocIds.length > 0) {
+            await FlashAPI.revertTransformation(transformedTokenDocIds);
           }
         } else {
-          const nonTransformedActorIds = actors
-            .filter(a => !a.getFlag("dnd5e", "isPolymorphed"))
-            .map(a => {
-              const token = canvas.tokens.placeables.find(t => t.actor === a);
-              return token ? token.document.id : a.id;
-            });
+          const nonTransformedTokenDocIds = tokenDocs
+            .filter(td => !td.actor?.getFlag("dnd5e", "isPolymorphed"))
+            .map(td => td.id);
 
-          if (nonTransformedActorIds.length === 0) {
+          if (nonTransformedTokenDocIds.length === 0) {
             return {};
           }
 
@@ -683,7 +877,7 @@ export class MonksActiveTilesIntegration {
           const preset = action.data?.preset || 'polymorph';
           const skipRevertCheck = true;
 
-          await FlashAPI.transformActors(nonTransformedActorIds, targetUuid, { preset, skipRevertCheck });
+          await FlashAPI.transformActors(nonTransformedTokenDocIds, targetUuid, { preset, skipRevertCheck });
         }
 
         return {};
@@ -692,7 +886,7 @@ export class MonksActiveTilesIntegration {
         const isRevert = action.data?.revert;
 
         if (isRevert) {
-          return `<div>Revert Transformation</div>`;
+          return `<div>${game.i18n.localize('FLASH_ROLLS.ui.dialogs.matt.content.revertTransformation')}</div>`;
         }
 
         let targetUuid = null;
@@ -716,8 +910,50 @@ export class MonksActiveTilesIntegration {
           }
         }
 
-        return `<div>Transform to <span class="value">${targetText}</span> (${preset})</div>`;
+        return `<div>${game.i18n.format('FLASH_ROLLS.ui.dialogs.matt.content.transform', {
+          target: `<span class="value">${targetText}</span>`,
+          preset: preset
+        })}</div>`;
       }
+    });
+  }
+
+  /**
+   * Filter tokens to only those truly within tile bounds
+   * @param {Array} entities - Array of token entities from MATT
+   * @param {Object} tile - The tile object to check bounds against
+   * @returns {Array} Filtered array of tokens within tile bounds
+   */
+  static _filterTokensWithinTileBounds(entities, tile) {
+    if (!Array.isArray(entities) || entities.length === 0 || !tile || !tile.document) {
+      return [];
+    }
+
+    const tileDoc = tile.document;
+    const tileBounds = {
+      x: tileDoc.x,
+      y: tileDoc.y,
+      x2: tileDoc.x + tileDoc.width,
+      y2: tileDoc.y + tileDoc.height
+    };
+
+    return entities.filter(entity => {
+      const token = entity instanceof foundry.canvas.placeables.Token ? entity : canvas.tokens.get(entity.id);
+      if (!token) return false;
+
+      const tokenX = token.document.x;
+      const tokenY = token.document.y;
+      const tokenWidth = token.document.width * canvas.grid.size;
+      const tokenHeight = token.document.height * canvas.grid.size;
+      const tokenCenterX = tokenX + tokenWidth / 2;
+      const tokenCenterY = tokenY + tokenHeight / 2;
+
+      const isWithin = tokenCenterX >= tileBounds.x &&
+                      tokenCenterX <= tileBounds.x2 &&
+                      tokenCenterY >= tileBounds.y &&
+                      tokenCenterY <= tileBounds.y2;
+
+      return isWithin;
     });
   }
 
@@ -727,12 +963,7 @@ export class MonksActiveTilesIntegration {
   static _resolveActorIds(entityData, entities) {
     const actorIds = [];
 
-    LogUtil.log("_resolveActorIds - entities:", [entities]);
-    LogUtil.log("_resolveActorIds - entities type:", [typeof entities]);
-    LogUtil.log("_resolveActorIds - entities length:", [entities?.length]);
-
     if (!entities || entities.length === 0) {
-      LogUtil.log("_resolveActorIds - No entities provided");
       return actorIds;
     }
 
@@ -751,8 +982,6 @@ export class MonksActiveTilesIntegration {
         actorId = entity.actorId;
       } else if (entity?.actor?.id) {
         actorId = entity.actor.id;
-      } else {
-        LogUtil.log(`_resolveActorIds - Could not resolve actor from entity:`, [entity]);
       }
 
       if (actorId && !actorIds.includes(actorId)) {
@@ -761,7 +990,6 @@ export class MonksActiveTilesIntegration {
       }
     }
 
-    LogUtil.log("_resolveActorIds - Final actorIds:", [actorIds]);
     return actorIds;
   }
 

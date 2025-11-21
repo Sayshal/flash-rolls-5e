@@ -7,8 +7,35 @@ import { SocketUtil } from "./SocketUtil.mjs";
  * Utility class providing general-purpose functionality for the module */
 export class GeneralUtil {
   /**
+   * Shows a notification message if notifications are enabled
+   * @param {string} type - The notification type: 'info', 'warn', or 'error'
+   * @param {string} message - The message to display
+   */
+  static notify(type, message) {
+    try {
+      const SETTINGS = getSettings();
+      if (SETTINGS?.disableNotifications?.tag) {
+        const disableNotifications = SettingsUtil.get(SETTINGS.disableNotifications.tag);
+        if (disableNotifications) {
+          return;
+        }
+      }
+    } catch (error) {
+      // If settings aren't available yet, just show the notification
+    }
+
+    if (type === 'info') {
+      ui.notifications.info(message);
+    } else if (type === 'warn') {
+      ui.notifications.warn(message);
+    } else if (type === 'error') {
+      ui.notifications.error(message);
+    }
+  }
+
+  /**
    * Checks if module is currently installed and active
-   * @param {string} moduleName 
+   * @param {string} moduleName
    * @returns {boolean}
    */
   static isModuleOn(moduleName){

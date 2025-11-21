@@ -108,7 +108,7 @@ export function showBatchedNotifications(pendingNotifications, getRollTypeDispla
   if (entries.length === 1 && entries[0].actors.length === 1) {
     // Single roll request - use original format
     const entry = entries[0];
-    ui.notifications.info(game.i18n.format('FLASH_ROLLS.notifications.rollRequestReceived', {
+    GeneralUtil.notify('info', game.i18n.format('FLASH_ROLLS.notifications.rollRequestReceived', {
       gm: entry.gm,
       rollType: getRollTypeDisplayFn(entry.rollType, entry.rollKey)
     }));
@@ -121,7 +121,7 @@ export function showBatchedNotifications(pendingNotifications, getRollTypeDispla
       messages.push(`${rollTypeDisplay} (${actorNames})`);
     }
 
-    ui.notifications.info(game.i18n.format('FLASH_ROLLS.notifications.rollRequestsReceivedMultiple', {
+    GeneralUtil.notify('info', game.i18n.format('FLASH_ROLLS.notifications.rollRequestsReceivedMultiple', {
       gm: entries[0].gm,
       requests: messages.join("; ")
     }));
@@ -400,7 +400,7 @@ export class NotificationManager {
     if (successfulRequests.length === 1) {
       const playerData = Object.values(requestsByPlayer)[0];
       const actorNames = playerData.actors.map(a => a.name).join(", ");
-      ui.notifications.info(game.i18n.format("FLASH_ROLLS.notifications.rollRequestsSentSingle", { 
+      GeneralUtil.notify('info', game.i18n.format("FLASH_ROLLS.notifications.rollRequestsSentSingle", {
         rollType: rollTypeName,
         actors: actorNames,
         player: playerData.player.name
@@ -411,7 +411,7 @@ export class NotificationManager {
         const actorNames = data.actors.map(a => a.name).join(", ");
         return `${data.player.name} (${actorNames})`;
       });
-      ui.notifications.info(game.i18n.format("FLASH_ROLLS.notifications.rollRequestsSentMultiple", { 
+      GeneralUtil.notify('info', game.i18n.format("FLASH_ROLLS.notifications.rollRequestsSentMultiple", {
         rollType: rollTypeName,
         count: successfulRequests.length,
         players: playerSummaries.join("; ")

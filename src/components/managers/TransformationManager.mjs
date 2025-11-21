@@ -2,6 +2,7 @@ import { LogUtil } from "../utils/LogUtil.mjs";
 import { getSettings } from "../../constants/Settings.mjs";
 import { getActorData } from "../helpers/Helpers.mjs";
 import { TransformationDialog } from "../ui/dialogs/TransformationDialog.mjs";
+import { GeneralUtil } from "../utils/GeneralUtil.mjs";
 
 /**
  * Manager for actor transformation (polymorph/wild shape)
@@ -16,7 +17,7 @@ export class TransformationManager {
    */
   static async transformSelectedActors(menu) {
     if (!menu || !menu.selectedActors || menu.selectedActors.size === 0) {
-      ui.notifications.warn(game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelected"));
+      GeneralUtil.notify('warn', game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelected"));
       return;
     }
 
@@ -39,7 +40,7 @@ export class TransformationManager {
     LogUtil.log('TransformationManager.transformActors', [actorIds, targetActorUuid, options]);
 
     if (!actorIds || actorIds.length === 0) {
-      ui.notifications.warn(game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelected"));
+      GeneralUtil.notify('warn', game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelected"));
       return;
     }
 
@@ -109,7 +110,7 @@ export class TransformationManager {
     LogUtil.log('TransformationManager.revertTransformation', [actorIds]);
 
     if (!actorIds || actorIds.length === 0) {
-      ui.notifications.warn(game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelected"));
+      GeneralUtil.notify('warn', game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelected"));
       return;
     }
 
@@ -121,7 +122,7 @@ export class TransformationManager {
 
     const transformedActors = actors.filter(a => a.getFlag("dnd5e", "isPolymorphed"));
     if (transformedActors.length === 0) {
-      ui.notifications.warn(game.i18n.localize("FLASH_ROLLS.notifications.notTransformed"));
+      GeneralUtil.notify('warn', game.i18n.localize("FLASH_ROLLS.notifications.notTransformed"));
       return;
     }
 
@@ -145,7 +146,7 @@ export class TransformationManager {
     }
 
     if (successCount > 0) {
-      ui.notifications.info(game.i18n.format("FLASH_ROLLS.notifications.reversionSuccess", {
+      GeneralUtil.notify('info', game.i18n.format("FLASH_ROLLS.notifications.reversionSuccess", {
         count: successCount
       }));
     }
@@ -186,7 +187,7 @@ export class TransformationManager {
     }
 
     if (successCount > 0) {
-      ui.notifications.info(game.i18n.format("FLASH_ROLLS.notifications.transformationSuccess", {
+      GeneralUtil.notify('info', game.i18n.format("FLASH_ROLLS.notifications.transformationSuccess", {
         count: successCount,
         target: targetActor.name
       }));
@@ -230,7 +231,7 @@ export class TransformationManager {
       await new Promise(resolve => setTimeout(resolve, 1000));
     } catch (error) {
       LogUtil.warn(`Transformation animation file not found: ${animationPath}`, [error]);
-      ui.notifications.warn(game.i18n.format("FLASH_ROLLS.notifications.animationFileNotFound", {
+      GeneralUtil.notify('warn', game.i18n.format("FLASH_ROLLS.notifications.animationFileNotFound", {
         path: animationPath
       }));
     }

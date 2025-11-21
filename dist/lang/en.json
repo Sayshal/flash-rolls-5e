@@ -280,6 +280,10 @@
         "label": "Teleport Animation Video",
         "hint": "Path to the video file to play when teleporting tokens. If JB2A is installed, the blue teleportation animation will be used by default. Leave empty to disable animations."
       },
+      "disableNotifications": {
+        "label": "Disable Notification Toasts",
+        "hint": "If you are very familiar with Flash Token Bar, you may want to disable the notification snippets for common actions. Error notifications will still be shown"
+      },
       "lockMenuPosition": {
         "label": "Prevent Menu Drag When Locked",
         "hint": "When enabled, toggling the 'Lock Menu' icon will also prevent the menu from being dragged to a new position. The menu will remain fixed in place until unlocked."
@@ -459,14 +463,37 @@
             "keepItems": "Keep Items",
             "keepHP": "Keep Hit Points",
             "transformTokens": "Transform Tokens"
+          }
+        },
+        "matt": {
+          "actions": {
+            "requestRoll": "Request Roll",
+            "healAll": "Full Heal",
+            "killAll": "Kill All",
+            "openSheets": "Open Character Sheets",
+            "toggleMovement": "Toggle Movement",
+            "teleportTokens": "Teleport Tokens",
+            "transformActors": "Transform Actors"
           },
-          "matt": {
-            "action": "Transform Actors",
+          "content": {
+            "healAll": "Full Heal",
+            "killAll": "Kill (HP 0)",
+            "openSheets": "Open character sheets",
+            "toggleMovement": "Toggle movement",
+            "teleport": "Teleport tokens to {location}{scene}{snap}",
+            "revertTransformation": "Revert Transformation",
+            "transform": "Transform to {target} ({preset})",
+            "requestRoll": "Request {type}{dc}{advantage}{bonus}{skipDialog}"
+          },
+          "transform": {
             "actors": "Actors",
             "targetCreature": "Target Creature",
-            "targetCreatureHelp": "Leave empty to show selection dialog",
+            "targetCreatureHint": "Leave empty to show selection dialog",
             "preset": "Preset",
             "revert": "Revert Transformation"
+          },
+          "warnings": {
+            "noActorsFound": "No actors found for this action"
           }
         },
         "midiQOLSettings": {

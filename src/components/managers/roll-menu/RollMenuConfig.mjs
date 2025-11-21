@@ -73,7 +73,7 @@ export class RollMenuConfig {
         rollMode: configOverrides.rollMode || game.settings.get("core", "rollMode"),
         chatMessage: true,
         isRollRequest: false,
-        skipRollDialog: true,
+        skipRollDialog: confirmedSkipDialog,
         sendRequest: rollRequestsEnabled && (configOverrides.hasOwnProperty('sendAsRequest') ? configOverrides.sendAsRequest : (pcActors.length > 0))
       };
 

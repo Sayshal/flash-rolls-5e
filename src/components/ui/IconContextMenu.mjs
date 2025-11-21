@@ -4,6 +4,7 @@ import { LogUtil } from '../utils/LogUtil.mjs';
 import { getIconConfiguration } from '../../constants/IconMappings.mjs';
 import { SettingsUtil } from '../utils/SettingsUtil.mjs';
 import { getSettings } from '../../constants/Settings.mjs';
+import { GeneralUtil } from '../utils/GeneralUtil.mjs';
 
 /**
  * Handles context menu functionality for menu icons
@@ -109,12 +110,12 @@ export class IconContextMenu {
   static async _handleRemoveIcon(iconId, iconType) {
     try {
       await IconLayoutUtil.removeIcon(iconId, iconType);
-      ui.notifications.info(game.i18n.format("FLASH_ROLLS.notifications.iconRemoved", {
+      GeneralUtil.notify('info',game.i18n.format("FLASH_ROLLS.notifications.iconRemoved", {
         iconName: game.i18n.localize(getIconConfiguration(iconId, iconType)?.labelKey || iconId)
       }));
     } catch (error) {
       LogUtil.error('Failed to remove icon', [error]);
-      ui.notifications.error(game.i18n.localize("FLASH_ROLLS.notifications.iconRemoveFailed"));
+      GeneralUtil.notify('error',game.i18n.localize("FLASH_ROLLS.notifications.iconRemoveFailed"));
     }
   }
 
@@ -230,7 +231,7 @@ export class IconContextMenu {
           macroCommand = this._generateTransformActorsMacro(selectedActorIds);
           break;
         default:
-          ui.notifications.warn(`No macro generation configured for icon: ${iconId}`);
+          GeneralUtil.notify('warn',`No macro generation configured for icon: ${iconId}`);
           return;
       }
 
@@ -253,14 +254,14 @@ export class IconContextMenu {
         }
       });
 
-      ui.notifications.info(game.i18n.format("FLASH_ROLLS.notifications.macroCreated", {
+      GeneralUtil.notify('info',game.i18n.format("FLASH_ROLLS.notifications.macroCreated", {
         macroName: macro.name
       }));
 
       macro.sheet.render(true);
     } catch (error) {
       LogUtil.error('Failed to create macro', [error]);
-      ui.notifications.error(game.i18n.localize("FLASH_ROLLS.notifications.macroCreationFailed"));
+      GeneralUtil.notify('error',game.i18n.localize("FLASH_ROLLS.notifications.macroCreationFailed"));
     }
   }
 
@@ -319,7 +320,7 @@ try {
 try {
   const actorIds = FlashAPI.getSelectedActors();
   if (actorIds.length === 0) {
-    ui.notifications.warn("No actors selected");
+    GeneralUtil.notify('warn',"No actors selected");
   } else {
     FlashAPI.${methodName}(actorIds);
   }
@@ -403,7 +404,7 @@ try {
 try {
   const actorIds = FlashAPI.getSelectedActors();
   if (actorIds.length === 0 && game.user.targets.size === 0) {
-    ui.notifications.warn("No actors selected and no targets to clear");
+    GeneralUtil.notify('warn',"No actors selected and no targets to clear");
   } else {
     FlashAPI.toggleTargets(actorIds);
   }
@@ -444,7 +445,7 @@ try {
 try {
   const actorIds = FlashAPI.getSelectedActors();
   if (actorIds.length === 0) {
-    ui.notifications.warn("No actors selected");
+    GeneralUtil.notify('warn',"No actors selected");
   } else {
     FlashAPI.placeTokens(actorIds);
   }
@@ -491,7 +492,7 @@ try {
 try {
   const tokenIds = FlashAPI.getSelectedActors(true);
   if (tokenIds.length === 0) {
-    ui.notifications.warn("No tokens found for selected actors");
+    GeneralUtil.notify('warn',"No tokens found for selected actors");
   } else {
     FlashAPI.teleportTokens(tokenIds);
   }
@@ -539,7 +540,7 @@ try {
   // const actorIds = ["8sKqJT1gcAUvko53","6xvOSmZnNUcP5Gyh"];
 
   if (actorIds.length === 0) {
-    ui.notifications.warn("No actors selected");
+    GeneralUtil.notify('warn',"No actors selected");
   } else {
     FlashAPI.transformActors(actorIds);
   }
@@ -569,7 +570,7 @@ try {
         LogUtil.log('Created Flash Token Bar macro folder', [folder]);
       } catch (error) {
         LogUtil.error('Failed to create Flash Token Bar macro folder:', [error]);
-        ui.notifications.warn('Failed to create Flash Token Bar macro folder. Macro will be created without folder organization.');
+        GeneralUtil.notify('warn','Failed to create Flash Token Bar macro folder. Macro will be created without folder organization.');
         return null;
       }
     }

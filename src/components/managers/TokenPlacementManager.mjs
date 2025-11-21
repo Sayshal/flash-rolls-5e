@@ -1,6 +1,7 @@
 import { LogUtil } from '../utils/LogUtil.mjs';
 import { MODULE_ID } from '../../constants/General.mjs';
 import { getActorData } from '../helpers/Helpers.mjs';
+import { GeneralUtil } from '../utils/GeneralUtil.mjs';
 
 /**
  * Manages token placement functionality
@@ -25,17 +26,17 @@ export class TokenPlacementManager {
    */
   static async placeTokensForSelectedActors(menu) {
     if (!game.user.isGM) {
-      ui.notifications.warn("Only GMs can place tokens");
+      GeneralUtil.notify('warn', "Only GMs can place tokens");
       return;
     }
 
     if (menu.selectedActors.size === 0) {
-      ui.notifications.warn(game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelectedForPlacement"));
+      GeneralUtil.notify('warn', game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelectedForPlacement"));
       return;
     }
 
     if (this._isPlacingTokens) {
-      ui.notifications.warn("Token placement already in progress");
+      GeneralUtil.notify('warn', "Token placement already in progress");
       return;
     }
 
@@ -59,7 +60,7 @@ export class TokenPlacementManager {
     }
 
     if (actorsToPlace.length === 0) {
-      ui.notifications.warn(game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelectedForPlacement"));
+      GeneralUtil.notify('warn', game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelectedForPlacement"));
       return;
     }
 
@@ -70,7 +71,7 @@ export class TokenPlacementManager {
     await this._createPreviewTokens();
     this._attachCanvasHandlers();
 
-    ui.notifications.info(`Click to place ${actorsToPlace.length} token(s) one at a time, right-click to skip current token`);
+    GeneralUtil.notify('info', `Click to place ${actorsToPlace.length} token(s) one at a time, right-click to skip current token`);
   }
 
   /**
@@ -213,7 +214,7 @@ export class TokenPlacementManager {
       if (this._placementIndex >= this._previewTokens.length) {
         const totalPlaced = this._previewTokens.length;
         this._cleanup();
-        ui.notifications.info(game.i18n.format("FLASH_ROLLS.notifications.tokensPlaced", {
+        GeneralUtil.notify('info', game.i18n.format("FLASH_ROLLS.notifications.tokensPlaced", {
           count: totalPlaced
         }));
       }
@@ -242,7 +243,7 @@ export class TokenPlacementManager {
 
     if (this._previewTokens.length === 0 || this._placementIndex >= this._previewTokens.length) {
       this._cleanup();
-      ui.notifications.info(game.i18n.localize("FLASH_ROLLS.notifications.tokenPlacementCancelled"));
+      GeneralUtil.notify('info', game.i18n.localize("FLASH_ROLLS.notifications.tokenPlacementCancelled"));
     } else {
       this._clearPreviewGraphics();
     }
@@ -321,12 +322,12 @@ export class TokenPlacementManager {
    */
   static async placeTokensAtLocation(actorIds, location) {
     if (!game.user.isGM) {
-      ui.notifications.warn("Only GMs can place tokens");
+      GeneralUtil.notify('warn', "Only GMs can place tokens");
       return;
     }
 
     if (!actorIds || actorIds.length === 0) {
-      ui.notifications.warn(game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelectedForPlacement"));
+      GeneralUtil.notify('warn', game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelectedForPlacement"));
       return;
     }
 
@@ -358,7 +359,7 @@ export class TokenPlacementManager {
     }
 
     if (actorsToPlace.length === 0) {
-      ui.notifications.warn(game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelectedForPlacement"));
+      GeneralUtil.notify('warn', game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelectedForPlacement"));
       LogUtil.warn("No valid actors found for placement", actorIds);
       return;
     }

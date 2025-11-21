@@ -1,5 +1,6 @@
 import { LogUtil } from "../../utils/LogUtil.mjs";
 import { MODULE_ID } from "../../../constants/General.mjs";
+import { GeneralUtil } from "../../utils/GeneralUtil.mjs";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 const { FormDataExtended } = foundry.applications.ux;
@@ -269,7 +270,7 @@ export class TransformationDialog extends HandlebarsApplicationMixin(Application
         if (actor && actor.type === 'npc') {
           await this._onToggleFavorite(data.uuid);
         } else if (actor && actor.type !== 'npc') {
-          ui.notifications.warn(game.i18n.localize("FLASH_ROLLS.ui.dialogs.transformation.onlyNPCs"));
+          GeneralUtil.notify('warn',game.i18n.localize("FLASH_ROLLS.ui.dialogs.transformation.onlyNPCs"));
         }
       }
     });
@@ -442,7 +443,7 @@ export class TransformationDialog extends HandlebarsApplicationMixin(Application
     const dialog = this;
 
     if (!dialog.selectedActorUuid) {
-      ui.notifications.warn(game.i18n.localize("FLASH_ROLLS.ui.dialogs.transformation.noActorSelected"));
+      GeneralUtil.notify('warn',game.i18n.localize("FLASH_ROLLS.ui.dialogs.transformation.noActorSelected"));
       return;
     }
 

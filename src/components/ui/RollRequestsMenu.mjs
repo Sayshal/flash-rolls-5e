@@ -960,14 +960,14 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
     }
     
     if (!requestType) {
-      ui.notifications.warn("No roll type selected for macro creation");
+      GeneralUtil.notify('warn',"No roll type selected for macro creation");
       return;
     }
     
     // Get currently selected actors
     const selectedActorIds = Array.from(this.selectedActors);
     if (selectedActorIds.length === 0) {
-      ui.notifications.warn("No actors selected for macro creation");
+      GeneralUtil.notify('warn',"No actors selected for macro creation");
       return;
     }
     

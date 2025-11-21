@@ -394,7 +394,7 @@ export class ChatMessageManager {
     const targets = message.querySelectorAll("[data-target-uuid]");
 
     if (targets.length === 0) {
-      ui.notifications.warn(game.i18n.localize("FLASH_ROLLS.notifications.noTargetedTokens"));
+      GeneralUtil.notify('warn', game.i18n.localize("FLASH_ROLLS.notifications.noTargetedTokens"));
       return;
     }
 
@@ -550,13 +550,13 @@ export class ChatMessageManager {
         const actor = game.actors.get(actorId);
         
         if (!actor) {
-          ui.notifications.warn(`Actor not found`);
+          GeneralUtil.notify('warn', `Actor not found`);
           return;
         }
-        
+
         const canRoll = game.user.isGM || actor.isOwner;
         if (!canRoll) {
-          ui.notifications.warn(`You don't have permission to roll for ${actor.name}`);
+          GeneralUtil.notify('warn', `You don't have permission to roll for ${actor.name}`);
           return;
         }
         
@@ -634,7 +634,7 @@ export class ChatMessageManager {
                 rollMethod = 'rollToolCheck';
                 break;
               default:
-                ui.notifications.warn(`Unknown roll type: ${rollType}`);
+                GeneralUtil.notify('warn', `Unknown roll type: ${rollType}`);
                 return;
             }
             

@@ -76,29 +76,26 @@ export const RollHelpers = {
    */
   buildRollConfig(requestData, rollConfig, additionalConfig = {}) {
 
-    // Build BasicRollProcessConfiguration
     const config = {
       rolls: [{
-        parts: rollConfig.parts || [],
-        data: rollConfig.data || {},
+        parts: rollConfig?.parts ?? [],
+        data: rollConfig?.data ?? {},
         options: {
-          ...rollConfig.options || {},
-          // Preserve the _fromFlashRolls flag if it exists
-          ...(rollConfig.options?._fromFlashRolls && { _fromFlashRolls: true })
+          ...(rollConfig?.options ?? {}),
+          ...(rollConfig?.options?._fromFlashRolls && { _fromFlashRolls: true })
         }
       }],
-      advantage: requestData.config.advantage || false,
-      disadvantage: requestData.config.disadvantage || false,
-      target: requestData.config.target,
+      advantage: requestData?.config?.advantage || false,
+      disadvantage: requestData?.config?.disadvantage || false,
+      target: requestData?.config?.target,
       subject: null,
       chatMessage: true,
       legacy: false,
-      // ...(requestData.config.rollMode && { rollMode: requestData.config.rollMode }),
       ...additionalConfig
     };
 
-    let situational = requestData.config.situational;
-    const alreadyInRolls = requestData.config.rolls?.[0]?.data?.situational;
+    let situational = requestData?.config?.situational;
+    const alreadyInRolls = requestData?.config?.rolls?.[0]?.data?.situational;
 
     if (game.user.isGM) {
       if (!situational && alreadyInRolls) {

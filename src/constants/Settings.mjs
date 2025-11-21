@@ -33,7 +33,8 @@ export const getSettings = () => {
         'tooltipAutoDismiss',
         'templateRemovalTimeout',
         'tokenMovementSpeed',
-        'autoBlockMovementInCombat'
+        'autoBlockMovementInCombat',
+        'disableNotifications'
       ],
       default: {
         showMenuOnLoad: false,
@@ -46,7 +47,8 @@ export const getSettings = () => {
         tooltipAutoDismiss: 2,
         tokenMovementSpeed: 6,
         templateRemovalTimeout: 5,
-        autoBlockMovementInCombat: false
+        autoBlockMovementInCombat: false,
+        disableNotifications: false
       },
       scope: SETTING_SCOPE.world,
       config: false, 
@@ -588,6 +590,16 @@ export const getSettings = () => {
       tag: "legacy-token-associations-migrated",
       label: game.i18n.localize("FLASH_ROLLS.settings.legacyTokenAssociationsMigrated.label"),
       hint: game.i18n.localize("FLASH_ROLLS.settings.legacyTokenAssociationsMigrated.hint"),
+      propType: Boolean,
+      default: false,
+      scope: SETTING_SCOPE.world,
+      config: false
+    },
+
+    disableNotifications: {
+      tag: "disable-notifications",
+      label: game.i18n.localize("FLASH_ROLLS.settings.disableNotifications.label"),
+      hint: game.i18n.localize("FLASH_ROLLS.settings.disableNotifications.hint"),
       propType: Boolean,
       default: false,
       scope: SETTING_SCOPE.world,

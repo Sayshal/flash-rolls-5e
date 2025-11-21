@@ -5,6 +5,7 @@ import { LogUtil } from "../utils/LogUtil.mjs";
 import { CustomRollDialog } from "../ui/dialogs/CustomRollDialog.mjs";
 import { NotificationManager } from "../helpers/Helpers.mjs";
 import { ChatMessageManager } from "../managers/ChatMessageManager.mjs";
+import { GeneralUtil } from "../utils/GeneralUtil.mjs";
 
 /**
  * Methods for handling different types of rolls
@@ -90,7 +91,7 @@ export const RollHandlers = {
 
   initiative: async (actor, requestData, rollConfig, dialogConfig, messageConfig) => {
     if (!game.combat) {
-      ui.notifications.warn(game.i18n.localize("COMBAT.NoneActive"));
+      GeneralUtil.notify('warn',game.i18n.localize("COMBAT.NoneActive"));
       return;
     }
     const situational = requestData.config.situational || rollConfig.data?.situational || '';
@@ -102,7 +103,7 @@ export const RollHandlers = {
       if (token) {
         tokenActor = token.actor;
       } else {
-        ui.notifications.info(game.i18n.localize("FLASH_ROLLS.notifications.noTokensForInitiative"));
+        GeneralUtil.notify('info',game.i18n.localize("FLASH_ROLLS.notifications.noTokensForInitiative"));
         return;
       }
     }
@@ -268,7 +269,7 @@ export const RollHandlers = {
           flags: messageConfig?.data?.flags
         });
       } catch (error) {
-        ui.notifications.error(game.i18n.format("FLASH_ROLLS.ui.notifications.invalidFormula", {formula: formula}));
+        GeneralUtil.notify('error',game.i18n.format("FLASH_ROLLS.ui.notifications.invalidFormula", {formula: formula}));
       }
       return;
     }
@@ -297,7 +298,7 @@ export const RollHandlers = {
             flags: messageConfig?.data?.flags
           });
         } catch (error) {
-          ui.notifications.error(game.i18n.format("FLASH_ROLLS.ui.notifications.invalidFormula", {formula: confirmedFormula}));
+          GeneralUtil.notify('error',game.i18n.format("FLASH_ROLLS.ui.notifications.invalidFormula", {formula: confirmedFormula}));
         }
       }
     });
