@@ -227,6 +227,7 @@ export class HooksManager {
    * Triggered when Foundry is ready (fully loaded)
    */
   static _onReady() {
+    LogUtil.log("CONFIG.DND5E",[CONFIG.DND5E]);
     SettingsUtil.registerSettingsMenu();
     ActorDirectoryIconUtil.initialize();
     SidebarController.addSidebarControls(ui.sidebar, ui.sidebar?.element);

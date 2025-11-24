@@ -171,7 +171,8 @@ export class TransformationManager {
     let successCount = 0;
     for (const actor of actors) {
       try {
-        await actor.transformInto(targetActor, settings, {
+        const sanitizedTarget = this._sanitizeTargetActor(actor, targetActor);
+        await actor.transformInto(sanitizedTarget, settings, {
           renderSheet: options.renderSheet ?? false
         });
         successCount++;
@@ -373,5 +374,51 @@ export class TransformationManager {
     } catch (error) {
       return null;
     }
+  }
+
+  /**
+   * Sanitize target actor to only include abilities present in source actor
+   * Prevents DnD5e transformInto errors when target has extra abilities that source doesn't have
+   * This handles cases where actors have optional abilities (san, hon) that aren't present in all actors
+   * @param {Actor} sourceActor - Actor being transformed (original form)
+   * @param {Actor} targetActor - Actor to transform into (new form)
+   * @returns {Actor} Sanitized target actor or original if no sanitization needed
+   * @private
+   */
+  static _sanitizeTargetActor(sourceActor, targetActor) {
+    if (!sourceActor?.system?.abilities || !targetActor?.system?.abilities) {
+      return targetActor;
+    }
+
+    const sourceData = sourceActor.toObject();
+    const targetData = targetActor.toObject();
+
+    const sourceAbilityKeys = Object.keys(sourceData.system.abilities);
+    const targetAbilityKeys = Object.keys(targetData.system.abilities);
+
+    LogUtil.log(`Sanitization check - Source (${sourceActor.name}) toObject:`, sourceAbilityKeys);
+    LogUtil.log(`Sanitization check - Target (${targetActor.name}) toObject:`, targetAbilityKeys);
+
+    const extraAbilities = targetAbilityKeys.filter(key => !sourceAbilityKeys.includes(key));
+
+    if (extraAbilities.length === 0) {
+      LogUtil.log('No extra abilities found in serialized data - skipping sanitization');
+      return targetActor;
+    }
+
+    LogUtil.log(`Sanitizing target actor ${targetActor.name}: removing abilities not present in source toObject`, extraAbilities);
+
+    for (const abilityKey of extraAbilities) {
+      delete targetData.system.abilities[abilityKey];
+    }
+
+    LogUtil.log('Sanitized data abilities:', Object.keys(targetData.system.abilities));
+
+    const TempActor = CONFIG.Actor.documentClass;
+    const tempActor = new TempActor(targetData, { temporary: true });
+
+    LogUtil.log('Temp actor abilities after creation:', Object.keys(tempActor.system.abilities));
+
+    return tempActor;
   }
 }
