@@ -31,12 +31,24 @@ export class RollRequestManager {
    * @type {Array<{actor: Actor, requestData: RollRequestData}>}
    */
   static rollQueue = [];
-  
+
   /**
    * Flag indicating if a roll dialog is currently active
    * @type {boolean}
    */
   static isProcessingRoll = false;
+
+  /**
+   * Resolver function for the current pending roll
+   * @type {Function|null}
+   */
+  static pendingRollResolver = null;
+
+  /**
+   * Actor ID for the current pending roll
+   * @type {string|null}
+   */
+  static pendingRollActorId = null;
   
   /**
    * Handle roll request from GM on player side
@@ -101,9 +113,10 @@ export class RollRequestManager {
     });
     
     this.rollQueue.push({ actor, requestData });
-    LogUtil.log('handleRequest - Added to queue', [this.rollQueue, this.isProcessingRoll]);
-    
-    if (!this.isProcessingRoll || this.rollQueue.length === 1) {
+    LogUtil.log('handleRequest - Added to queue', [this.rollQueue.length, 'isProcessing:', this.isProcessingRoll]);
+
+    if (!this.isProcessingRoll) {
+      this.isProcessingRoll = true;
       this.processNextRoll();
     }
   }
@@ -120,20 +133,48 @@ export class RollRequestManager {
       return;
     }
 
-    this.isProcessingRoll = true;
     const { actor, requestData } = this.rollQueue.shift();
 
     LogUtil.log('processNextRoll - Processing', [actor.name, requestData.rollType, this.rollQueue.length, 'remaining']);
 
+    const actorUniqueId = requestData.isTokenActor ? requestData.actorId : actor.id;
+    const rollCompletedPromise = new Promise((resolve) => {
+      this.pendingRollResolver = resolve;
+      this.pendingRollActorId = actorUniqueId;
+    });
+
+    const timeoutPromise = new Promise((resolve) => {
+      setTimeout(() => {
+        LogUtil.log('processNextRoll - timeout reached for', [actor.name]);
+        resolve();
+      }, 60000);
+    });
+
     try {
       await this.executePlayerRollRequest(actor, requestData);
+      await Promise.race([rollCompletedPromise, timeoutPromise]);
     } catch (error) {
       LogUtil.error('Error processing roll request:', [error]);
     }
 
+    this.pendingRollResolver = null;
+    this.pendingRollActorId = null;
+
     setTimeout(() => {
       this.processNextRoll();
-    }, 500);
+    }, 300);
+  }
+
+  /**
+   * Called when a roll message is created to signal roll completion
+   */
+  static onRollCompleted() {
+    LogUtil.log('onRollCompleted', ['pending:', this.pendingRollActorId, 'hasResolver:', !!this.pendingRollResolver]);
+    if (this.pendingRollResolver) {
+      this.pendingRollResolver();
+      this.pendingRollResolver = null;
+      this.pendingRollActorId = null;
+    }
   }
   
   /**
@@ -175,19 +216,26 @@ export class RollRequestManager {
       const defaultRollMode = game.settings.get("core", "rollMode");
       const finalRollMode = rollModeFromGM || defaultRollMode;
 
+      const actorUniqueId = requestData.isTokenActor ? requestData.actorId : actor.id;
       const rollMetadata = {
         [MODULE_ID]: {
           isFlashRollRequest: true,
           rollType: requestData.rollType,
-          rollKey: requestData.rollKey
+          rollKey: requestData.rollKey,
+          actorUniqueId: actorUniqueId
         }
       };
 
+      const speaker = ChatMessage.getSpeaker({ actor });
       const messageConfig = {
         rollMode: finalRollMode,
         create: requestData.rollProcessConfig.chatMessage !== false,
         flags: rollMetadata,
+        data: {
+          speaker
+        },
         messageData: {
+          speaker,
           flags: rollMetadata
         }
       };

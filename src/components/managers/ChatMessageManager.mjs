@@ -8,6 +8,7 @@ import { SettingsUtil } from "../utils/SettingsUtil.mjs";
 import { RollHelpers } from "../helpers/RollHelpers.mjs";
 import { RollHandlers } from "../handlers/RollHandlers.mjs";
 import { HooksManager } from "../core/HooksManager.mjs";
+import { RollRequestManager } from "./RollRequestManager.mjs";
 
 /**
  * Utility class for managing group roll chat messages
@@ -166,6 +167,10 @@ export class ChatMessageManager {
       } catch (error) {
         LogUtil.error("ChatMessageManager.onPreCreateChatMessage - flavor error", [error]);
       }
+    }
+
+    if (!game.user.isGM && data.rolls?.length > 0 && RollRequestManager.pendingRollResolver) {
+      RollRequestManager.onRollCompleted();
     }
   }
 
@@ -1469,26 +1474,38 @@ export class ChatMessageManager {
     const SETTINGS = getSettings();
     const groupRollsMsgEnabled = SettingsUtil.get(SETTINGS.groupRollsMsgEnabled.tag);
     if (!groupRollsMsgEnabled) return;
-    
+
+    const actorUniqueIdFromFlag = message.getFlag(MODULE_ID, 'actorUniqueId');
     const actorId = message.speaker?.actor;
     const tokenId = message.speaker?.token;
 
-    LogUtil.log('interceptRollMessage - speaker info', ['actorId:', actorId, 'tokenId:', tokenId]);
+    LogUtil.log('interceptRollMessage - speaker info', ['actorUniqueId from flag:', actorUniqueIdFromFlag, 'actorId:', actorId, 'tokenId:', tokenId]);
 
-    // For unlinked tokens, we need to get the synthetic actor from the token
-    // because flags are set on the synthetic actor, not the base actor
     let actor;
-    if (tokenId) {
-      const token = canvas.tokens?.get(tokenId) || game.scenes.active?.tokens?.get(tokenId);
-      actor = token?.actor;  // This gets the synthetic actor for unlinked tokens
+    let uniqueId;
+    if (actorUniqueIdFromFlag) {
+      const tokenDoc = game.scenes.active?.tokens.get(actorUniqueIdFromFlag);
+      if (tokenDoc?.actor) {
+        actor = tokenDoc.actor;
+        uniqueId = actorUniqueIdFromFlag;
+      } else {
+        actor = game.actors.get(actorUniqueIdFromFlag);
+        uniqueId = actorUniqueIdFromFlag;
+      }
     }
     if (!actor) {
-      actor = game.actors.get(actorId);
+      if (tokenId) {
+        const token = canvas.tokens?.get(tokenId) || game.scenes.active?.tokens?.get(tokenId);
+        actor = token?.actor;
+      }
+      if (!actor) {
+        actor = game.actors.get(actorId);
+      }
+      uniqueId = tokenId || actorId;
     }
 
     if (!actor) return;
 
-    const uniqueId = tokenId || actorId;
     LogUtil.log('interceptRollMessage - using uniqueId:', [uniqueId, 'for actor:', actor.name]);
     const groupRollId = message.getFlag(MODULE_ID, 'groupRollId') ||
                         actor.getFlag(MODULE_ID, 'tempGroupRollId') ||

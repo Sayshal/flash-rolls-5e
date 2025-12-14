@@ -4,92 +4,102 @@
   <h4><i class="fas fa-globe"></i> {{localize "FLASH_ROLLS.ui.dialogs.worldSettingsLabel"}} <span class="toggle-hint">{{localize 'FLASH_ROLLS.ui.dialogs.toggleHints'}}</span></h4>
   <hr/>
 
-  <div class="form-group">
-    <label for="skipRollDialog">{{fields.skipRollDialog.label}}</label>
-    <input type="checkbox" name="skipRollDialog" id="skipRollDialog" {{#if skipRollDialog}}checked{{/if}} />
-    <p class="hint">{{fields.skipRollDialog.hint}}</p>
-  </div>
+  <fieldset>
+    <legend>Roll Dialog</legend>
+    <div class="form-group">
+      <label for="skipRollDialog">{{fields.skipRollDialog.label}}</label>
+      <input type="checkbox" name="skipRollDialog" id="skipRollDialog" {{#if skipRollDialog}}checked{{/if}} />
+      <p class="hint">{{fields.skipRollDialog.hint}}</p>
+    </div>  
+  
+    <div class="form-group">
+      <label for="skipRollDialogOption">{{fields.skipRollDialogOption.label}}</label>
+      <select name="skipRollDialogOption" id="skipRollDialogOption" data-current-value="{{skipRollDialogOption}}">
+        {{#each fields.skipRollDialogOption.choices}}
+        <option value="{{@key}}">
+          {{this}}
+        </option>
+        {{/each}}
+      </select>
+      <p class="hint">{{{fields.skipRollDialogOption.hint}}}</p>
+    </div>
 
-  <div class="form-group">
-    <label for="skipRollDialogOption">{{fields.skipRollDialogOption.label}}</label>
-    <select name="skipRollDialogOption" id="skipRollDialogOption" data-current-value="{{skipRollDialogOption}}">
-      {{#each fields.skipRollDialogOption.choices}}
-      <option value="{{@key}}">
-        {{this}}
-      </option>
-      {{/each}}
-    </select>
-    <p class="hint">{{{fields.skipRollDialogOption.hint}}}</p>
-  </div>
+    <div class="form-group">
+      <label for="skipToRollResolver">{{fields.skipToRollResolver.label}}</label>
+      <input type="checkbox" name="skipToRollResolver" id="skipToRollResolver" {{#if skipToRollResolver}}checked{{/if}} />
+      <p class="hint">{{fields.skipToRollResolver.hint}}</p>
+    </div>
 
-  <div class="form-group">
-    <label for="skipToRollResolver">{{fields.skipToRollResolver.label}}</label>
-    <input type="checkbox" name="skipToRollResolver" id="skipToRollResolver" {{#if skipToRollResolver}}checked{{/if}} />
-    <p class="hint">{{fields.skipToRollResolver.hint}}</p>
-  </div>
+  </fieldset>
 
-  <div class="form-group">
-    <label for="showOnlyPCsWithToken">{{fields.showOnlyPCsWithToken.label}}</label>
-    <input type="checkbox" name="showOnlyPCsWithToken" id="showOnlyPCsWithToken" {{#if showOnlyPCsWithToken}}checked{{/if}} />
-    <p class="hint">{{{fields.showOnlyPCsWithToken.hint}}}</p>
-  </div>
+  <fieldset>
+    <legend>Template (Spell / Area of Effect)</legend>
+
+    <div class="form-group">
+      <label for="removeTemplate">{{fields.removeTemplate.label}}</label>
+      <input type="checkbox" name="removeTemplate" id="removeTemplate" {{#if removeTemplate}}checked{{/if}} />
+      <p class="hint">{{{fields.removeTemplate.hint}}}</p>
+    </div>
+
+    <div class="form-group range">
+      <label for="templateRemovalTimeout">{{fields.templateRemovalTimeout.label}}</label>
+      <input type="range" name="templateRemovalTimeout" id="templateRemovalTimeout" min="0" max="30" value="{{templateRemovalTimeout}}" />
+      <input type="number" name="templateRemovalTimeout_value" class="range-value-input" value="{{templateRemovalTimeout}}" />
+      <p class="hint">{{{fields.templateRemovalTimeout.hint}}}</p>
+    </div>
+
+    <div class="form-group">
+      <label for="templateAutoTarget">{{fields.templateAutoTarget.label}}</label>
+      <select name="templateAutoTarget" id="templateAutoTarget" data-current-value="{{templateAutoTarget}}">
+        {{#each fields.templateAutoTarget.choices}}
+        <option value="{{@key}}" {{#if (eq @key ../templateAutoTarget)}}selected{{/if}}>
+          {{this}}
+        </option>
+        {{/each}}
+      </select>
+      <p class="hint">{{{fields.templateAutoTarget.hint}}}</p>
+    </div>
+
+  </fieldset>
 
 
-  <div class="form-group">
-    <label for="removeTemplate">{{fields.removeTemplate.label}}</label>
-    <input type="checkbox" name="removeTemplate" id="removeTemplate" {{#if removeTemplate}}checked{{/if}} />
-    <p class="hint">{{{fields.removeTemplate.hint}}}</p>
-  </div>
+  <fieldset>
+    <legend>Token Options</legend>
 
-  <div class="form-group range">
-    <label for="templateRemovalTimeout">{{fields.templateRemovalTimeout.label}}</label>
-    <input type="range" name="templateRemovalTimeout" id="templateRemovalTimeout" min="0" max="30" value="{{templateRemovalTimeout}}" />
-    <input type="number" name="templateRemovalTimeout_value" class="range-value-input" value="{{templateRemovalTimeout}}" />
-    <p class="hint">{{{fields.templateRemovalTimeout.hint}}}</p>
-  </div>
+    <div class="form-group range">
+      <label for="tokenMovementSpeed">{{fields.tokenMovementSpeed.label}}</label>
+      <input type="range" name="tokenMovementSpeed" id="tokenMovementSpeed" min="1" max="100" value="{{tokenMovementSpeed}}" />
+      <input type="number" name="tokenMovementSpeed_value" class="range-value-input" value="{{tokenMovementSpeed}}" />
+      <p class="hint">{{{fields.tokenMovementSpeed.hint}}}</p>
+    </div>
 
-  <div class="form-group">
-    <label for="templateAutoTarget">{{fields.templateAutoTarget.label}}</label>
-    <select name="templateAutoTarget" id="templateAutoTarget" data-current-value="{{templateAutoTarget}}">
-      {{#each fields.templateAutoTarget.choices}}
-      <option value="{{@key}}" {{#if (eq @key ../templateAutoTarget)}}selected{{/if}}>
-        {{this}}
-      </option>
-      {{/each}}
-    </select>
-    <p class="hint">{{{fields.templateAutoTarget.hint}}}</p>
-  </div>
+    <div class="form-group">
+      <label for="showOnlyPCsWithToken">{{fields.showOnlyPCsWithToken.label}}</label>
+      <input type="checkbox" name="showOnlyPCsWithToken" id="showOnlyPCsWithToken" {{#if showOnlyPCsWithToken}}checked{{/if}} />
+      <p class="hint">{{{fields.showOnlyPCsWithToken.hint}}}</p>
+    </div>
 
-  <div class="form-group range">
-    <label for="tokenMovementSpeed">{{fields.tokenMovementSpeed.label}}</label>
-    <input type="range" name="tokenMovementSpeed" id="tokenMovementSpeed" min="1" max="100" value="{{tokenMovementSpeed}}" />
-    <input type="number" name="tokenMovementSpeed_value" class="range-value-input" value="{{tokenMovementSpeed}}" />
-    <p class="hint">{{{fields.tokenMovementSpeed.hint}}}</p>
-  </div>
+    <div class="form-group">
+      <label for="autoBlockMovementInCombat">{{fields.autoBlockMovementInCombat.label}}</label>
+      <input type="checkbox" name="autoBlockMovementInCombat" id="autoBlockMovementInCombat" {{#if autoBlockMovementInCombat}}checked{{/if}} />
+      <p class="hint">{{{fields.autoBlockMovementInCombat.hint}}}</p>
+    </div>
+  </fieldset>
 
-  <div class="form-group">
-    <label for="autoBlockMovementInCombat">{{fields.autoBlockMovementInCombat.label}}</label>
-    <input type="checkbox" name="autoBlockMovementInCombat" id="autoBlockMovementInCombat" {{#if autoBlockMovementInCombat}}checked{{/if}} />
-    <p class="hint">{{{fields.autoBlockMovementInCombat.hint}}}</p>
-  </div>
+  <fieldset>
+    <legend>Other Options </legend>
 
-  <div class="form-group">
-    <label for="addMacrosToFolder">{{fields.addMacrosToFolder.label}}</label>
-    <input type="checkbox" name="addMacrosToFolder" id="addMacrosToFolder" {{#if addMacrosToFolder}}checked{{/if}} />
-    <p class="hint">{{{fields.addMacrosToFolder.hint}}}</p>
-  </div>
+    <div class="form-group">
+      <label for="addMacrosToFolder">{{fields.addMacrosToFolder.label}}</label>
+      <input type="checkbox" name="addMacrosToFolder" id="addMacrosToFolder" {{#if addMacrosToFolder}}checked{{/if}} />
+      <p class="hint">{{{fields.addMacrosToFolder.hint}}}</p>
+    </div>
 
-  <div class="form-group range">
-    <label for="tooltipAutoDismiss">{{fields.tooltipAutoDismiss.label}}</label>
-    <input type="range" name="tooltipAutoDismiss" id="tooltipAutoDismiss" min="0" step="1" max="10" value="{{tooltipAutoDismiss}}" />
-    <input type="number" name="tooltipAutoDismiss_value" class="range-value-input" value="{{tooltipAutoDismiss}}" />
-    <p class="hint">{{{fields.tooltipAutoDismiss.hint}}}</p>
-  </div>
-
-  <div class="form-group">
-    <label for="disableNotifications">{{fields.disableNotifications.label}}</label>
-    <input type="checkbox" name="disableNotifications" id="disableNotifications" {{#if disableNotifications}}checked{{/if}} />
-    <p class="hint">{{{fields.disableNotifications.hint}}}</p>
-  </div>
+    <div class="form-group">
+      <label for="disableNotifications">{{fields.disableNotifications.label}}</label>
+      <input type="checkbox" name="disableNotifications" id="disableNotifications" {{#if disableNotifications}}checked{{/if}} />
+      <p class="hint">{{{fields.disableNotifications.hint}}}</p>
+    </div>
+  </fieldset>
   
 </section>
