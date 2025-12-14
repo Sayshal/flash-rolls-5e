@@ -1502,7 +1502,6 @@ export class ChatMessageManager {
   static interceptRollMessage(message, html, context) {
     const SETTINGS = getSettings();
     const groupRollsMsgEnabled = SettingsUtil.get(SETTINGS.groupRollsMsgEnabled.tag);
-    if (!groupRollsMsgEnabled) return;
 
     const actorUniqueIdFromFlag = message.getFlag(MODULE_ID, 'actorUniqueId');
     const actorId = message.speaker?.actor;
@@ -1536,12 +1535,28 @@ export class ChatMessageManager {
     if (!actor) return;
 
     LogUtil.log('interceptRollMessage - using uniqueId:', [uniqueId, 'for actor:', actor.name]);
+
+    const isFlashRollRequest = message.getFlag(MODULE_ID, 'isFlashRollRequest');
+    const rollType = message.getFlag(MODULE_ID, 'rollType');
+    const rollKey = message.getFlag(MODULE_ID, 'rollKey');
+    const roll = message.rolls?.[0];
+
+    if (!groupRollsMsgEnabled) {
+      if (isFlashRollRequest && roll) {
+        this._broadcastIndividualRollComplete(actor, roll, rollType, rollKey, tokenId);
+      }
+      return;
+    }
+
     const groupRollId = message.getFlag(MODULE_ID, 'groupRollId') ||
                         actor.getFlag(MODULE_ID, 'tempGroupRollId') ||
                         actor.getFlag(MODULE_ID, 'tempInitiativeConfig')?.groupRollId;
 
     if (!groupRollId) {
       LogUtil.log('interceptRollMessage #2 - no groupRollId in flag', [actor.name]);
+      if (isFlashRollRequest && roll) {
+        this._broadcastIndividualRollComplete(actor, roll, rollType, rollKey, tokenId);
+      }
       return;
     }
     
@@ -1573,8 +1588,7 @@ export class ChatMessageManager {
         return;
       }
     }
-    
-    const roll = message.rolls?.[0];
+
     if (!roll) return;
 
     let rollMode = CONST.DICE_ROLL_MODES.PUBLIC;
@@ -1649,54 +1663,91 @@ export class ChatMessageManager {
   }
   
   /**
-   * Add groupRollId to message flags if it's a group roll
+   * Add groupRollId and Flash Roll metadata to message flags
    * @param {Object} messageConfig - The message configuration object
-   * @param {Object} requestData - The request data containing the groupRollId
+   * @param {Object} requestData - The request data containing the groupRollId and rollKey
    * @param {Actor} actor - The actor performing the roll (optional, for player flag storage)
+   * @param {string} rollType - The type of roll (save, skill, ability, etc.)
    */
-  static async addGroupRollFlag(messageConfig, requestData, actor = null) {
+  static async addGroupRollFlag(messageConfig, requestData, actor = null, rollType = null) {
     const SETTINGS = getSettings();
     const groupRollsMsgEnabled = SettingsUtil.get(SETTINGS.groupRollsMsgEnabled.tag);
-    
-    LogUtil.log('addGroupRollFlag called', [messageConfig, requestData.groupRollId, this.isGroupRoll(requestData.groupRollId)]);
-    
+
+    LogUtil.log('addGroupRollFlag called', [messageConfig, requestData.groupRollId, this.isGroupRoll(requestData.groupRollId), rollType]);
+
     if (!game.user.isGM && requestData.groupRollId && actor) {
       await actor.setFlag(MODULE_ID, 'tempGroupRollId', requestData.groupRollId);
       if (actor.isToken && actor.actor) {
         await actor.actor.setFlag(MODULE_ID, 'tempGroupRollId', requestData.groupRollId);
         LogUtil.log('addGroupRollFlag - Also stored tempGroupRollId on base actor for player', [requestData.groupRollId, actor.actor.id]);
       }
-      
+
       if (!this.groupRollMessages.has(requestData.groupRollId)) {
         const messages = game.messages.contents;
-        const groupMessage = messages.find(m => 
+        const groupMessage = messages.find(m =>
           m.getFlag(MODULE_ID, 'groupRollId') === requestData.groupRollId &&
           m.getFlag(MODULE_ID, 'isGroupRoll')
         );
-        
+
         if (groupMessage) {
           this.groupRollMessages.set(requestData.groupRollId, groupMessage);
           LogUtil.log('addGroupRollFlag - Registered group roll message on player side', [requestData.groupRollId]);
         }
       }
     }
-    
-    // Add groupRollId for any multi-actor roll when setting is enabled
+
+    messageConfig.data = messageConfig.data || {};
+    messageConfig.data.flags = messageConfig.data.flags || {};
+    messageConfig.data.flags[MODULE_ID] = messageConfig.data.flags[MODULE_ID] || {};
+    messageConfig.data.flags[MODULE_ID].isFlashRollRequest = true;
+    if (rollType) {
+      messageConfig.data.flags[MODULE_ID].rollType = rollType;
+    }
+    if (requestData.rollKey) {
+      messageConfig.data.flags[MODULE_ID].rollKey = requestData.rollKey;
+    }
+
     if (groupRollsMsgEnabled && requestData.groupRollId) {
       const shouldAddFlag = game.user.isGM ? this.isGroupRoll(requestData.groupRollId) : true;
 
       if (shouldAddFlag) {
-        messageConfig.data = messageConfig.data || {};
-        messageConfig.data.flags = messageConfig.data.flags || {};
-        messageConfig.data.flags[MODULE_ID] = messageConfig.data.flags[MODULE_ID] || {};
         messageConfig.data.flags[MODULE_ID].groupRollId = requestData.groupRollId;
         messageConfig.data.flags.rsr5e = { ...messageConfig.data.flags.rsr5e, processed: true, quickRoll: false};
 
-        LogUtil.log('addGroupRollFlag - Added flag to messageConfig', [messageConfig]);
+        LogUtil.log('addGroupRollFlag - Added groupRollId flag to messageConfig', [messageConfig]);
       }
     }
   }
   
+  /**
+   * Broadcast roll complete hook for individual (non-group) rolls
+   * @param {Actor} actor - The actor who rolled
+   * @param {Roll} roll - The completed roll
+   * @param {string} rollType - Type of roll (save, skill, ability, etc.)
+   * @param {string} rollKey - Roll key (ability/skill key)
+   * @param {string|null} tokenId - Token ID if applicable
+   * @private
+   */
+  static _broadcastIndividualRollComplete(actor, roll, rollType, rollKey, tokenId) {
+    if (!actor || !roll) return;
+
+    const hookData = {
+      actorUuid: actor.uuid,
+      actorId: actor.id,
+      tokenId: tokenId || null,
+      roll: roll.toJSON(),
+      total: roll.total,
+      rollType: rollType || null,
+      rollKey: rollKey || null,
+      groupRollId: null,
+      dc: null,
+      success: null
+    };
+
+    LogUtil.log('_broadcastIndividualRollComplete - Broadcasting hook', [actor.name, rollType, rollKey, roll.total]);
+    SocketUtil.execForAll(SOCKET_CALLS.broadcastRollComplete, hookData);
+  }
+
   /**
    * Clean up old messages and data
    */

@@ -187,6 +187,7 @@ Triggers roll requests for the provided actors using Flash Token Bar 5e's roll o
 - `options.situationalBonus` (string, optional) - Situational bonus (e.g., `'+2'`, `'1d4'`)
 - `options.advantage` (boolean, optional) - Roll with advantage
 - `options.disadvantage` (boolean, optional) - Roll with disadvantage
+- `options.rollMode` (string, optional) - Roll visibility mode from `CONST.DICE_ROLL_MODES`: `'publicroll'`, `'gmroll'`, `'blindroll'`, `'selfroll'`
 - `options.skipRollDialog` (boolean, optional) - Skip the roll dialog
 - `options.sendAsRequest` (boolean, optional) - Send to players instead of rolling locally. Default is true.
 

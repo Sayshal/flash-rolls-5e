@@ -34,6 +34,7 @@ export class FlashAPI {
    * @param {string} [options.situationalBonus] - Situational bonus (e.g., '+2', '1d4')
    * @param {boolean} [options.advantage] - Roll with advantage
    * @param {boolean} [options.disadvantage] - Roll with disadvantage
+   * @param {string} [options.rollMode] - Roll visibility mode (CONST.DICE_ROLL_MODES: 'publicroll', 'gmroll', 'blindroll', 'selfroll')
    * @param {boolean} [options.skipRollDialog] - Skip the roll dialog
    * @param {boolean} [options.sendAsRequest] - Send to players instead of rolling locally
    * @param {string} [options.groupRollId=null] - Group roll identifier for combining multiple rolls into one message
@@ -47,15 +48,15 @@ export class FlashAPI {
         ui.notifications.error(game.i18n.localize("FLASH_ROLLS.notifications.invalidMacroData"));
         return;
       }
-      
-      const { requestType, rollKey = null, actorIds = [], dc, situationalBonus, advantage, disadvantage, skipRollDialog, sendAsRequest = true, groupRollId = null, isContestedRoll = false } = options;
+
+      const { requestType, rollKey = null, actorIds = [], dc, situationalBonus, advantage, disadvantage, rollMode, skipRollDialog, sendAsRequest = true, groupRollId = null, isContestedRoll = false } = options;
 
       if (!requestType) {
         ui.notifications.error(game.i18n.localize("FLASH_ROLLS.notifications.missingRequestType"));
         return;
       }
 
-      const config = { dc, situationalBonus, advantage, disadvantage, skipRollDialog, sendAsRequest, groupRollId, isContestedRoll };
+      const config = { dc, situationalBonus, advantage, disadvantage, rollMode, skipRollDialog, sendAsRequest, groupRollId, isContestedRoll };
       
       LogUtil.log('FlashAPI.requestRoll', [requestType, rollKey, actorIds, config]);
       

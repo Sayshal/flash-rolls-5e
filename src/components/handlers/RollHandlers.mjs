@@ -17,8 +17,8 @@ export const RollHandlers = {
     const config = RollHelpers.buildRollConfig(requestData, rollConfig, {
       ability: requestData.rollKey
     });
-    
-    await ChatMessageManager.addGroupRollFlag(messageConfig, requestData, actor);
+
+    await ChatMessageManager.addGroupRollFlag(messageConfig, requestData, actor, ROLL_TYPES.ABILITY);
     await actor.rollAbilityCheck(config, dialogConfig, messageConfig);
   },
   
@@ -30,9 +30,9 @@ export const RollHandlers = {
     const config = RollHelpers.buildRollConfig(requestData, rollConfig, {
       ability: requestData.config?.ability || requestData.rollKey
     });
-    
-    await ChatMessageManager.addGroupRollFlag(messageConfig, requestData, actor);
-    
+
+    await ChatMessageManager.addGroupRollFlag(messageConfig, requestData, actor, ROLL_TYPES.SAVE);
+
     await actor.rollSavingThrow(config, dialogConfig, messageConfig);
   },
   
@@ -41,40 +41,40 @@ export const RollHandlers = {
   },
 
   skill: async (actor, requestData, rollConfig, dialogConfig, messageConfig) => {
-    const defaultAbility = actor.system.skills?.[requestData.rollKey]?.ability || 
-                          CONFIG.DND5E.skills?.[requestData.rollKey]?.ability || 
+    const defaultAbility = actor.system.skills?.[requestData.rollKey]?.ability ||
+                          CONFIG.DND5E.skills?.[requestData.rollKey]?.ability ||
                           undefined;
 
     const config = RollHelpers.buildRollConfig(requestData, rollConfig, {
-      skill: requestData.rollKey, 
-      chooseAbility: dialogConfig.configure !== false, 
-      ability: requestData.config.ability || defaultAbility 
+      skill: requestData.rollKey,
+      chooseAbility: dialogConfig.configure !== false,
+      ability: requestData.config.ability || defaultAbility
     });
-    await ChatMessageManager.addGroupRollFlag(messageConfig, requestData, actor);
+    await ChatMessageManager.addGroupRollFlag(messageConfig, requestData, actor, ROLL_TYPES.SKILL);
     await actor.rollSkill(config, dialogConfig, messageConfig);
   },
 
   tool: async (actor, requestData, rollConfig, dialogConfig, messageConfig) => {
     const toolConfig = actor.system.tools?.[requestData.rollKey];
-    const defaultAbility = toolConfig?.ability || 
+    const defaultAbility = toolConfig?.ability ||
                           CONFIG.DND5E.enrichmentLookup?.tools?.[requestData.rollKey]?.ability ||
                           'int';
 
     const config = RollHelpers.buildRollConfig(requestData, rollConfig, {
       tool: requestData.rollKey,
-      chooseAbility: dialogConfig.configure !== false, 
+      chooseAbility: dialogConfig.configure !== false,
       ability: requestData.config.ability || defaultAbility
     });
     LogUtil.log('RollHandlers.tool #2', [config, dialogConfig, messageConfig]);
-    
-    await ChatMessageManager.addGroupRollFlag(messageConfig, requestData, actor);
+
+    await ChatMessageManager.addGroupRollFlag(messageConfig, requestData, actor, ROLL_TYPES.TOOL);
     await actor.rollToolCheck(config, dialogConfig, messageConfig);
   },
 
   concentration: async (actor, requestData, rollConfig, dialogConfig, messageConfig) => {
     const config = RollHelpers.buildRollConfig(requestData, rollConfig);
-    
-    await ChatMessageManager.addGroupRollFlag(messageConfig, requestData, actor);
+
+    await ChatMessageManager.addGroupRollFlag(messageConfig, requestData, actor, ROLL_TYPES.CONCENTRATION);
     await actor.rollConcentration(config, dialogConfig, messageConfig);
   },
 
@@ -108,8 +108,8 @@ export const RollHandlers = {
         return;
       }
     }
-    await ChatMessageManager.addGroupRollFlag(messageConfig, requestData, actor);
-    
+    await ChatMessageManager.addGroupRollFlag(messageConfig, requestData, actor, ROLL_TYPES.INITIATIVE);
+
     try {
       if (dialogConfig.configure) {
         LogUtil.log('RollHandlers.initiative - Dialog', []);
@@ -163,18 +163,18 @@ export const RollHandlers = {
 
   deathsave: async (actor, requestData, rollConfig, dialogConfig, messageConfig) => {
     const config = RollHelpers.buildRollConfig(requestData, rollConfig);
-    await ChatMessageManager.addGroupRollFlag(messageConfig, requestData, actor);
+    await ChatMessageManager.addGroupRollFlag(messageConfig, requestData, actor, ROLL_TYPES.DEATH_SAVE);
     await actor.rollDeathSave(config, dialogConfig, messageConfig);
   },
 
   hitdie: async (actor, requestData, rollConfig, dialogConfig, messageConfig) => {
     dialogConfig.configure = game.user.isGM ? dialogConfig.configure : true;
-    
+
     const config = RollHelpers.buildRollConfig(requestData, rollConfig, {
-      denomination: requestData.rollKey // The hit die denomination (d6, d8, etc.)
+      denomination: requestData.rollKey
     });
     LogUtil.log('RollHandlers.hitdie', [config, dialogConfig, messageConfig]);
-    await ChatMessageManager.addGroupRollFlag(messageConfig, requestData, actor);
+    await ChatMessageManager.addGroupRollFlag(messageConfig, requestData, actor, ROLL_TYPES.HIT_DIE);
     await actor.rollHitDie(config, dialogConfig, messageConfig);
   },
 
