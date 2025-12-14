@@ -110,12 +110,12 @@ export class IconContextMenu {
   static async _handleRemoveIcon(iconId, iconType) {
     try {
       await IconLayoutUtil.removeIcon(iconId, iconType);
-      GeneralUtil.notify('info',game.i18n.format("FLASH_ROLLS.notifications.iconRemoved", {
+      FlashAPI.notify('info',game.i18n.format("FLASH_ROLLS.notifications.iconRemoved", {
         iconName: game.i18n.localize(getIconConfiguration(iconId, iconType)?.labelKey || iconId)
       }));
     } catch (error) {
       LogUtil.error('Failed to remove icon', [error]);
-      GeneralUtil.notify('error',game.i18n.localize("FLASH_ROLLS.notifications.iconRemoveFailed"));
+      FlashAPI.notify('error',game.i18n.localize("FLASH_ROLLS.notifications.iconRemoveFailed"));
     }
   }
 
@@ -231,7 +231,7 @@ export class IconContextMenu {
           macroCommand = this._generateTransformActorsMacro(selectedActorIds);
           break;
         default:
-          GeneralUtil.notify('warn',`No macro generation configured for icon: ${iconId}`);
+          FlashAPI.notify('warn',`No macro generation configured for icon: ${iconId}`);
           return;
       }
 
@@ -254,14 +254,14 @@ export class IconContextMenu {
         }
       });
 
-      GeneralUtil.notify('info',game.i18n.format("FLASH_ROLLS.notifications.macroCreated", {
+      FlashAPI.notify('info',game.i18n.format("FLASH_ROLLS.notifications.macroCreated", {
         macroName: macro.name
       }));
 
       macro.sheet.render(true);
     } catch (error) {
       LogUtil.error('Failed to create macro', [error]);
-      GeneralUtil.notify('error',game.i18n.localize("FLASH_ROLLS.notifications.macroCreationFailed"));
+      FlashAPI.notify('error',game.i18n.localize("FLASH_ROLLS.notifications.macroCreationFailed"));
     }
   }
 
@@ -320,7 +320,7 @@ try {
 try {
   const actorIds = FlashAPI.getSelectedActors();
   if (actorIds.length === 0) {
-    GeneralUtil.notify('warn',"No actors selected");
+    FlashAPI.notify('warn',"No actors selected");
   } else {
     FlashAPI.${methodName}(actorIds);
   }
@@ -404,7 +404,7 @@ try {
 try {
   const actorIds = FlashAPI.getSelectedActors();
   if (actorIds.length === 0 && game.user.targets.size === 0) {
-    GeneralUtil.notify('warn',"No actors selected and no targets to clear");
+    FlashAPI.notify('warn',"No actors selected and no targets to clear");
   } else {
     FlashAPI.toggleTargets(actorIds);
   }
@@ -445,7 +445,7 @@ try {
 try {
   const actorIds = FlashAPI.getSelectedActors();
   if (actorIds.length === 0) {
-    GeneralUtil.notify('warn',"No actors selected");
+    FlashAPI.notify('warn',"No actors selected");
   } else {
     FlashAPI.placeTokens(actorIds);
   }
@@ -492,7 +492,7 @@ try {
 try {
   const tokenIds = FlashAPI.getSelectedActors(true);
   if (tokenIds.length === 0) {
-    GeneralUtil.notify('warn',"No tokens found for selected actors");
+    FlashAPI.notify('warn',"No tokens found for selected actors");
   } else {
     FlashAPI.teleportTokens(tokenIds);
   }
@@ -540,7 +540,7 @@ try {
   // const actorIds = ["8sKqJT1gcAUvko53","6xvOSmZnNUcP5Gyh"];
 
   if (actorIds.length === 0) {
-    GeneralUtil.notify('warn',"No actors selected");
+    FlashAPI.notify('warn',"No actors selected");
   } else {
     FlashAPI.transformActors(actorIds);
   }
@@ -570,7 +570,7 @@ try {
         LogUtil.log('Created Flash Token Bar macro folder', [folder]);
       } catch (error) {
         LogUtil.error('Failed to create Flash Token Bar macro folder:', [error]);
-        GeneralUtil.notify('warn','Failed to create Flash Token Bar macro folder. Macro will be created without folder organization.');
+        FlashAPI.notify('warn','Failed to create Flash Token Bar macro folder. Macro will be created without folder organization.');
         return null;
       }
     }

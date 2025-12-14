@@ -137,7 +137,7 @@ export class HooksManager {
         const message = game.messages.get(messageId);
         if (message) {
           message.setFlag(MODULE_ID, 'npcHiddenOverride', true);
-          GeneralUtil.notify('info', game.i18n.localize("FLASH_ROLLS.notifications.npcHiddenFromPlayers"));
+          FlashAPI.notify('info', game.i18n.localize("FLASH_ROLLS.notifications.npcHiddenFromPlayers"));
         }
       },
       condition: li => {
@@ -171,7 +171,7 @@ export class HooksManager {
           } else {
             message.unsetFlag(MODULE_ID, 'npcHiddenOverride');
           }
-          GeneralUtil.notify('info', game.i18n.localize("FLASH_ROLLS.notifications.npcVisibleToPlayers"));
+          FlashAPI.notify('info', game.i18n.localize("FLASH_ROLLS.notifications.npcVisibleToPlayers"));
         }
       },
       condition: li => {
@@ -220,6 +220,7 @@ export class HooksManager {
     SettingsUtil.registerSettings();
     DiceConfigUtil.initialize();
     this._registerHook(HOOKS_CORE.RENDER_CHAT_MESSAGE, ChatMessageManager.onRenderChatMessage.bind(ChatMessageManager));
+    this._registerHook(HOOKS_CORE.RENDER_ROLL_RESOLVER, this._onRenderRollResolver.bind(this));
     MonksActiveTilesIntegration.initialize();
   }
   
@@ -483,7 +484,75 @@ export class HooksManager {
     }
     
   }
-  
+
+  /**
+   * Customize the Roll Resolver dialog title
+   * @param {RollResolver} app - The roll resolver application
+   * @param {jQuery} html - The rendered HTML
+   */
+  static _onRenderRollResolver(app, html) {
+    try {
+      const roll = app.roll;
+      if (!roll) return;
+
+      LogUtil.log('_onRenderRollResolver - roll options:', [roll.options]);
+
+      const messageData = roll.options?.messageData;
+      if (!messageData?.flags?.[MODULE_ID]) {
+        LogUtil.log('_onRenderRollResolver - no metadata found in messageData');
+        return;
+      }
+
+      const { rollType, rollKey } = messageData.flags[MODULE_ID];
+      if (!rollType) {
+        LogUtil.log('_onRenderRollResolver - no rollType found');
+        return;
+      }
+
+      LogUtil.log('_onRenderRollResolver - found metadata', [rollType, rollKey]);
+
+      const title = html[0].querySelector('.window-title');
+      if (!title) {
+        LogUtil.log('_onRenderRollResolver - no title element found');
+        return;
+      }
+
+      let rollTypeDisplay;
+      switch (rollType.toLowerCase()) {
+        case 'ability':
+        case 'abilitycheck':
+          rollTypeDisplay = `${game.i18n.localize(CONFIG.DND5E.abilities[rollKey]?.label || rollKey)} ${game.i18n.localize("DND5E.AbilityCheck")}`;
+          break;
+        case 'save':
+        case 'savingthrow':
+          rollTypeDisplay = `${game.i18n.localize(CONFIG.DND5E.abilities[rollKey]?.label || rollKey)} ${game.i18n.localize("DND5E.SavingThrow")}`;
+          break;
+        case 'skill':
+          rollTypeDisplay = game.i18n.localize(CONFIG.DND5E.skills[rollKey]?.label || rollKey);
+          break;
+        case 'tool':
+          rollTypeDisplay = game.i18n.localize(CONFIG.DND5E.tools?.[rollKey]?.label || rollKey);
+          break;
+        case 'initiative':
+        case 'initiativedialog':
+          rollTypeDisplay = game.i18n.localize("DND5E.Initiative");
+          break;
+        case 'deathsave':
+          rollTypeDisplay = game.i18n.localize("DND5E.DeathSave");
+          break;
+        case 'hitdie':
+          rollTypeDisplay = `${game.i18n.localize("DND5E.HitDie")} (${rollKey})`;
+          break;
+        default:
+          return;
+      }
+
+      title.textContent = rollTypeDisplay;
+    } catch (error) {
+      LogUtil.error('Error customizing Roll Resolver title:', [error]);
+    }
+  }
+
   /**
    * Intercept group roll message creation (GM only) - currently unused
    */
@@ -528,7 +597,7 @@ export class HooksManager {
     const targets = message.querySelectorAll("[data-target-uuid]");
     
     if (targets.length === 0) {
-      GeneralUtil.notify('warn', game.i18n.localize("FLASH_ROLLS.notifications.noTargetedTokens"));
+      FlashAPI.notify('warn', game.i18n.localize("FLASH_ROLLS.notifications.noTargetedTokens"));
       return;
     }
 
@@ -661,7 +730,7 @@ export class HooksManager {
     LogUtil.log('Movement check result:', { isMovementAllowed, user: user.name, token: tokenDoc.name });
 
     if (!isMovementAllowed) {
-      GeneralUtil.notify('warn', game.i18n.localize("FLASH_ROLLS.notifications.movementRestricted"));
+      FlashAPI.notify('warn', game.i18n.localize("FLASH_ROLLS.notifications.movementRestricted"));
       LogUtil.log('Movement blocked for token:', tokenDoc.name);
       return false;
     }

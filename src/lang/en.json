@@ -81,7 +81,10 @@
       "showAllResultsToPlayers": "Show All Results to Players"
     },
     "chat": {
-      "requestedBy": "[Requested by {gm}]"
+      "requestedBy": "[Requested by {gm}]",
+      "groupRoll": "Group Roll",
+      "contestedRoll": "Contested Roll",
+      "rollRequest": "Roll Request"
     },
     "settings": {
       "debugMode": {
@@ -138,18 +141,26 @@
         "label": "Default Roll Requests to Public",
         "hint": "When GM sends a roll request to player, the roll mode for that specific request will default to 'public'. It can still be changed on the roll dialog. Disable this to use the GM's current roll mode as default."
       },
+      "useCondensedRollMessage": {
+        "label": "Use Condensed Message for Single Roll Requests",
+        "hint": "If enabled, single-actor roll requests will post a condensed roll message similar to group rolls format. This will override the regular roll result message if the roll is a request from GM."
+      },
       "skipRollDialog": {
-        "label": "Skip Roll Dialogs (GM)",
+        "label": "Skip Roll Dialogs on GM side",
         "hint": "Enable to skip the Roll Configuration windows according to the option selected below. System will use default configurations for the roll when skipped."
       },
       "skipRollDialogOption": {
-        "label": "Skip Roll Dialog Options",
+        "label": "Skip Roll Dialog Option for GM",
         "hint": "When Skip Roll Dialogs, which dialogs do you want to skip? This does not affect dialogs on player side.",
         "choices": {
           "1": "All roll config dialogs",
           "2": "Roll request config dialogs",
           "3": "Local roll config dialogs"
         }
+      },
+      "skipToRollResolver": {
+        "label": "Skip Dialog for Non-Digital Dice",
+        "hint": "When enabled, the roll configuration dialog will be skipped if the player has configured their dice to use manual dice or interactive devices (like Bluetooth/Pixels dice). This allows quick dice entry without going through the configuration dialog."
       },
       "rollInterceptionEnabled": {
         "label": "Send Roll Requests from Player Sheets and Other Modules",

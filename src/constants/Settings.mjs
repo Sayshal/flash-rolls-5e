@@ -26,6 +26,7 @@ export const getSettings = () => {
         'showMenuOnLoad',
         'skipRollDialog',
         'skipRollDialogOption',
+        'skipToRollResolver',
         'showOnlyPCsWithToken',
         'addMacrosToFolder',
         'templateAutoTarget',
@@ -40,6 +41,7 @@ export const getSettings = () => {
         showMenuOnLoad: false,
         skipRollDialog: false,
         skipRollDialogOption: 1,
+        skipToRollResolver: false,
         showOnlyPCsWithToken: true,
         addMacrosToFolder: true,
         templateAutoTarget: 1,
@@ -118,7 +120,7 @@ export const getSettings = () => {
     },
 
     rollRequestsSettings: {
-      tag: "flash5e-roll-request-settings", 
+      tag: "flash5e-roll-request-settings",
       label: game.i18n.localize("FLASH_ROLLS.settings.moduleSettingsMenu.label"),
       title: game.i18n.localize("FLASH_ROLLS.settings.moduleSettingsMenu.title"),
       hint: game.i18n.localize("FLASH_ROLLS.settings.moduleSettingsMenu.hint"),
@@ -130,7 +132,8 @@ export const getSettings = () => {
         'placeTemplateForPlayer',
         'showOfflineNotifications',
         'initiateCombatOnRequest',
-        'publicPlayerRolls'
+        'publicPlayerRolls',
+        'useCondensedRollMessage'
       ],
       default: {
         rollInterceptionEnabled: true,
@@ -139,7 +142,8 @@ export const getSettings = () => {
         placeTemplateForPlayer: false,
         showOfflineNotifications: true,
         initiateCombatOnRequest: true,
-        publicPlayerRolls: true
+        publicPlayerRolls: false,
+        useCondensedRollMessage: false
       },
       scope: SETTING_SCOPE.world,
       config: false, 
@@ -294,7 +298,7 @@ export const getSettings = () => {
       tag: "skip-roll-dialog-options",
       label: game.i18n.localize("FLASH_ROLLS.settings.skipRollDialogOption.label"),
       hint: game.i18n.localize("FLASH_ROLLS.settings.skipRollDialogOption.hint"),
-      propType: Number, 
+      propType: Number,
       inputType: SETTING_INPUT.select,
       choices: {
         1: game.i18n.localize("FLASH_ROLLS.settings.skipRollDialogOption.choices.1"),
@@ -305,6 +309,18 @@ export const getSettings = () => {
       scope: SETTING_SCOPE.world,
       config: false
     },
+
+    skipToRollResolver: {
+      tag: "skip-to-roll-resolver",
+      label: game.i18n.localize("FLASH_ROLLS.settings.skipToRollResolver.label"),
+      hint: game.i18n.localize("FLASH_ROLLS.settings.skipToRollResolver.hint"),
+      propType: Boolean,
+      inputType: SETTING_INPUT.checkbox,
+      default: false,
+      scope: SETTING_SCOPE.world,
+      config: false
+    },
+
     useGMTargetTokens: {
       tag: "use-gm-target-tokens",
       label: game.i18n.localize("FLASH_ROLLS.settings.useGMTargetTokens.label"),
@@ -326,12 +342,12 @@ export const getSettings = () => {
       config: false
     },
     publicPlayerRolls: {
-      tag: "public-player-rolls",
+      tag: "public-player-roll-messages",
       label: game.i18n.localize("FLASH_ROLLS.settings.publicPlayerRolls.label"),
       hint: game.i18n.localize("FLASH_ROLLS.settings.publicPlayerRolls.hint"),
       propType: Boolean,
       inputType: SETTING_INPUT.checkbox,
-      default: true,
+      default: false,
       scope: SETTING_SCOPE.world,
       config: false
     },
@@ -365,6 +381,17 @@ export const getSettings = () => {
       propType: Boolean,
       inputType: SETTING_INPUT.checkbox,
       default: true,
+      scope: SETTING_SCOPE.world,
+      config: false
+    },
+
+    useCondensedRollMessage: {
+      tag: "use-condensed-roll-message",
+      label: game.i18n.localize("FLASH_ROLLS.settings.useCondensedRollMessage.label"),
+      hint: game.i18n.localize("FLASH_ROLLS.settings.useCondensedRollMessage.hint"),
+      propType: Boolean,
+      inputType: SETTING_INPUT.checkbox,
+      default: false,
       scope: SETTING_SCOPE.world,
       config: false
     },

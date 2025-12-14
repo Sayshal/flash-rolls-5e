@@ -61,7 +61,11 @@
       {{#if groupResult.complete}}
       <div class="group-roll-footer {{#if groupResult.success}}success{{else}}failure{{/if}}" data-show-to-players="{{showResultToPlayers}}">
         <div class="group-result-summary">
+          {{#if isSingleActor}}
+          <span class="group-result-label">Result:</span>
+          {{else}}
           <span class="group-result-label">Group Result:</span>
+          {{/if}}
           {{#if groupResult.success}}
             <i class="fas fa-check-circle success-icon"></i>
             <span class="group-result-value success">Success</span>
@@ -70,11 +74,13 @@
             <span class="group-result-value failure">Failure</span>
           {{/if}}
         </div>
+        {{#unless isSingleActor}}
         {{#if groupSummary}}
         <div class="group-result-details">
           <span class="summary-text">{{groupSummary}}</span>
         </div>
         {{/if}}
+        {{/unless}}
       </div>
       {{/if}}
     {{/if}}

@@ -5,6 +5,7 @@ import { HOOKS_CORE, HOOKS_DND5E } from '../../constants/Hooks.mjs';
 import { getSettings } from '../../constants/Settings.mjs';
 import RollRequestsMenu from '../ui/RollRequestsMenu.mjs';
 import { GeneralUtil } from '../utils/GeneralUtil.mjs';
+import { FlashAPI } from '../core/FlashAPI.mjs';
 
 /**
  * Tracks token placement from group actors and maintains tokenAssociations.
@@ -1130,7 +1131,7 @@ export class GroupTokenTracker {
     }
 
     if (tokens.length === 0) {
-      GeneralUtil.notify('warn',`No tokens found for ${groupActor.name} in ${scene.name}`);
+      FlashAPI.notify('warn',`No tokens found for ${groupActor.name} in ${scene.name}`);
       return;
     }
 

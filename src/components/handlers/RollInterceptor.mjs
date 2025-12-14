@@ -8,10 +8,12 @@ import { GMRollConfigDialog, GMSkillToolConfigDialog, GMHitDieConfigDialog, GMDa
 import { RollHandlers } from './RollHandlers.mjs';
 import { ensureCombatForInitiative, filterActorsForInitiative } from '../helpers/RollValidationHelpers.mjs';
 import { GeneralUtil } from '../utils/GeneralUtil.mjs';
+import { FlashAPI } from '../core/FlashAPI.mjs';
 import { ModuleHelpers } from '../helpers/ModuleHelpers.mjs';
 import { OfflinePlayerManager } from '../managers/roll-menu/OfflinePlayerManager.mjs';
 import { RollHelpers } from '../helpers/RollHelpers.mjs';
 import { HooksManager } from '../core/HooksManager.mjs';
+import { DiceConfigUtil } from '../utils/DiceConfigUtil.mjs';
 
 /**
  * Handles intercepting D&D5e rolls on the GM side and redirecting them to players
@@ -116,10 +118,15 @@ export class RollInterceptor {
     const owner = GeneralUtil.getActorOwner(actor);
     const isPC = owner?.id === game.user.id && owner?.active;
     const areSkipKeysPressed = GeneralUtil.areSkipKeysPressed(config.event);
-    const skipRollDialog = areSkipKeysPressed || SettingsUtil.get(SETTINGS.skipRollDialog.tag);
+    const skipToRollResolver = SettingsUtil.get(SETTINGS.skipToRollResolver.tag);
+    const hasNonDigitalDice = skipToRollResolver && DiceConfigUtil.hasNonDigitalDice();
+    const skipRollDialog = areSkipKeysPressed || SettingsUtil.get(SETTINGS.skipRollDialog.tag) || hasNonDigitalDice;
 
     if (!requestsEnabled || !rollInterceptionEnabled || config.isRollRequest === false) {
-      if(!isMidiOn) dialog.configure = areSkipKeysPressed ? false : config.isRollRequest!==undefined ? false : !RollHelpers.shouldSkipRollDialog(skipRollDialog, {isPC: isPC, isNPC: !isPC});
+      if(!isMidiOn) {
+        const shouldSkip = areSkipKeysPressed || (config.isRollRequest === undefined && skipRollDialog);
+        dialog.configure = !shouldSkip;
+      }
       return;
     }
 
@@ -690,7 +697,7 @@ export class RollInterceptor {
     
     // Owner is active, send the request
     SocketUtil.execForUser('handleRollRequest', owner.id, requestData);
-    GeneralUtil.notify('info',game.i18n.format('FLASH_ROLLS.notifications.rollRequestSent', { 
+    FlashAPI.notify('info',game.i18n.format('FLASH_ROLLS.notifications.rollRequestSent', { 
       player: owner?.name || 'Unknown',
       actor: actor.name || 'Unknown' 
     }));

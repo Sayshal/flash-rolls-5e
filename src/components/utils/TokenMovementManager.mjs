@@ -5,6 +5,7 @@ import { SettingsUtil } from './SettingsUtil.mjs';
 import { getSettings } from '../../constants/Settings.mjs';
 import RollRequestsMenu from '../ui/RollRequestsMenu.mjs';
 import { GeneralUtil } from './GeneralUtil.mjs';
+import { FlashAPI } from '../core/FlashAPI.mjs';
 
 /**
  * Manages token movement restrictions for Flash Token Bar 5e
@@ -18,7 +19,7 @@ export class TokenMovementManager {
    */
   static async toggleMovementForSelected(menu) {
     if (menu.selectedActors.size === 0) {
-      GeneralUtil.notify('warn',game.i18n.localize("FLASH_ROLLS.notifications.noValidActorsSelected"));
+      FlashAPI.notify('warn',game.i18n.localize("FLASH_ROLLS.notifications.noValidActorsSelected"));
       return;
     }
 
@@ -37,7 +38,7 @@ export class TokenMovementManager {
     }
 
     if (tokens.length === 0) {
-      GeneralUtil.notify('warn',game.i18n.localize("FLASH_ROLLS.notifications.noTokensForMovementLock"));
+      FlashAPI.notify('warn',game.i18n.localize("FLASH_ROLLS.notifications.noTokensForMovementLock"));
       return;
     }
 
@@ -54,7 +55,7 @@ export class TokenMovementManager {
     RollRequestsMenu.refreshIfOpen();
 
     const messageKey = shouldLock ? "movementLocked" : "movementUnlocked";
-    GeneralUtil.notify('info',game.i18n.format(`FLASH_ROLLS.notifications.${messageKey}`, {
+    FlashAPI.notify('info',game.i18n.format(`FLASH_ROLLS.notifications.${messageKey}`, {
       count: tokens.length
     }));
 
@@ -70,7 +71,7 @@ export class TokenMovementManager {
    */
   static async _setMovementForSelected(menu, restricted) {
     if (menu.selectedActors.size === 0) {
-      GeneralUtil.notify('warn',game.i18n.localize("FLASH_ROLLS.notifications.noValidActorsSelected"));
+      FlashAPI.notify('warn',game.i18n.localize("FLASH_ROLLS.notifications.noValidActorsSelected"));
       return;
     }
 
@@ -85,14 +86,14 @@ export class TokenMovementManager {
     }
 
     if (tokens.length === 0) {
-      GeneralUtil.notify('warn',game.i18n.localize("FLASH_ROLLS.notifications.noTokensForMovementLock"));
+      FlashAPI.notify('warn',game.i18n.localize("FLASH_ROLLS.notifications.noTokensForMovementLock"));
       return;
     }
 
     await this.setMovementRestriction(tokens, restricted);
 
     const messageKey = restricted ? "movementLocked" : "movementUnlocked";
-    GeneralUtil.notify('info',game.i18n.format(`FLASH_ROLLS.notifications.${messageKey}`, {
+    FlashAPI.notify('info',game.i18n.format(`FLASH_ROLLS.notifications.${messageKey}`, {
       count: tokens.length
     }));
 

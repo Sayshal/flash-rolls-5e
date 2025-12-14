@@ -2,6 +2,7 @@ import { HOOKS_CORE } from "../../constants/Hooks.mjs";
 import { MODULE_ID, ROLL_TYPES } from "../../constants/General.mjs";
 import { getSettings } from "../../constants/Settings.mjs";
 import { GeneralUtil } from "../utils/GeneralUtil.mjs";
+import { FlashAPI } from "../core/FlashAPI.mjs";
 import { LogUtil } from "../utils/LogUtil.mjs";
 import { SettingsUtil } from "../utils/SettingsUtil.mjs";
 import { RollHelpers } from "../helpers/RollHelpers.mjs";
@@ -394,7 +395,7 @@ export class ChatMessageManager {
     const targets = message.querySelectorAll("[data-target-uuid]");
 
     if (targets.length === 0) {
-      GeneralUtil.notify('warn', game.i18n.localize("FLASH_ROLLS.notifications.noTargetedTokens"));
+      FlashAPI.notify('warn', game.i18n.localize("FLASH_ROLLS.notifications.noTargetedTokens"));
       return;
     }
 
@@ -550,13 +551,13 @@ export class ChatMessageManager {
         const actor = game.actors.get(actorId);
         
         if (!actor) {
-          GeneralUtil.notify('warn', `Actor not found`);
+          FlashAPI.notify('warn', `Actor not found`);
           return;
         }
 
         const canRoll = game.user.isGM || actor.isOwner;
         if (!canRoll) {
-          GeneralUtil.notify('warn', `You don't have permission to roll for ${actor.name}`);
+          FlashAPI.notify('warn', `You don't have permission to roll for ${actor.name}`);
           return;
         }
         
@@ -634,7 +635,7 @@ export class ChatMessageManager {
                 rollMethod = 'rollToolCheck';
                 break;
               default:
-                GeneralUtil.notify('warn', `Unknown roll type: ${rollType}`);
+                FlashAPI.notify('warn', `Unknown roll type: ${rollType}`);
                 return;
             }
             
@@ -948,6 +949,7 @@ export class ChatMessageManager {
       showResultToPlayers,
       groupRollNPCHidden,
       isGM,
+      isSingleActor: validEntries.length === 1,
       actorEntries: validEntries.map(entry => ({ actorId: entry.actor.id, uniqueId: entry.uniqueId, tokenId: entry.tokenId })),
       moduleId: MODULE_ID
     };
@@ -1086,10 +1088,16 @@ export class ChatMessageManager {
         : this.templatePath;
 
       const content = await GeneralUtil.renderTemplate(templatePath, data);
+      let speakerAlias = game.i18n.localize("FLASH_ROLLS.chat.groupRoll");
+      if (data.isContestedRoll) {
+        speakerAlias = game.i18n.localize("FLASH_ROLLS.chat.contestedRoll");
+      } else if (data.isSingleActor) {
+        speakerAlias = game.i18n.localize("FLASH_ROLLS.chat.rollRequest");
+      }
       const messageData = {
         content,
         speaker: {
-          alias: data.isContestedRoll ? "Contested Roll" : "Group Roll"
+          alias: speakerAlias
         },
         flags: {
           [MODULE_ID]: {

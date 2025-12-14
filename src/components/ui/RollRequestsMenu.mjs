@@ -10,6 +10,7 @@ import { RollHandlers } from '../handlers/RollHandlers.mjs';
 import { RollHelpers } from '../helpers/RollHelpers.mjs';
 import { ensureCombatForInitiative, filterActorsForInitiative } from '../helpers/RollValidationHelpers.mjs';
 import { GeneralUtil } from '../utils/GeneralUtil.mjs';
+import { FlashAPI } from '../core/FlashAPI.mjs';
 import { ModuleHelpers } from '../helpers/ModuleHelpers.mjs';
 import { ChatMessageManager } from '../managers/ChatMessageManager.mjs';
 import { RollMenuActorUtil } from '../utils/RollMenuActorUtil.mjs';
@@ -960,14 +961,14 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
     }
     
     if (!requestType) {
-      GeneralUtil.notify('warn',"No roll type selected for macro creation");
+      FlashAPI.notify('warn',"No roll type selected for macro creation");
       return;
     }
     
     // Get currently selected actors
     const selectedActorIds = Array.from(this.selectedActors);
     if (selectedActorIds.length === 0) {
-      GeneralUtil.notify('warn',"No actors selected for macro creation");
+      FlashAPI.notify('warn',"No actors selected for macro creation");
       return;
     }
     

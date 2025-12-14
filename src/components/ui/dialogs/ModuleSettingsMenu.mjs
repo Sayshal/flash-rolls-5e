@@ -3,6 +3,7 @@ import { getSettingMenus } from "../../../constants/SettingMenus.mjs";
 import { LogUtil } from "../../utils/LogUtil.mjs"
 import { SettingsUtil } from "../../utils/SettingsUtil.mjs";
 import { GeneralUtil } from "../../utils/GeneralUtil.mjs";
+import { FlashAPI } from "../../core/FlashAPI.mjs";
 import { IconLayoutUtil } from "../../utils/IconLayoutUtil.mjs";
 import { LibWrapperUtil } from "../../utils/LibWrapperUtil.mjs";
 
@@ -414,7 +415,7 @@ export class ModuleSettingsMenu extends HandlebarsApplicationMixin(ApplicationV2
       }
     });
 
-    GeneralUtil.notify('info',game.i18n.localize('FLASH_ROLLS.notifications.settingsUpdated'));
+    FlashAPI.notify('info',game.i18n.localize('FLASH_ROLLS.notifications.settingsUpdated'));
     return confirmReload;
   }
 

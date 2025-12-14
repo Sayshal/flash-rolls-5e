@@ -6,6 +6,7 @@ import { getSettings } from "../../constants/Settings.mjs";
 import { SettingsUtil } from "../utils/SettingsUtil.mjs";
 import { GeneralUtil } from "../utils/GeneralUtil.mjs";
 import { RollHelpers } from "../helpers/RollHelpers.mjs";
+import { DiceConfigUtil } from "../utils/DiceConfigUtil.mjs";
 
 /**
  * @typedef {Object} RollRequestData
@@ -163,21 +164,31 @@ export class RollRequestManager {
         options: {}
       };
 
+      const skipToRollResolver = SettingsUtil.get(SETTINGS.skipToRollResolver.tag);
+      const hasNonDigitalDice = skipToRollResolver && DiceConfigUtil.hasNonDigitalDice();
+
       const dialogConfig = {
-        configure: true
+        configure: !hasNonDigitalDice
       };
 
       const rollModeFromGM = requestData.rollProcessConfig.rollMode;
       const defaultRollMode = game.settings.get("core", "rollMode");
       const finalRollMode = rollModeFromGM || defaultRollMode;
 
+      const rollMetadata = {
+        [MODULE_ID]: {
+          isFlashRollRequest: true,
+          rollType: requestData.rollType,
+          rollKey: requestData.rollKey
+        }
+      };
+
       const messageConfig = {
         rollMode: finalRollMode,
         create: requestData.rollProcessConfig.chatMessage !== false,
-        flags: {
-          [MODULE_ID]: {
-            isFlashRollRequest: true
-          }
+        flags: rollMetadata,
+        messageData: {
+          flags: rollMetadata
         }
       };
 
@@ -189,7 +200,6 @@ export class RollRequestManager {
       };
 
       const handler = RollHandlers[normalizedRollType];
-      LogUtil.log('executePlayerRollRequest - found handler?', [!!handler, normalizedRollType]);
 
       if (handler) {
         LogUtil.log('executePlayerRollRequest - calling handler', [normalizedRollType]);

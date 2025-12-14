@@ -4,6 +4,7 @@ import { getActorData } from '../helpers/Helpers.mjs';
 import { SettingsUtil } from '../utils/SettingsUtil.mjs';
 import { getSettings } from '../../constants/Settings.mjs';
 import { GeneralUtil } from '../utils/GeneralUtil.mjs';
+import { FlashAPI } from '../core/FlashAPI.mjs';
 
 /**
  * Manages token teleportation functionality
@@ -33,17 +34,17 @@ export class TokenTeleportManager {
    */
   static async teleportSelectedTokens(menu) {
     if (!game.user.isGM) {
-      GeneralUtil.notify('warn',"Only GMs can teleport tokens");
+      FlashAPI.notify('warn',"Only GMs can teleport tokens");
       return;
     }
 
     if (menu.selectedActors.size === 0) {
-      GeneralUtil.notify('warn',game.i18n.localize("FLASH_ROLLS.notifications.noTokensSelectedForTeleport"));
+      FlashAPI.notify('warn',game.i18n.localize("FLASH_ROLLS.notifications.noTokensSelectedForTeleport"));
       return;
     }
 
     if (this._isTeleporting) {
-      GeneralUtil.notify('warn',"Teleportation already in progress");
+      FlashAPI.notify('warn',"Teleportation already in progress");
       return;
     }
 
@@ -72,7 +73,7 @@ export class TokenTeleportManager {
     }
 
     if (tokensToTeleport.length === 0) {
-      GeneralUtil.notify('warn',game.i18n.localize("FLASH_ROLLS.notifications.noTokensSelectedForTeleport"));
+      FlashAPI.notify('warn',game.i18n.localize("FLASH_ROLLS.notifications.noTokensSelectedForTeleport"));
       return;
     }
 
@@ -125,7 +126,7 @@ export class TokenTeleportManager {
     LogUtil.log(`Teleport ready with ${tokenCount} tokens on scene: ${sceneName}`, this._tokenDataToTeleport);
 
     if (showNotification) {
-      GeneralUtil.notify('info',game.i18n.format("FLASH_ROLLS.notifications.teleportReady", {
+      FlashAPI.notify('info',game.i18n.format("FLASH_ROLLS.notifications.teleportReady", {
         count: tokenCount
       }));
     }
@@ -207,7 +208,7 @@ export class TokenTeleportManager {
         event.stopPropagation();
         LogUtil.log("Cancelling teleport via ESC key");
         this._cleanup();
-        GeneralUtil.notify('info',game.i18n.localize("FLASH_ROLLS.notifications.teleportCancelled"));
+        FlashAPI.notify('info',game.i18n.localize("FLASH_ROLLS.notifications.teleportCancelled"));
       }
     };
 
@@ -375,7 +376,7 @@ export class TokenTeleportManager {
 
     const tokens = this._getTokensFromData();
     if (tokens.length === 0) {
-      GeneralUtil.notify('warn',"No valid tokens found for teleportation");
+      FlashAPI.notify('warn',"No valid tokens found for teleportation");
       this._cleanup();
       return [];
     }
@@ -425,7 +426,7 @@ export class TokenTeleportManager {
       });
     }
 
-    await this._sourceScene.updateEmbeddedDocuments('Token', updates, { animate: false, teleport: true });
+    await this._sourceScene.updateEmbeddedDocuments('Token', updates, { animate: false });
 
     if (animationPath || this._hasJB2A()) {
       await this._playArrivalAnimations(arrivalPositions);
@@ -458,7 +459,7 @@ export class TokenTeleportManager {
 
     const tokens = this._getTokensFromData();
     if (tokens.length === 0) {
-      GeneralUtil.notify('warn',"No valid tokens found for teleportation");
+      FlashAPI.notify('warn',"No valid tokens found for teleportation");
       this._cleanup();
       return [];
     }
@@ -766,7 +767,7 @@ export class TokenTeleportManager {
     event.stopPropagation();
     LogUtil.log("Cancelling teleport via right-click");
     this._cleanup();
-    GeneralUtil.notify('info', game.i18n.localize("FLASH_ROLLS.notifications.teleportCancelled"));
+    FlashAPI.notify('info', game.i18n.localize("FLASH_ROLLS.notifications.teleportCancelled"));
   }
 
   /**
@@ -950,7 +951,7 @@ export class TokenTeleportManager {
    */
   static async teleportToDestination(actorIds, destinationScene, centerLocation) {
     if (!game.user.isGM) {
-      GeneralUtil.notify('warn',"Only GMs can teleport tokens");
+      FlashAPI.notify('warn',"Only GMs can teleport tokens");
       return;
     }
 
@@ -967,7 +968,7 @@ export class TokenTeleportManager {
     }
 
     if (!actorIds || actorIds.length === 0) {
-      GeneralUtil.notify('warn',game.i18n.localize("FLASH_ROLLS.notifications.noTokensSelectedForTeleport"));
+      FlashAPI.notify('warn',game.i18n.localize("FLASH_ROLLS.notifications.noTokensSelectedForTeleport"));
       return;
     }
 
@@ -1019,12 +1020,12 @@ export class TokenTeleportManager {
         ui.notifications.error("No valid tokens found. Ensure you're using token IDs, not actor IDs.");
         return;
       } else {
-        GeneralUtil.notify('warn',`Some token IDs were invalid and skipped. ${tokensToTeleport.length} token(s) will be teleported.`);
+        FlashAPI.notify('warn',`Some token IDs were invalid and skipped. ${tokensToTeleport.length} token(s) will be teleported.`);
       }
     }
 
     if (tokensToTeleport.length === 0) {
-      GeneralUtil.notify('warn',game.i18n.localize("FLASH_ROLLS.notifications.noTokensSelectedForTeleport"));
+      FlashAPI.notify('warn',game.i18n.localize("FLASH_ROLLS.notifications.noTokensSelectedForTeleport"));
       return;
     }
 

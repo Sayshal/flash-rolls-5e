@@ -224,7 +224,7 @@ export class MonksActiveTilesIntegration {
         const actorIds = this._resolveActorIds(null, entities);
 
         if (!actorIds || actorIds.length === 0) {
-          GeneralUtil.notify('warn',game.i18n.localize('FLASH_ROLLS.ui.dialogs.matt.warnings.noActorsFound'));
+          FlashAPI.notify('warn',game.i18n.localize('FLASH_ROLLS.ui.dialogs.matt.warnings.noActorsFound'));
           return {};
         }
 
@@ -347,7 +347,7 @@ export class MonksActiveTilesIntegration {
         const actorIds = this._resolveActorIds(null, entities);
 
         if (!actorIds || actorIds.length === 0) {
-          GeneralUtil.notify('warn',game.i18n.localize('FLASH_ROLLS.ui.dialogs.matt.warnings.noActorsFound'));
+          FlashAPI.notify('warn',game.i18n.localize('FLASH_ROLLS.ui.dialogs.matt.warnings.noActorsFound'));
           return {};
         }
 
@@ -409,7 +409,7 @@ export class MonksActiveTilesIntegration {
         const actorIds = this._resolveActorIds(null, entities);
 
         if (!actorIds || actorIds.length === 0) {
-          GeneralUtil.notify('warn',game.i18n.localize('FLASH_ROLLS.ui.dialogs.matt.warnings.noActorsFound'));
+          FlashAPI.notify('warn',game.i18n.localize('FLASH_ROLLS.ui.dialogs.matt.warnings.noActorsFound'));
           return {};
         }
 
@@ -471,7 +471,7 @@ export class MonksActiveTilesIntegration {
         const actorIds = this._resolveActorIds(null, entities);
 
         if (!actorIds || actorIds.length === 0) {
-          GeneralUtil.notify('warn',game.i18n.localize('FLASH_ROLLS.ui.dialogs.matt.warnings.noActorsFound'));
+          FlashAPI.notify('warn',game.i18n.localize('FLASH_ROLLS.ui.dialogs.matt.warnings.noActorsFound'));
           return {};
         }
 
@@ -533,7 +533,7 @@ export class MonksActiveTilesIntegration {
         const actorIds = this._resolveActorIds(null, entities);
 
         if (!actorIds || actorIds.length === 0) {
-          GeneralUtil.notify('warn',game.i18n.localize('FLASH_ROLLS.ui.dialogs.matt.warnings.noActorsFound'));
+          FlashAPI.notify('warn',game.i18n.localize('FLASH_ROLLS.ui.dialogs.matt.warnings.noActorsFound'));
           return {};
         }
 
@@ -625,7 +625,7 @@ export class MonksActiveTilesIntegration {
         }
 
         if (!tokenIds || tokenIds.length === 0) {
-          GeneralUtil.notify('warn',game.i18n.localize('FLASH_ROLLS.ui.dialogs.matt.warnings.noActorsFound'));
+          FlashAPI.notify('warn',game.i18n.localize('FLASH_ROLLS.ui.dialogs.matt.warnings.noActorsFound'));
           return {};
         }
 
@@ -842,7 +842,7 @@ export class MonksActiveTilesIntegration {
         }
 
         if (!tokenDocs || tokenDocs.length === 0) {
-          GeneralUtil.notify('warn',game.i18n.localize('FLASH_ROLLS.ui.dialogs.matt.warnings.noActorsFound'));
+          FlashAPI.notify('warn',game.i18n.localize('FLASH_ROLLS.ui.dialogs.matt.warnings.noActorsFound'));
           return {};
         }
 

@@ -4,6 +4,7 @@ import { getSettings } from '../../../constants/Settings.mjs';
 import { RollInterceptor } from '../../handlers/RollInterceptor.mjs';
 import { RollHandlers } from '../../handlers/RollHandlers.mjs';
 import { GeneralUtil } from '../../utils/GeneralUtil.mjs';
+import { FlashAPI } from '../../core/FlashAPI.mjs';
 
 /**
  * Handles offline player detection and roll execution
@@ -23,14 +24,14 @@ export class OfflinePlayerManager {
     LogUtil.log('OfflinePlayerManager.handleOfflinePlayer', [owner?.name, actor?.name, rollType]);
 
     if (!owner || !originalConfig) {
-      GeneralUtil.notify('warn', 'Flash Token Bar: No owner found for actor ' + actor.name);
+      FlashAPI.notify('warn', 'Flash Token Bar: No owner found for actor ' + actor.name);
       return true;
     }
     
     if (!owner.active) {
       const SETTINGS = getSettings();
       if (SettingsUtil.get(SETTINGS.showOfflineNotifications.tag)) {
-        GeneralUtil.notify('info', game.i18n.format("FLASH_ROLLS.notifications.playerOffline", {
+        FlashAPI.notify('info', game.i18n.format("FLASH_ROLLS.notifications.playerOffline", {
           player: owner.name
         }));
       }

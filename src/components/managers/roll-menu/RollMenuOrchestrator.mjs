@@ -11,6 +11,7 @@ import { RollMenuConfig } from './RollMenuConfig.mjs';
 import { OfflinePlayerManager } from './OfflinePlayerManager.mjs';
 import { RollMenuExecutor } from './RollMenuExecutor.mjs';
 import { GeneralUtil } from '../../utils/GeneralUtil.mjs';
+import { FlashAPI } from '../../core/FlashAPI.mjs';
 
 /**
  * Utility class for orchestrating roll requests and execution
@@ -81,11 +82,12 @@ export class RollMenuOrchestrator {
     ));
 
     const groupRollsMsgEnabled = SettingsUtil.get(SETTINGS.groupRollsMsgEnabled.tag);
+    const useCondensedRollMessage = SettingsUtil.get(SETTINGS.useCondensedRollMessage.tag);
+    const isMultiActorRoll = allActors.length > 1;
 
-    // Create group message FIRST so individual rolls can update it
     // Skip if groupRollId already exists (e.g., from contested rolls where the group message was already created)
     const groupMessageAlreadyExists = groupRollId && ChatMessageManager.groupRollMessages.has(groupRollId);
-    const shouldCreateGroupMessage = groupRollsMsgEnabled && !groupMessageAlreadyExists && (allActors.length > 1 || config.groupRollId);
+    const shouldCreateGroupMessage = groupRollsMsgEnabled && !groupMessageAlreadyExists && (isMultiActorRoll || useCondensedRollMessage || config.groupRollId);
     if (shouldCreateGroupMessage) {
       await ChatMessageManager.createGroupRollMessage(
         allActorEntries,
@@ -121,7 +123,7 @@ export class RollMenuOrchestrator {
 
     // Player Rolls: Actors owned by active players
     for (const { actor, owner } of onlinePlayerActors) {
-      const useGroupId = groupRollsMsgEnabled && (allActorEntries.length > 1 || config.isContestedRoll) ? groupRollId : null;
+      const useGroupId = groupRollsMsgEnabled && (isMultiActorRoll || useCondensedRollMessage || config.isContestedRoll) ? groupRollId : null;
 
       LogUtil.log('orchestrateRollsForActors - Sending to player', {
         actor: actor.name,
@@ -152,7 +154,7 @@ export class RollMenuOrchestrator {
     // Handle NPC actors using traditional GM rolls
     if (npcActors.length > 0) {
       config.skipRollDialog = true;
-      config.groupRollId = (groupRollsMsgEnabled && (allActorEntries.length > 1 || config.isContestedRoll)) ? groupRollId : null;
+      config.groupRollId = (groupRollsMsgEnabled && (isMultiActorRoll || useCondensedRollMessage || config.isContestedRoll)) ? groupRollId : null;
 
       const npcActorIds = npcActors.map(actor => actor.id);
       const npcActorEntries = actorsData.filter(entry =>
@@ -403,7 +405,7 @@ export class RollMenuOrchestrator {
     }
     
     if (actorsWithoutTokens.length > 0) {
-      GeneralUtil.notify('info', game.i18n.format("FLASH_ROLLS.notifications.actorsSkippedInitiative", {
+      FlashAPI.notify('info', game.i18n.format("FLASH_ROLLS.notifications.actorsSkippedInitiative", {
         actors: actorsWithoutTokens.join(", ")
       }) || `Initiative skipped for actors without tokens: ${actorsWithoutTokens.join(", ")}`);
     }

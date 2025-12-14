@@ -77,7 +77,7 @@ export class FlashAPI {
       const normalizedRequestType = rollOption.name;
       
       if (actorIds.length === 0) {
-        GeneralUtil.notify('warn', game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelected"));
+        FlashAPI.notify('warn', game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelected"));
         return;
       }
       
@@ -113,7 +113,7 @@ export class FlashAPI {
       // Show notification for invalid actors but continue with valid ones
       if (invalidActorIds.length > 0) {
         const invalidIds = invalidActorIds.join(', ');
-        GeneralUtil.notify('info', game.i18n.format("FLASH_ROLLS.notifications.invalidActorIds", {
+        FlashAPI.notify('info', game.i18n.format("FLASH_ROLLS.notifications.invalidActorIds", {
           numIds: invalidActorIds.length,
           invalidIds: invalidIds
         }));
@@ -222,7 +222,7 @@ export class FlashAPI {
       rollOption = rollRequestOptions.find(option => option.name === requestType);
     }
     if (!rollOption) {
-      GeneralUtil.notify('warn', `Unknown request type: ${requestType}`);
+      FlashAPI.notify('warn', `Unknown request type: ${requestType}`);
       return;
     }
     
@@ -278,7 +278,7 @@ export class FlashAPI {
     };
     
     const macro = await Macro.create(macroDocumentData);
-    GeneralUtil.notify('info', game.i18n.format("FLASH_ROLLS.notifications.macroCreated", {
+    FlashAPI.notify('info', game.i18n.format("FLASH_ROLLS.notifications.macroCreated", {
       macroName: macro.name
     }));
     
@@ -308,7 +308,7 @@ export class FlashAPI {
         LogUtil.log('Created Flash Token Bar macro folder', [folder]);
       } catch (error) {
         LogUtil.error('Failed to create Flash Token Bar macro folder:', [error]);
-        GeneralUtil.notify('warn', 'Failed to create Flash Token Bar macro folder. Macro will be created without folder organization.');
+        FlashAPI.notify('warn', 'Failed to create Flash Token Bar macro folder. Macro will be created without folder organization.');
         return null;
       }
     }
@@ -613,7 +613,7 @@ export class FlashAPI {
   static async selectAllActors(tab) {
     const menu = RollRequestsMenu.getInstance();
     if (!menu || !menu.rendered) {
-      GeneralUtil.notify('warn', game.i18n.localize("FLASH_ROLLS.notifications.menuNotOpen"));
+      FlashAPI.notify('warn', game.i18n.localize("FLASH_ROLLS.notifications.menuNotOpen"));
       return;
     }
 
@@ -638,7 +638,7 @@ export class FlashAPI {
   static async filterActors(filters) {
     const menu = RollRequestsMenu.getInstance();
     if (!menu || !menu.rendered) {
-      GeneralUtil.notify('warn', game.i18n.localize("FLASH_ROLLS.notifications.menuNotOpen"));
+      FlashAPI.notify('warn', game.i18n.localize("FLASH_ROLLS.notifications.menuNotOpen"));
       return;
     }
 
@@ -765,7 +765,7 @@ export class FlashAPI {
       }
 
       if (totalRemoved > 0) {
-        GeneralUtil.notify('info', `Removed ${totalRemoved} status effects`);
+        FlashAPI.notify('info', `Removed ${totalRemoved} status effects`);
       }
     } else if (menu && menu.rendered) {
       await RollMenuEventManager.removeAllStatusEffectsFromSelected(menu);
@@ -806,7 +806,7 @@ export class FlashAPI {
     } else if (menu && menu.rendered) {
       await RollMenuEventManager.createGroupFromSelected(menu);
     } else {
-      GeneralUtil.notify('warn', game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelected"));
+      FlashAPI.notify('warn', game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelected"));
     }
   }
 
@@ -823,7 +823,7 @@ export class FlashAPI {
     } else if (menu && menu.rendered) {
       await TokenMovementManager.toggleMovementForSelected(menu);
     } else {
-      GeneralUtil.notify('warn', game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelected"));
+      FlashAPI.notify('warn', game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelected"));
     }
   }
 
@@ -840,7 +840,7 @@ export class FlashAPI {
     } else if (menu && menu.rendered) {
       await RollMenuEventManager.openContestedRollDialog(menu);
     } else {
-      GeneralUtil.notify('warn', game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelected"));
+      FlashAPI.notify('warn', game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelected"));
     }
   }
 
@@ -862,7 +862,7 @@ export class FlashAPI {
     } else if (menu && menu.rendered) {
       await TokenPlacementManager.placeTokensForSelectedActors(menu);
     } else {
-      GeneralUtil.notify('warn', game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelected"));
+      FlashAPI.notify('warn', game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelected"));
     }
   }
 
@@ -885,7 +885,7 @@ export class FlashAPI {
     } else if (menu && menu.rendered) {
       await TokenTeleportManager.teleportSelectedTokens(menu);
     } else {
-      GeneralUtil.notify('warn', game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelected"));
+      FlashAPI.notify('warn', game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelected"));
     }
   }
 
@@ -907,7 +907,7 @@ export class FlashAPI {
     } else if (menu && menu.rendered) {
       await TransformationManager.transformSelectedActors(menu);
     } else {
-      GeneralUtil.notify('warn', game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelected"));
+      FlashAPI.notify('warn', game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelected"));
     }
   }
 
@@ -925,7 +925,16 @@ export class FlashAPI {
       const selectedActorIds = Array.from(menu.selectedActors);
       await TransformationManager.revertTransformation(selectedActorIds);
     } else {
-      GeneralUtil.notify('warn', game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelected"));
+      FlashAPI.notify('warn', game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelected"));
     }
+  }
+
+  /**
+   * Show a notification to the user
+   * @param {string} type - Notification type ('info', 'warn', 'error')
+   * @param {string} message - Message to display
+   */
+  static notify(type, message) {
+    GeneralUtil.notify(type, message);
   }
 }

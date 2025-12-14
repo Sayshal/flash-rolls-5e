@@ -5,6 +5,7 @@ import { getSettings } from "../../../constants/Settings.mjs";
 import { RollHelpers } from "../../helpers/RollHelpers.mjs";
 import { ChatMessageManager } from "../../managers/ChatMessageManager.mjs";
 import { GeneralUtil } from "../../utils/GeneralUtil.mjs";
+import { FlashAPI } from "../../core/FlashAPI.mjs";
 
 /**
  * Contested Roll Dialog for requesting different roll types from selected actors
@@ -138,7 +139,7 @@ export class ContestedRollDialog extends HandlebarsApplicationMixin(ApplicationV
    */
   async _onRequest(event, target) {
     if (this.actors.length === 0) {
-      GeneralUtil.notify('warn',game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelected"));
+      FlashAPI.notify('warn',game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelected"));
       return;
     }
 
@@ -146,7 +147,7 @@ export class ContestedRollDialog extends HandlebarsApplicationMixin(ApplicationV
       const actor = actorEntry.actor || actorEntry;
       const selection = this.rollSelections.get(actor.id);
       if (!selection) {
-        GeneralUtil.notify('warn',game.i18n.format("FLASH_ROLLS.notifications.noRollSelected", { name: actor.name }));
+        FlashAPI.notify('warn',game.i18n.format("FLASH_ROLLS.notifications.noRollSelected", { name: actor.name }));
         return;
       }
     }
@@ -298,7 +299,7 @@ export class ContestedRollDialog extends HandlebarsApplicationMixin(ApplicationV
       const actor = actorEntry.actor || actorEntry;
       const selection = this.rollSelections.get(actor.id);
       if (!selection) {
-        GeneralUtil.notify('warn',game.i18n.format("FLASH_ROLLS.notifications.noRollSelected", { name: actor.name }));
+        FlashAPI.notify('warn',game.i18n.format("FLASH_ROLLS.notifications.noRollSelected", { name: actor.name }));
         return;
       }
     }
@@ -322,7 +323,7 @@ export class ContestedRollDialog extends HandlebarsApplicationMixin(ApplicationV
     const firstActor = this.actors[0].actor || this.actors[0];
     const firstSelection = this.rollSelections.get(firstActor.id);
     if (!firstSelection) {
-      GeneralUtil.notify('warn',"Please select a roll type for all actors before creating a macro.");
+      FlashAPI.notify('warn',"Please select a roll type for all actors before creating a macro.");
       return null;
     }
 
@@ -450,7 +451,7 @@ ${joinedCommands}
     };
 
     const macro = await Macro.create(macroDocumentData);
-    GeneralUtil.notify('info', game.i18n.format("FLASH_ROLLS.notifications.macroCreated", {
+    FlashAPI.notify('info', game.i18n.format("FLASH_ROLLS.notifications.macroCreated", {
       macroName: macro.name
     }));
 
@@ -476,7 +477,7 @@ ${joinedCommands}
         LogUtil.log('Created Flash Token Bar macro folder', [folder]);
       } catch (error) {
         LogUtil.error('Failed to create Flash Token Bar macro folder:', [error]);
-        GeneralUtil.notify('warn',"Failed to create Flash Token Bar macro folder. Macro will be created without folder organization.");
+        FlashAPI.notify('warn',"Failed to create Flash Token Bar macro folder. Macro will be created without folder organization.");
         return null;
       }
     }
@@ -502,7 +503,7 @@ ${joinedCommands}
    */
   static async show(actors) {
     if (!actors || actors.length === 0) {
-      GeneralUtil.notify('warn',game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelected"));
+      FlashAPI.notify('warn',game.i18n.localize("FLASH_ROLLS.notifications.noActorsSelected"));
       return null;
     }
 

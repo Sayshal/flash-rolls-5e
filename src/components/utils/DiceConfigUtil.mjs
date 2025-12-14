@@ -1,3 +1,4 @@
+import { LogUtil } from './LogUtil.mjs';
 import { SocketUtil } from './SocketUtil.mjs';
 
 /**
@@ -31,6 +32,8 @@ export class DiceConfigUtil {
     const clientSettings = game.settings.storage.get("client");
     this.diceConfig = clientSettings[`core.diceConfiguration`] || '';
     
+    LogUtil.log("setDiceConfig", [this.diceConfig]);
+
     return this.diceConfig;
   }
   
@@ -125,7 +128,67 @@ export class DiceConfigUtil {
     if (userId === game.user?.id) {
       return !!this.diceConfig;
     }
-    
+
     return !!this.playerDiceConfigs[userId];
+  }
+
+  /**
+   * Check if the user is using non-digital dice (manual or interactive methods like bluetooth)
+   * @param {string} [userId] - Optional user ID to check. Defaults to current user.
+   * @returns {boolean} True if user has non-digital dice configured
+   */
+  static hasNonDigitalDice(userId) {
+    let config = userId ? this.getUserDiceConfig(userId) : this.diceConfig;
+
+    if (!config) {
+      this.setDiceConfig();
+      config = this.diceConfig;
+      LogUtil.log('hasNonDigitalDice - config was empty, refreshed:', [config]);
+    }
+
+    if (!config || (typeof config !== 'object' && typeof config !== 'string')) {
+      LogUtil.log('hasNonDigitalDice - no config or wrong type', [typeof config, config]);
+      return false;
+    }
+
+    let configObj;
+    try {
+      configObj = typeof config === 'string' ? JSON.parse(config) : config;
+    } catch (e) {
+      LogUtil.error('hasNonDigitalDice - failed to parse config', [config, e]);
+      return false;
+    }
+
+    const allMethods = CONFIG.Dice?.fulfillment?.methods;
+
+    LogUtil.log('hasNonDigitalDice - all available methods:', [allMethods]);
+    LogUtil.log('hasNonDigitalDice - user config:', [configObj]);
+
+    for (const method of Object.values(configObj)) {
+      if (!method) continue;
+
+      LogUtil.log('hasNonDigitalDice - checking method value:', [method]);
+
+      if (method === 'manual') {
+        LogUtil.log('hasNonDigitalDice - found manual method');
+        return true;
+      }
+
+      if (method !== 'random') {
+        const methodConfig = allMethods?.[method];
+        LogUtil.log('hasNonDigitalDice - found non-random method', [method, 'config:', methodConfig, 'interactive:', methodConfig?.interactive]);
+
+        if (methodConfig?.interactive) {
+          LogUtil.log('hasNonDigitalDice - method is interactive');
+          return true;
+        }
+
+        LogUtil.log('hasNonDigitalDice - treating non-random method as non-digital');
+        return true;
+      }
+    }
+
+    LogUtil.log('hasNonDigitalDice - no non-digital dice found');
+    return false;
   }
 }

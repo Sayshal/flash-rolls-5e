@@ -57,5 +57,11 @@
     </select>
     <p class="hint">{{{fields.consumptionConfigMode.hint}}}</p>
   </div>
-  
+
+  <div class="form-group">
+    <label for="useCondensedRollMessage">{{fields.useCondensedRollMessage.label}}</label>
+    <input type="checkbox" name="useCondensedRollMessage" id="useCondensedRollMessage" {{#if useCondensedRollMessage}}checked{{/if}} />
+    <p class="hint">{{{fields.useCondensedRollMessage.hint}}}</p>
+  </div>
+
 </section>
