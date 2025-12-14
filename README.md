@@ -341,6 +341,56 @@ FlashAPI.createMacro({
 });
 ```
 
+### Hooks
+
+Flash Token Bar 5e fires custom hooks that other modules can listen to for integration purposes.
+
+#### `flash-rolls-5e.ready`
+
+Fires when Flash Token Bar is fully initialized and the API is available. Use this to safely access `FlashAPI` methods.
+
+**Example:**
+```javascript
+Hooks.once("flash-rolls-5e.ready", () => {
+  console.log("Flash Token Bar is ready!");
+  // FlashAPI is now available
+});
+```
+
+#### `flash-rolls-5e.rollComplete`
+
+Fires when any roll completes through Flash Token Bar's group roll system. This hook is broadcast to all connected clients via socketlib.
+
+**Payload:**
+```javascript
+{
+  actorUuid: "Actor.abc123",        // Full actor UUID
+  actorId: "abc123",                // Actor ID
+  tokenId: "xyz789",                // Token ID (if token actor, null otherwise)
+  roll: Roll,                       // Deserialized Roll object
+  total: 15,                        // Roll total
+  rollType: "save",                 // Roll type (save, skill, ability, etc.)
+  rollKey: "dex",                   // Roll key (ability/skill key)
+  groupRollId: "randomId123",       // Group roll ID for correlation
+  dc: 14,                           // DC if provided (null otherwise)
+  success: true                     // Whether roll met DC (null if no DC)
+}
+```
+
+**Example:**
+```javascript
+Hooks.on("flash-rolls-5e.rollComplete", (data) => {
+  console.log(`${data.actorUuid} rolled ${data.total} on ${data.rollType}/${data.rollKey}`);
+
+  if (data.dc && data.success) {
+    console.log("Roll succeeded!");
+  }
+
+  // Access the full Roll object
+  console.log("Roll formula:", data.roll.formula);
+});
+```
+
 ## Actor Ownership for Roll Requests
 
 Flash Token Bar 5e follows specific rules for determining if a roll request should be sent to a player or rolled by the GM.
@@ -375,9 +425,13 @@ Flash Token Bar 5e requires the [socketlib](https://github.com/manuelVo/foundryv
 
 This module works best together with [Carolingian UI](https://foundryvtt.com/packages/crlngn-ui), but also works with core Foundry UI.
 
-### Midi-QOL and Ready Set Roll
+### Midi-QOL
 
-I suggest you uncheck the setting "Treat Rolls from Player Sheets as Requests" when using Midi-QOL or Ready Set Roll. This setting is off by default, I am working to make it work with these modules.
+Flash Token Bar 5e integrates with Midi-QOL for save requests. When Midi-QOL's "Player Rolls Saves" setting is set to "ftb" (Flash Token Bar), saves triggered by spells and abilities will be handled through Flash Token Bar's group roll system.
+
+### Ready Set Roll
+
+I suggest you uncheck the setting "Treat Rolls from Player Sheets as Requests" when using Ready Set Roll. This setting is off by default.
 
 ## License
 

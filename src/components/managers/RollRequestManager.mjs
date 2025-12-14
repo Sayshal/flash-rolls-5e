@@ -113,7 +113,6 @@ export class RollRequestManager {
     });
     
     this.rollQueue.push({ actor, requestData });
-    LogUtil.log('handleRequest - Added to queue', [this.rollQueue.length, 'isProcessing:', this.isProcessingRoll]);
 
     if (!this.isProcessingRoll) {
       this.isProcessingRoll = true;
@@ -137,39 +136,32 @@ export class RollRequestManager {
 
     LogUtil.log('processNextRoll - Processing', [actor.name, requestData.rollType, this.rollQueue.length, 'remaining']);
 
-    const actorUniqueId = requestData.isTokenActor ? requestData.actorId : actor.id;
-    const rollCompletedPromise = new Promise((resolve) => {
-      this.pendingRollResolver = resolve;
-      this.pendingRollActorId = actorUniqueId;
-    });
+    const normalizedRollType = requestData.rollType?.toLowerCase();
+    const isNoWaitRoll = normalizedRollType === ROLL_TYPES.DAMAGE ||
+                         normalizedRollType === ROLL_TYPES.ATTACK ||
+                         normalizedRollType === ROLL_TYPES.ITEM;
 
-    const timeoutPromise = new Promise((resolve) => {
-      setTimeout(() => {
-        LogUtil.log('processNextRoll - timeout reached for', [actor.name]);
-        resolve();
-      }, 60000);
-    });
+    if (isNoWaitRoll) {
+      this.executePlayerRollRequest(actor, requestData).catch(error => {
+        LogUtil.error('Error processing roll request:', [error]);
+      });
+      this.processNextRoll();
+      return;
+    }
 
     try {
       await this.executePlayerRollRequest(actor, requestData);
-      await Promise.race([rollCompletedPromise, timeoutPromise]);
     } catch (error) {
       LogUtil.error('Error processing roll request:', [error]);
     }
 
-    this.pendingRollResolver = null;
-    this.pendingRollActorId = null;
-
-    setTimeout(() => {
-      this.processNextRoll();
-    }, 300);
+    this.processNextRoll();
   }
 
   /**
    * Called when a roll message is created to signal roll completion
    */
   static onRollCompleted() {
-    LogUtil.log('onRollCompleted', ['pending:', this.pendingRollActorId, 'hasResolver:', !!this.pendingRollResolver]);
     if (this.pendingRollResolver) {
       this.pendingRollResolver();
       this.pendingRollResolver = null;

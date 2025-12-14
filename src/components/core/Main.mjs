@@ -55,5 +55,19 @@ export class Main {
     SocketUtil.registerCall(SOCKET_CALLS.receiveDiceConfig, Main.receiveDiceConfig);
     SocketUtil.registerCall(SOCKET_CALLS.handleRollRequest, Main.handleRollRequest);
     SocketUtil.registerCall(SOCKET_CALLS.removeTemplate, GeneralUtil.removeTemplate);
+    SocketUtil.registerCall(SOCKET_CALLS.broadcastRollComplete, Main.handleBroadcastRollComplete);
+  }
+
+  /**
+   * Handle broadcast roll complete - fires the hook locally on each client
+   * This is called via socket on all clients when a roll completes
+   * @param {Object} hookData - Serialized hook data
+   */
+  static handleBroadcastRollComplete(hookData) {
+    LogUtil.log('Main.handleBroadcastRollComplete', [hookData]);
+    if (hookData.roll && !(hookData.roll instanceof Roll)) {
+      hookData.roll = Roll.fromJSON(JSON.stringify(hookData.roll));
+    }
+    Hooks.callAll("flash-rolls-5e.rollComplete", hookData);
   }
 }

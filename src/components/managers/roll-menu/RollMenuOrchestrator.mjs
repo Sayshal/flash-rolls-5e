@@ -145,7 +145,7 @@ export class RollMenuOrchestrator {
 
       await this.sendRollRequestToPlayer(actor, owner, rollMethodName, currentRollKey, config, true, useGroupId);
       successfulRequests.push({ actor, owner });
-      await delay(250);
+      await delay(100);
     }
     if (successfulRequests.length > 0) {
       this.showConsolidatedNotification(successfulRequests, rollMethodName, rollKey);

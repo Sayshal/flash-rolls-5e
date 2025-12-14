@@ -20,7 +20,8 @@ export const SOCKET_CALLS = {
   receiveDiceConfig: "receiveDiceConfig",
   getDiceConfig: "getDiceConfig",
   handleRollRequest: "handleRollRequest",
-  removeTemplate: "removeTemplate"
+  removeTemplate: "removeTemplate",
+  broadcastRollComplete: "broadcastRollComplete"
 };
 
 export const HOOK_NAMES = {

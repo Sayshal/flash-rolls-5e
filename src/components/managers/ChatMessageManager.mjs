@@ -1,5 +1,5 @@
 import { HOOKS_CORE } from "../../constants/Hooks.mjs";
-import { MODULE_ID, ROLL_TYPES } from "../../constants/General.mjs";
+import { MODULE_ID, ROLL_TYPES, SOCKET_CALLS } from "../../constants/General.mjs";
 import { getSettings } from "../../constants/Settings.mjs";
 import { GeneralUtil } from "../utils/GeneralUtil.mjs";
 import { FlashAPI } from "../core/FlashAPI.mjs";
@@ -9,6 +9,7 @@ import { RollHelpers } from "../helpers/RollHelpers.mjs";
 import { RollHandlers } from "../handlers/RollHandlers.mjs";
 import { HooksManager } from "../core/HooksManager.mjs";
 import { RollRequestManager } from "./RollRequestManager.mjs";
+import { SocketUtil } from "../utils/SocketUtil.mjs";
 
 /**
  * Utility class for managing group roll chat messages
@@ -553,8 +554,19 @@ export class ChatMessageManager {
         
         const dataset = diceBtn.dataset;
         const actorId = dataset.actorId;
-        const actor = game.actors.get(actorId);
-        
+        const tokenId = dataset.tokenId;
+        let actor;
+        let uniqueId = actorId;
+        if (tokenId) {
+          const tokenDoc = game.scenes.current?.tokens.get(tokenId);
+          actor = tokenDoc?.actor;
+          uniqueId = tokenId;
+        }
+        if (!actor) {
+          actor = game.actors.get(actorId);
+          uniqueId = actorId;
+        }
+
         if (!actor) {
           FlashAPI.notify('warn', `Actor not found`);
           return;
@@ -796,6 +808,7 @@ export class ChatMessageManager {
       const newResults = newEntries.map(entry => {
         const result = {
           actorId: entry.actor.id,
+          actorUuid: entry.actor.uuid,
           uniqueId: entry.uniqueId,
           tokenId: entry.tokenId,
           actorImg: entry.actor.img || entry.actor.prototypeToken?.texture?.src || 'icons/svg/mystery-man.svg',
@@ -901,6 +914,7 @@ export class ChatMessageManager {
 
       return {
         actorId: entry.actor.id,
+        actorUuid: entry.actor.uuid,
         uniqueId: entry.uniqueId,
         tokenId: entry.tokenId,
         actorImg: entry.actor.img || entry.actor.prototypeToken?.texture?.src || 'icons/svg/mystery-man.svg',
@@ -1259,6 +1273,7 @@ export class ChatMessageManager {
       flagData.results[resultIndex].rolled = true;
       flagData.results[resultIndex].showDice = false;
       flagData.results[resultIndex].total = roll.total;
+      flagData.results[resultIndex].roll = roll.toJSON();
       flagData.results[resultIndex].rollMode = rollMode;
       LogUtil.log('_performGroupRollUpdate - Set roll mode for result', [flagData.results[resultIndex].actorName, 'rollMode:', rollMode]);
 
@@ -1274,6 +1289,20 @@ export class ChatMessageManager {
         flagData.results[resultIndex].success = roll.total >= flagData.dc;
         flagData.results[resultIndex].failure = roll.total < flagData.dc;
       }
+
+      const hookData = {
+        actorUuid: flagData.results[resultIndex].actorUuid,
+        actorId: flagData.results[resultIndex].actorId,
+        tokenId: flagData.results[resultIndex].tokenId,
+        roll: roll.toJSON(),
+        total: roll.total,
+        rollType: flagData.rollType,
+        rollKey: flagData.rollKey,
+        groupRollId: groupRollId,
+        dc: flagData.dc || null,
+        success: flagData.dc ? roll.total >= flagData.dc : null
+      };
+      SocketUtil.execForAll(SOCKET_CALLS.broadcastRollComplete, hookData);
     }else{
       LogUtil.error('Group message id not found');
       return;
@@ -1563,10 +1592,7 @@ export class ChatMessageManager {
       'message.rollMode:', message.rollMode,
       'message.blind:', message.blind,
       'message.whisper:', message.whisper,
-      'determined rollMode:', rollMode,
-      'PUBLIC constant:', CONST.DICE_ROLL_MODES.PUBLIC,
-      'PRIVATE constant:', CONST.DICE_ROLL_MODES.PRIVATE,
-      'BLIND constant:', CONST.DICE_ROLL_MODES.BLIND
+      'determined rollMode:', rollMode
     ]);
 
     if (html && html instanceof HTMLElement && html.style) {
