@@ -376,6 +376,45 @@ body.flash5e {
   span.toggle-hint {
     display: none;
   }
+}
+
+body:not(.crlngn-ui) #flash-rolls-settings {
+  span.toggle-hint {
+    display: block;
+    width: auto;
+    border: 0;
+    background-color: rgba(0,0,0,0.25);
+    border-radius: 3px;
+    font-size: 0.7em;
+    padding: 0.15em 0.5em;
+    font-weight: normal;
+    text-transform: uppercase;
+    cursor: pointer;
+    margin-left: 0.5em;
+    float:right;
+
+    &:hover {
+      background-color: rgba(0,0,0,0.5);
+    }
+  }
+  p.hint {
+    display: none;
+  }
+  p.hint.shown {
+    display: block;
+  }
+  .standard-form .tab {
+    gap: 0.35rem;
+  }
+  .standard-form .form-group > label {
+    min-width: 50%;
+  }
+  .standard-form input[type="number"] {
+    max-width: 5rem;
+  }
+}
+
+.standard-form.flash5e {
   hr{
     margin: 0;
   }

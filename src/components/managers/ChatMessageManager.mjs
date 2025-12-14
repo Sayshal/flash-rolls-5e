@@ -936,6 +936,9 @@ export class ChatMessageManager {
     const showDCToPlayers = SettingsUtil.get(SETTINGS.showGroupDCToPlayers.tag);
     const showResultToPlayers = SettingsUtil.get(SETTINGS.showGroupResultToPlayers.tag);
     const groupRollNPCHidden = SettingsUtil.get(SETTINGS.groupRollNPCHidden.tag);
+    const groupCalculationForSaves = SettingsUtil.get(SETTINGS.groupCalculationForSaves.tag);
+    const isSaveRoll = rollType === ROLL_TYPES.SAVE || rollType === ROLL_TYPES.SAVING_THROW;
+    const showGroupCalculation = isSaveRoll ? groupCalculationForSaves : true;
     const isGM = game.user?.isGM === true;
 
     results.forEach(result => {
@@ -966,6 +969,7 @@ export class ChatMessageManager {
       supportsDC,
       showDCToPlayers,
       showResultToPlayers,
+      showGroupCalculation,
       groupRollNPCHidden,
       isGM,
       isSingleActor: validEntries.length === 1,
@@ -1316,6 +1320,9 @@ export class ChatMessageManager {
     flagData.showDCToPlayers = SettingsUtil.get(SETTINGS.showGroupDCToPlayers.tag);
     flagData.showResultToPlayers = SettingsUtil.get(SETTINGS.showGroupResultToPlayers.tag);
     flagData.groupRollNPCHidden = SettingsUtil.get(SETTINGS.groupRollNPCHidden.tag);
+    const groupCalculationForSaves = SettingsUtil.get(SETTINGS.groupCalculationForSaves.tag);
+    const isSaveRoll = flagData.rollType === ROLL_TYPES.SAVE || flagData.rollType === ROLL_TYPES.SAVING_THROW;
+    flagData.showGroupCalculation = isSaveRoll ? groupCalculationForSaves : true;
     flagData.isGM = game.user?.isGM === true;
 
     if (flagData.results) {
@@ -1413,6 +1420,7 @@ export class ChatMessageManager {
     if (pendingData?.results && pendingData?.actorEntries) {
       if (pendingData.results.size === pendingData.actorEntries.length) {
         this.pendingRolls.delete(groupRollId);
+        this._scheduleMessageRemoval(message);
         setTimeout(() => {
           this.groupRollMessages.delete(groupRollId);
           this.updateQueue.delete(groupRollId);
@@ -1420,7 +1428,7 @@ export class ChatMessageManager {
       }
     }
   }
-  
+
   /**
    * Update group roll message with new DC value
    * @param {ChatMessage} message - The chat message to update
@@ -1466,20 +1474,21 @@ export class ChatMessageManager {
     flagData.showDCToPlayers = SettingsUtil.get(SETTINGS.showGroupDCToPlayers.tag);
     flagData.showResultToPlayers = SettingsUtil.get(SETTINGS.showGroupResultToPlayers.tag);
     flagData.groupRollNPCHidden = SettingsUtil.get(SETTINGS.groupRollNPCHidden.tag);
+    const groupCalculationForSaves = SettingsUtil.get(SETTINGS.groupCalculationForSaves.tag);
+    const isSaveRoll = flagData.rollType === ROLL_TYPES.SAVE || flagData.rollType === ROLL_TYPES.SAVING_THROW;
+    flagData.showGroupCalculation = isSaveRoll ? groupCalculationForSaves : true;
     flagData.isGM = game.user?.isGM === true;
-    
-    // Ensure isNPC flag is set on results if not already present
+
     if (flagData.results) {
       flagData.results.forEach(result => {
         if (result.isNPC === undefined) {
           const actor = game.actors.get(result.actorId);
           result.isNPC = actor ? !actor.testUserPermission(game.user, CONST.DOCUMENT_OWNERSHIP_LEVELS.LIMITED) : false;
         }
-        // Update shouldHide flag
         result.shouldHide = result.isNPC && flagData.groupRollNPCHidden && !flagData.isGM;
       });
     }
-    
+
     const newContent = await GeneralUtil.renderTemplate(this.templatePath, flagData);
     await message.update({
       content: newContent,
@@ -1491,7 +1500,7 @@ export class ChatMessageManager {
       }
     });
   }
-  
+
   /**
    * Intercept individual roll messages and update group message instead
    * @param {ChatMessage} message - The chat message document
@@ -1544,6 +1553,7 @@ export class ChatMessageManager {
     if (!groupRollsMsgEnabled) {
       if (isFlashRollRequest && roll) {
         this._broadcastIndividualRollComplete(actor, roll, rollType, rollKey, tokenId);
+        this._scheduleIndividualMessageRemoval(message, rollType);
       }
       return;
     }
@@ -1746,6 +1756,74 @@ export class ChatMessageManager {
 
     LogUtil.log('_broadcastIndividualRollComplete - Broadcasting hook', [actor.name, rollType, rollKey, roll.total]);
     SocketUtil.execForAll(SOCKET_CALLS.broadcastRollComplete, hookData);
+  }
+
+  /**
+   * Schedule message hide and delete for midi-qol integration
+   * Hides message after 1 second, deletes after 10 seconds
+   * @param {ChatMessage} message - The chat message to hide/delete
+   * @private
+   */
+  static _scheduleMessageRemoval(message) {
+    if (!game.user.isGM) return;
+
+    const SETTINGS = getSettings();
+    const removeSaveMsgAfterRoll = SettingsUtil.get(SETTINGS.removeSaveMsgAfterRoll.tag);
+    if (!removeSaveMsgAfterRoll) return;
+    if (!GeneralUtil.isMidiWorkflowActive()) return;
+
+    const flagData = message.getFlag(MODULE_ID, 'rollData');
+    const isSaveRoll = flagData?.rollType === ROLL_TYPES.SAVE || flagData?.rollType === ROLL_TYPES.SAVING_THROW;
+    if (!isSaveRoll) return;
+
+    LogUtil.log('_scheduleMessageRemoval - Scheduling hide/delete for save message', [message.id]);
+
+    setTimeout(() => {
+      const msgElement = document.querySelector(`[data-message-id="${message.id}"]`);
+      if (msgElement) {
+        msgElement.classList.add('flash-rolls-hidden');
+      }
+    }, 1000);
+
+    setTimeout(() => {
+      message.delete().catch(err => {
+        LogUtil.error('_scheduleMessageRemoval - Failed to delete message', [err]);
+      });
+    }, 10000);
+  }
+
+  /**
+   * Schedule individual message hide and delete for midi-qol integration
+   * Used when group rolls are disabled
+   * @param {ChatMessage} message - The chat message to hide/delete
+   * @param {string} rollType - The type of roll
+   * @private
+   */
+  static _scheduleIndividualMessageRemoval(message, rollType) {
+    if (!game.user.isGM) return;
+
+    const SETTINGS = getSettings();
+    const removeSaveMsgAfterRoll = SettingsUtil.get(SETTINGS.removeSaveMsgAfterRoll.tag);
+    if (!removeSaveMsgAfterRoll) return;
+    if (!GeneralUtil.isMidiWorkflowActive()) return;
+
+    const isSaveRoll = rollType === ROLL_TYPES.SAVE || rollType === ROLL_TYPES.SAVING_THROW;
+    if (!isSaveRoll) return;
+
+    LogUtil.log('_scheduleIndividualMessageRemoval - Scheduling hide/delete for individual save message', [message.id]);
+
+    setTimeout(() => {
+      const msgElement = document.querySelector(`[data-message-id="${message.id}"]`);
+      if (msgElement) {
+        msgElement.classList.add('flash-rolls-hidden');
+      }
+    }, 1000);
+
+    setTimeout(() => {
+      message.delete().catch(err => {
+        LogUtil.error('_scheduleIndividualMessageRemoval - Failed to delete message', [err]);
+      });
+    }, 10000);
   }
 
   /**

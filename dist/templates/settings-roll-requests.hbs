@@ -22,46 +22,62 @@
     <p class="hint">{{fields.showOfflineNotifications.hint}}</p>
   </div>
 
-  <div class="form-group">
-    <label for="initiateCombatOnRequest">{{fields.initiateCombatOnRequest.label}}</label>
-    <input type="checkbox" name="initiateCombatOnRequest" id="initiateCombatOnRequest" {{#if initiateCombatOnRequest}}checked{{/if}} />
-    <p class="hint">{{fields.initiateCombatOnRequest.hint}}</p>
-  </div>
+  <fieldset>
+    <legend>{{localize "FLASH_ROLLS.settings.moduleSettingsMenu.fieldsets.rollActivation"}}</legend>
 
-  <div class="form-group">
-    <label for="publicPlayerRolls">{{fields.publicPlayerRolls.label}}</label>
-    <input type="checkbox" name="publicPlayerRolls" id="publicPlayerRolls" {{#if publicPlayerRolls}}checked{{/if}} />
-    <p class="hint">{{{fields.publicPlayerRolls.hint}}}</p>
-  </div>
+    <div class="form-group">
+      <label for="publicPlayerRolls">{{fields.publicPlayerRolls.label}}</label>
+      <input type="checkbox" name="publicPlayerRolls" id="publicPlayerRolls" {{#if publicPlayerRolls}}checked{{/if}} />
+      <p class="hint">{{{fields.publicPlayerRolls.hint}}}</p>
+    </div>
 
-  <div class="form-group">
-    <label for="useGMTargetTokens">{{fields.useGMTargetTokens.label}}</label>
-    <input type="checkbox" name="useGMTargetTokens" id="useGMTargetTokens" {{#if useGMTargetTokens}}checked{{/if}} />
-    <p class="hint">{{fields.useGMTargetTokens.hint}}</p>
-  </div>
+    <div class="form-group">
+      <label for="useGMTargetTokens">{{fields.useGMTargetTokens.label}}</label>
+      <input type="checkbox" name="useGMTargetTokens" id="useGMTargetTokens" {{#if useGMTargetTokens}}checked{{/if}} />
+      <p class="hint">{{fields.useGMTargetTokens.hint}}</p>
+    </div>
 
-  <div class="form-group">
-    <label for="placeTemplateForPlayer">{{fields.placeTemplateForPlayer.label}}</label>
-    <input type="checkbox" name="placeTemplateForPlayer" id="placeTemplateForPlayer" {{#if placeTemplateForPlayer}}checked{{/if}} />
-    <p class="hint">{{fields.placeTemplateForPlayer.hint}}</p>
-  </div>
+    <div class="form-group">
+      <label for="placeTemplateForPlayer">{{fields.placeTemplateForPlayer.label}}</label>
+      <input type="checkbox" name="placeTemplateForPlayer" id="placeTemplateForPlayer" {{#if placeTemplateForPlayer}}checked{{/if}} />
+      <p class="hint">{{fields.placeTemplateForPlayer.hint}}</p>
+    </div>
 
-  <div class="form-group">
-    <label for="consumptionConfigMode">{{fields.consumptionConfigMode.label}}</label>
-    <select name="consumptionConfigMode" id="consumptionConfigMode" data-current-value="{{consumptionConfigMode}}">
-      {{#each fields.consumptionConfigMode.choices}}
-      <option value="{{@key}}" {{#if (eq @key ../consumptionConfigMode)}}selected{{/if}}>
-        {{this}}
-      </option>
-      {{/each}}
-    </select>
-    <p class="hint">{{{fields.consumptionConfigMode.hint}}}</p>
-  </div>
+    <div class="form-group">
+      <label for="initiateCombatOnRequest">{{fields.initiateCombatOnRequest.label}}</label>
+      <input type="checkbox" name="initiateCombatOnRequest" id="initiateCombatOnRequest" {{#if initiateCombatOnRequest}}checked{{/if}} />
+      <p class="hint">{{fields.initiateCombatOnRequest.hint}}</p>
+    </div>
 
-  <div class="form-group">
-    <label for="useCondensedRollMessage">{{fields.useCondensedRollMessage.label}}</label>
-    <input type="checkbox" name="useCondensedRollMessage" id="useCondensedRollMessage" {{#if useCondensedRollMessage}}checked{{/if}} />
-    <p class="hint">{{{fields.useCondensedRollMessage.hint}}}</p>
-  </div>
+    <div class="form-group">
+      <label for="consumptionConfigMode">{{fields.consumptionConfigMode.label}}</label>
+      <select name="consumptionConfigMode" id="consumptionConfigMode" data-current-value="{{consumptionConfigMode}}">
+        {{#each fields.consumptionConfigMode.choices}}
+        <option value="{{@key}}" {{#if (eq @key ../consumptionConfigMode)}}selected{{/if}}>
+          {{this}}
+        </option>
+        {{/each}}
+      </select>
+      <p class="hint">{{{fields.consumptionConfigMode.hint}}}</p>
+    </div>
+
+  </fieldset>
+
+  <fieldset>
+    <legend>{{localize "FLASH_ROLLS.settings.moduleSettingsMenu.fieldsets.chatMessages"}}</legend>
+
+    <div class="form-group">
+      <label for="useCondensedRollMessage">{{fields.useCondensedRollMessage.label}}</label>
+      <input type="checkbox" name="useCondensedRollMessage" id="useCondensedRollMessage" {{#if useCondensedRollMessage}}checked{{/if}} />
+      <p class="hint">{{{fields.useCondensedRollMessage.hint}}}</p>
+    </div>
+
+    <div class="form-group">
+      <label for="removeSaveMsgAfterRoll">{{fields.removeSaveMsgAfterRoll.label}}</label>
+      <input type="checkbox" name="removeSaveMsgAfterRoll" id="removeSaveMsgAfterRoll" {{#if removeSaveMsgAfterRoll}}checked{{/if}} />
+      <p class="hint">{{{fields.removeSaveMsgAfterRoll.hint}}}</p>
+    </div>
+
+  </fieldset>
 
 </section>

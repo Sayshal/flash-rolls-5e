@@ -97,6 +97,7 @@ export const getSettings = () => {
       fields: [
         'groupRollsMsgEnabled',
         'groupRollResultMode',
+        'groupCalculationForSaves',
         'showGroupDCToPlayers',
         'showGroupResultToPlayers',
         'groupRollNPCHidden',
@@ -107,6 +108,7 @@ export const getSettings = () => {
       default: {
         groupRollsMsgEnabled: true,
         groupRollResultMode: 1,
+        groupCalculationForSaves: false,
         showGroupDCToPlayers: false,
         showGroupResultToPlayers: true,
         groupRollNPCHidden: true,
@@ -133,7 +135,8 @@ export const getSettings = () => {
         'showOfflineNotifications',
         'initiateCombatOnRequest',
         'publicPlayerRolls',
-        'useCondensedRollMessage'
+        'useCondensedRollMessage',
+        'removeSaveMsgAfterRoll'
       ],
       default: {
         rollInterceptionEnabled: true,
@@ -143,7 +146,8 @@ export const getSettings = () => {
         showOfflineNotifications: true,
         initiateCombatOnRequest: true,
         publicPlayerRolls: false,
-        useCondensedRollMessage: false
+        useCondensedRollMessage: false,
+        removeSaveMsgAfterRoll: false
       },
       scope: SETTING_SCOPE.world,
       config: false, 
@@ -242,7 +246,7 @@ export const getSettings = () => {
       tag: "group-roll-result-mode",
       label: game.i18n.localize("FLASH_ROLLS.settings.groupRollResultMode.label"),
       hint: game.i18n.localize("FLASH_ROLLS.settings.groupRollResultMode.hint"),
-      propType: Number, 
+      propType: Number,
       inputType: SETTING_INPUT.select,
       choices: {
         1: game.i18n.localize("FLASH_ROLLS.settings.groupRollResultMode.choices.1"),
@@ -251,6 +255,17 @@ export const getSettings = () => {
         4: game.i18n.localize("FLASH_ROLLS.settings.groupRollResultMode.choices.4")
       },
       default: 1,
+      scope: SETTING_SCOPE.world,
+      config: false
+    },
+
+    groupCalculationForSaves: {
+      tag: "group-calculation-for-saves",
+      label: game.i18n.localize("FLASH_ROLLS.settings.groupCalculationForSaves.label"),
+      hint: game.i18n.localize("FLASH_ROLLS.settings.groupCalculationForSaves.hint"),
+      propType: Boolean,
+      inputType: SETTING_INPUT.checkbox,
+      default: false,
       scope: SETTING_SCOPE.world,
       config: false
     },
@@ -389,6 +404,17 @@ export const getSettings = () => {
       tag: "use-condensed-roll-message",
       label: game.i18n.localize("FLASH_ROLLS.settings.useCondensedRollMessage.label"),
       hint: game.i18n.localize("FLASH_ROLLS.settings.useCondensedRollMessage.hint"),
+      propType: Boolean,
+      inputType: SETTING_INPUT.checkbox,
+      default: false,
+      scope: SETTING_SCOPE.world,
+      config: false
+    },
+
+    removeSaveMsgAfterRoll: {
+      tag: "remove-save-msg-after-roll",
+      label: game.i18n.localize("FLASH_ROLLS.settings.removeSaveMsgAfterRoll.label"),
+      hint: game.i18n.localize("FLASH_ROLLS.settings.removeSaveMsgAfterRoll.hint"),
       propType: Boolean,
       inputType: SETTING_INPUT.checkbox,
       default: false,

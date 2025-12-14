@@ -59,6 +59,7 @@
       </div>
 
       {{#if groupResult.complete}}
+      {{#if showGroupCalculation}}
       <div class="group-roll-footer {{#if groupResult.success}}success{{else}}failure{{/if}}" data-show-to-players="{{showResultToPlayers}}">
         <div class="group-result-summary">
           {{#if isSingleActor}}
@@ -82,6 +83,7 @@
         {{/if}}
         {{/unless}}
       </div>
+      {{/if}}
       {{/if}}
     {{/if}}
   {{/if}}

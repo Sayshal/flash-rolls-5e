@@ -29,33 +29,44 @@
   </div>
 
   <div class="form-group">
-    <label for="showGroupDCToPlayers">{{fields.showGroupDCToPlayers.label}}</label>
-    <input type="checkbox" name="showGroupDCToPlayers" id="showGroupDCToPlayers" {{#if showGroupDCToPlayers}}checked{{/if}} />
-    <p class="hint">{{fields.showGroupDCToPlayers.hint}}</p>
-  </div>
-
-  <div class="form-group">
-    <label for="showGroupResultToPlayers">{{fields.showGroupResultToPlayers.label}}</label>
-    <input type="checkbox" name="showGroupResultToPlayers" id="showGroupResultToPlayers" {{#if showGroupResultToPlayers}}checked{{/if}} />
-    <p class="hint">{{fields.showGroupResultToPlayers.hint}}</p>
-  </div>
-
-  <div class="form-group">
-    <label for="groupRollNPCHidden">{{fields.groupRollNPCHidden.label}}</label>
-    <input type="checkbox" name="groupRollNPCHidden" id="groupRollNPCHidden" {{#if groupRollNPCHidden}}checked{{/if}} />
-    <p class="hint">{{fields.groupRollNPCHidden.hint}}</p>
-  </div>
-
-  <div class="form-group">
-    <label for="concealNPCNames">{{fields.concealNPCNames.label}}</label>
-    <input type="checkbox" name="concealNPCNames" id="concealNPCNames" {{#if concealNPCNames}}checked{{/if}} />
-    <p class="hint">{{fields.concealNPCNames.hint}}</p>
-  </div>
-
-  <div class="form-group">
     <label for="interceptTidySheetsGroupRolls">{{fields.interceptTidySheetsGroupRolls.label}}</label>
     <input type="checkbox" name="interceptTidySheetsGroupRolls" id="interceptTidySheetsGroupRolls" {{#if interceptTidySheetsGroupRolls}}checked{{/if}} />
     <p class="hint">{{fields.interceptTidySheetsGroupRolls.hint}}</p>
   </div>
+
+  <fieldset>
+    <legend>{{localize "FLASH_ROLLS.settings.moduleSettingsMenu.fieldsets.visibility"}}</legend>
+
+    <div class="form-group">
+      <label for="showGroupDCToPlayers">{{fields.showGroupDCToPlayers.label}}</label>
+      <input type="checkbox" name="showGroupDCToPlayers" id="showGroupDCToPlayers" {{#if showGroupDCToPlayers}}checked{{/if}} />
+      <p class="hint">{{fields.showGroupDCToPlayers.hint}}</p>
+    </div>
+
+    <div class="form-group">
+      <label for="showGroupResultToPlayers">{{fields.showGroupResultToPlayers.label}}</label>
+      <input type="checkbox" name="showGroupResultToPlayers" id="showGroupResultToPlayers" {{#if showGroupResultToPlayers}}checked{{/if}} />
+      <p class="hint">{{fields.showGroupResultToPlayers.hint}}</p>
+    </div>
+
+    <div class="form-group">
+      <label for="groupRollNPCHidden">{{fields.groupRollNPCHidden.label}}</label>
+      <input type="checkbox" name="groupRollNPCHidden" id="groupRollNPCHidden" {{#if groupRollNPCHidden}}checked{{/if}} />
+      <p class="hint">{{fields.groupRollNPCHidden.hint}}</p>
+    </div>
+
+    <div class="form-group">
+      <label for="concealNPCNames">{{fields.concealNPCNames.label}}</label>
+      <input type="checkbox" name="concealNPCNames" id="concealNPCNames" {{#if concealNPCNames}}checked{{/if}} />
+      <p class="hint">{{fields.concealNPCNames.hint}}</p>
+    </div>
+
+    <div class="form-group">
+      <label for="groupCalculationForSaves">{{fields.groupCalculationForSaves.label}}</label>
+      <input type="checkbox" name="groupCalculationForSaves" id="groupCalculationForSaves" {{#if groupCalculationForSaves}}checked{{/if}} />
+      <p class="hint">{{fields.groupCalculationForSaves.hint}}</p>
+    </div>
+
+  </fieldset>
 
 </section>

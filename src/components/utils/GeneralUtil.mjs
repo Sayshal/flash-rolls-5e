@@ -44,6 +44,15 @@ export class GeneralUtil {
   }
 
   /**
+   * Check if Midi-QOL module is active and has an ongoing workflow
+   * @returns {boolean} True if midi-qol has an active workflow
+   */
+  static isMidiWorkflowActive() {
+    if (!this.isModuleOn('midi-qol')) return false;
+    return globalThis.MidiQOL?.Workflow?.workflows?.size > 0;
+  }
+
+  /**
    * Finds and returns the first element matching the selector within the parent element
    * @param {HTMLElement} parent - The parent element to search within
    * @param {string} selector - CSS selector string
