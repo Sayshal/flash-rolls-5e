@@ -119,10 +119,6 @@
         "label": "Intercept Tidy5e Sheets Group Rolls",
         "hint": "When enabled, group skill rolls from Tidy5e Sheets will use Flash Rolls' group roll system instead of the default chat prompt. Requires Tidy5e Sheets module."
       },
-      "disableDialogInPlayerGroupRoll": {
-        "label": "Disable Player Side Dialog in Group Rolls",
-        "hint": "This prevents roll dialogs from popping up for each player when receiving group requests from GM. When enabled, players must click the roll button on the group roll chat card to roll manually. Only disables dialogs in group rolls."
-      },
       "groupRollResultMode": {
         "label": "Group Roll Result Mode",
         "hint": "Select how to calculate the result of a group roll:<br/>• <b>Standard Rule</b> - At least half the group must succeed.<br/>• <b>Group Average</b> - Simple average of all rolls, rounded down.<br/>• <b>Leader with help</b> - Result from the actor with highest bonus, minus number of group failures.<br/>• <b>Weakest Link</b> - Result from the actor with the lowest relevant skill modifier, plus number of group successes.",
@@ -138,8 +134,8 @@
         "hint": "When enabled, group roll messages for saving throws will include the group calculation result summary. When disabled, save group messages will only show individual results without the group calculation footer."
       },
       "removeSaveMsgAfterRoll": {
-        "label": "Hide Save Request Messages sent from Midi-QOL",
-        "hint": "Activate this to reduce repetition, save roll messages will be hidden 1 second after all rolls complete and deleted after 10 seconds. This prevents duplicate information."
+        "label": "Hide Messages from Automatic Save Request by Midi-QOL",
+        "hint": "Activate this to reduce repetition especially with Midi-QoL. Save roll messages will be hidden 1 second after all rolls complete and then deleted. This prevents duplicate information with what's shown on Midi-QoL cards."
       },
       "useGMTargetTokens": {
         "label": "Use GM Targeted Tokens",
@@ -159,11 +155,11 @@
       },
       "skipRollDialogOption": {
         "label": "Which Roll Dialogs to Skip (GM)",
-        "hint": "When Skip Roll Dialogs is checked, which dialogs do you want to skip? This does not affect dialogs on player side.",
+        "hint": "When Skip Roll Dialogs is checked, which dialogs do you want to skip? This does not affect dialogs on player side and does not affect consumption dialogs.",
         "choices": {
           "1": "All roll config dialogs",
-          "2": "Roll request config dialogs",
-          "3": "Local roll config dialogs"
+          "2": "Only when sending roll request",
+          "3": "Only on local rolls"
         }
       },
       "skipToRollResolver": {
@@ -173,6 +169,10 @@
       "rollInterceptionEnabled": {
         "label": "Send Roll Requests from Player Sheets and Other Modules",
         "hint": "When enabled, rolls made by the GM for player characters will be automatically redirected to the owner player, if they are online, from character sheets or other modules."
+      },
+      "showRequestPrompt": {
+        "label": "Prompt Player on Request",
+        "hint": "When enabled, the roll will be immediately triggered on player side and show the roll dialog for them to click on. When disabled, player will only get the chat message on chat log and must click to roll."
       },
       "showOfflineNotifications": {
         "label": "Show Offline Notifications",

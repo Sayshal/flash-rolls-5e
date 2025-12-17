@@ -20,12 +20,6 @@ export class VanillaActivityManager {
   static async triggerMissingRolls(activity, config, results) {
     LogUtil.log("VanillaActivityManager.triggerMissingRolls", [activity, config, results]);
 
-    // Check if attack roll should be triggered
-    // if (activity.attack && !results.attackRoll) {
-    //   LogUtil.log("VanillaActivityManager.triggerMissingRolls - Manually triggering attack roll");
-    //   await activity.rollAttack(config, {}, {});
-    // }
-
     // Check if damage/healing roll should be triggered for save/heal/damage-only activities
     const hasDamageParts = activity.damage?.parts?.length > 0;
     // const hasHealingFormula = activity.healing?.formula;

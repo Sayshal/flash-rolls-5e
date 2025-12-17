@@ -14,6 +14,9 @@
   height: auto;
   background: transparent;
   transition: right 0.25s ease-in-out;
+  &:hover {
+    z-index: 1001;
+  }
 }
 
 /* Floating Info */
@@ -97,10 +100,13 @@ body:not(.crlngn-ui) #flash-rolls-menu:after {
 /* Accordion Visibility Control */
 #flash-rolls-menu .request-types-accordion {
   display: none !important;
+  opacity: 0;
+  transition: opacity 0.1s ease-out 0.3;
 }
 
 #flash-rolls-menu .request-types-accordion.hover-visible {
   display: flex !important;
+  opacity: 1;
 }
 
 /* No Actors State */

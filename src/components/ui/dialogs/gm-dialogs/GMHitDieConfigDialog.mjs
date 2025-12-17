@@ -198,7 +198,7 @@ export class GMHitDieConfigDialog extends GMRollConfigMixin(dnd5e.applications.d
     
     const SETTINGS = getSettings();
     const isPublicRollsOn = SettingsUtil.get(SETTINGS.publicPlayerRolls.tag) === true;
-    const rollMode = RollHelpers.determineRollMode(isPublicRollsOn);
+    const rollMode = RollHelpers.determineRollMode(isPublicRollsOn, options.rollMode);
     
     const rollConfig = {
       data: actor.getRollData(),

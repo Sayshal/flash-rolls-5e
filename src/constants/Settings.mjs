@@ -102,8 +102,7 @@ export const getSettings = () => {
         'showGroupResultToPlayers',
         'groupRollNPCHidden',
         'concealNPCNames',
-        'interceptTidySheetsGroupRolls',
-        'disableDialogInPlayerGroupRoll'
+        'interceptTidySheetsGroupRolls'
       ],
       default: {
         groupRollsMsgEnabled: true,
@@ -113,8 +112,7 @@ export const getSettings = () => {
         showGroupResultToPlayers: true,
         groupRollNPCHidden: true,
         concealNPCNames: false,
-        interceptTidySheetsGroupRolls: true,
-        disableDialogInPlayerGroupRoll: false
+        interceptTidySheetsGroupRolls: true
       },
       scope: SETTING_SCOPE.world,
       config: false,
@@ -129,6 +127,7 @@ export const getSettings = () => {
       propType: Object,
       fields: [
         'rollInterceptionEnabled',
+        'showRequestPrompt',
         'useGMTargetTokens',
         'consumptionConfigMode',
         'placeTemplateForPlayer',
@@ -140,6 +139,7 @@ export const getSettings = () => {
       ],
       default: {
         rollInterceptionEnabled: true,
+        showRequestPrompt: true,
         useGMTargetTokens: true,
         consumptionConfigMode: 2,
         placeTemplateForPlayer: false,
@@ -205,17 +205,6 @@ export const getSettings = () => {
       propType: Boolean,
       inputType: SETTING_INPUT.checkbox,
       default: true,
-      scope: SETTING_SCOPE.world,
-      config: false
-    },
-
-    disableDialogInPlayerGroupRoll: {
-      tag: "disable-dialog-in-player-group-roll",
-      label: game.i18n.localize("FLASH_ROLLS.settings.disableDialogInPlayerGroupRoll.label"),
-      hint: game.i18n.localize("FLASH_ROLLS.settings.disableDialogInPlayerGroupRoll.hint"),
-      propType: Boolean,
-      inputType: SETTING_INPUT.checkbox,
-      default: false,
       scope: SETTING_SCOPE.world,
       config: false
     },
@@ -353,6 +342,16 @@ export const getSettings = () => {
       propType: Boolean,
       inputType: SETTING_INPUT.checkbox,
       default: false,
+      scope: SETTING_SCOPE.world,
+      config: false
+    },
+    showRequestPrompt: {
+      tag: "show-request-prompt",
+      label: game.i18n.localize("FLASH_ROLLS.settings.showRequestPrompt.label"),
+      hint: game.i18n.localize("FLASH_ROLLS.settings.showRequestPrompt.hint"),
+      propType: Boolean,
+      inputType: SETTING_INPUT.checkbox,
+      default: true,
       scope: SETTING_SCOPE.world,
       config: false
     },

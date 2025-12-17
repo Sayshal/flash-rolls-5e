@@ -21,7 +21,8 @@ export const SOCKET_CALLS = {
   getDiceConfig: "getDiceConfig",
   handleRollRequest: "handleRollRequest",
   removeTemplate: "removeTemplate",
-  broadcastRollComplete: "broadcastRollComplete"
+  broadcastRollComplete: "broadcastRollComplete",
+  deleteChatMessage: "deleteChatMessage"
 };
 
 export const HOOK_NAMES = {

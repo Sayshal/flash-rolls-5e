@@ -7,7 +7,7 @@
   
   <div class="group-roll-list">
     {{#each results}}
-    <div class="actor-result {{#if success}}success{{/if}} {{#if failure}}failure{{/if}} {{#if shouldHide}}npc-hidden{{/if}} {{#if shouldHideRoll}}roll-hidden{{/if}}" data-actor-id="{{actorId}}"{{#if tokenId}} data-token-id="{{tokenId}}"{{/if}}>
+    <div class="actor-result {{#unless rolled}}pending{{/unless}} {{#if success}}success{{/if}} {{#if failure}}failure{{/if}} {{#if shouldHide}}npc-hidden{{/if}} {{#if shouldHideRoll}}roll-hidden{{/if}}" data-actor-id="{{actorId}}"{{#if tokenId}} data-token-id="{{tokenId}}"{{/if}}>
       <div class="actor-summary">
         <img class="actor-image" src="{{actorImg}}" alt="{{actorName}}" />
         <span class="actor-name">{{actorName}}</span>

@@ -49,6 +49,7 @@ export class GeneralUtil {
    */
   static isMidiWorkflowActive() {
     if (!this.isModuleOn('midi-qol')) return false;
+    LogUtil.log("isMidiWorkflowActive",[globalThis.MidiQOL?.Workflow?.workflows]);
     return globalThis.MidiQOL?.Workflow?.workflows?.size > 0;
   }
 

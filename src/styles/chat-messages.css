@@ -19,7 +19,7 @@
     padding: 0;
     cursor: pointer;
     transition: background-color 0.2s ease-in-out;
-    
+
     .actor-summary {
       display: flex;
       flex-direction: row;
@@ -31,6 +31,14 @@
 
       &:hover {
         background-color: var(--fr5e-secondary-bg-10);
+      }
+    }
+
+    &.pending {
+      cursor: default;
+
+      .actor-summary:hover {
+        background-color: transparent;
       }
     }
     
@@ -145,6 +153,9 @@
     font-family: var(--font-awesome) !important;
     font-size: 1.25rem;
     display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: center;
     
     &.rollable {
       cursor: pointer;
@@ -173,6 +184,10 @@
     border: 1px solid var(--fr5e-bg-50);
     padding: 3px;
     transition: border-color 0s;
+
+    &:hover{
+      background: var(--fr5e-secondary-bg-10);
+    }
   }
   .dice-formula {
     background-color: var(--fr5e-secondary-bg-10);

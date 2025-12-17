@@ -159,7 +159,7 @@ export class GMDamageConfigDialog extends GMRollConfigMixin(dnd5e.applications.d
     LogUtil.log('GMDamageConfigDialog - retrieved activity config from cache', [itemId, storedActivityConfig]);
     const SETTINGS = getSettings();
     const isPublicRollsOn = SettingsUtil.get(SETTINGS.publicPlayerRolls.tag) === true;
-    const rollMode = RollHelpers.determineRollMode(isPublicRollsOn, originalConfig.rollMode);
+    const rollMode = RollHelpers.determineRollMode(isPublicRollsOn, options.rollMode || originalConfig.rollMode);
     
     const normalizedRollType = rollType?.toLowerCase();
     

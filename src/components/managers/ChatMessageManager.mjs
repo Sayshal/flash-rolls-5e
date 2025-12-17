@@ -122,6 +122,7 @@ export class ChatMessageManager {
           }
         } else {
           let storedGroupRollId = actor.getFlag(MODULE_ID, 'tempGroupRollId');
+          LogUtil.log('ChatMessageManager.onPreCreateChatMessage - Player side check', [actor.name, 'storedGroupRollId:', storedGroupRollId, 'isToken:', actor.isToken]);
           if (!storedGroupRollId && actor.isToken) {
             const baseActor = game.actors.get(actor.actor?.id);
             if (baseActor) {
@@ -182,7 +183,9 @@ export class ChatMessageManager {
    * @param {Object} context - Rendering context
    */
   static onRenderChatMessage(message, html, context) {
-    LogUtil.log("ChatMessageManager.onRenderChatMessage #0", [message, html, context]);
+    const midiRequestId = message.getFlag('midi-qol', 'requestId');
+    const dnd5eRollType = message.flags?.dnd5e?.roll?.type;
+    LogUtil.log("ChatMessageManager.onRenderChatMessage #0", [message.id, 'speaker:', message.speaker?.alias, 'midiRequestId:', midiRequestId, 'dnd5eRollType:', dnd5eRollType]);
 
     const htmlElement = html instanceof jQuery ? html[0] : (html[0] || html);
 
@@ -939,7 +942,9 @@ export class ChatMessageManager {
     const groupCalculationForSaves = SettingsUtil.get(SETTINGS.groupCalculationForSaves.tag);
     const isSaveRoll = rollType === ROLL_TYPES.SAVE || rollType === ROLL_TYPES.SAVING_THROW;
     const showGroupCalculation = isSaveRoll ? groupCalculationForSaves : true;
+    const fromMidiWorkflow = config?.fromMidiWorkflow ?? false;
     const isGM = game.user?.isGM === true;
+    LogUtil.log('buildGroupRollData - fromMidiWorkflow', [fromMidiWorkflow, 'config.fromMidiWorkflow:', config?.fromMidiWorkflow, 'rollType:', rollType]);
 
     results.forEach(result => {
       result.shouldHide = result.isNPC && groupRollNPCHidden && !isGM;
@@ -971,6 +976,7 @@ export class ChatMessageManager {
       showResultToPlayers,
       showGroupCalculation,
       groupRollNPCHidden,
+      fromMidiWorkflow,
       isGM,
       isSingleActor: validEntries.length === 1,
       actorEntries: validEntries.map(entry => ({ actorId: entry.actor.id, uniqueId: entry.uniqueId, tokenId: entry.tokenId })),
@@ -1516,7 +1522,7 @@ export class ChatMessageManager {
     const actorId = message.speaker?.actor;
     const tokenId = message.speaker?.token;
 
-    LogUtil.log('interceptRollMessage - speaker info', ['actorUniqueId from flag:', actorUniqueIdFromFlag, 'actorId:', actorId, 'tokenId:', tokenId]);
+    LogUtil.log('interceptRollMessage - speaker info', ['actorUniqueId from flag:', actorUniqueIdFromFlag, message]);
 
     let actor;
     let uniqueId;
@@ -1564,12 +1570,30 @@ export class ChatMessageManager {
 
     if (!groupRollId) {
       LogUtil.log('interceptRollMessage #2 - no groupRollId in flag', [actor.name]);
+
+      if (game.user.isGM && roll && groupRollsMsgEnabled) {
+        const matchingGroupRollId = this._findMatchingPendingRoll(actor, uniqueId, message);
+        if (matchingGroupRollId) {
+          LogUtil.log('interceptRollMessage - Found matching pending roll for external roll', [actor.name, matchingGroupRollId]);
+          return this._processMatchedExternalRoll(message, html, actor, uniqueId, matchingGroupRollId, roll, tokenId);
+        }
+      }
+
       if (isFlashRollRequest && roll) {
         this._broadcastIndividualRollComplete(actor, roll, rollType, rollKey, tokenId);
       }
+
+      const midiRequestId = message.getFlag('midi-qol', 'requestId');
+      if (midiRequestId && game.user.isGM) {
+        const dnd5eRollType = message.flags?.dnd5e?.roll?.type;
+        if (dnd5eRollType === 'save') {
+          LogUtil.log('interceptRollMessage - Midi-QOL save roll detected, scheduling removal', [actor.name, midiRequestId]);
+          this._scheduleMidiSaveRemoval(message);
+        }
+      }
       return;
     }
-    
+
     if (!game.user.isGM && !this.groupRollMessages.has(groupRollId)) {
       const messages = game.messages.contents;
       const groupMessage = messages.find(m => 
@@ -1627,34 +1651,7 @@ export class ChatMessageManager {
       LogUtil.log('interceptRollMessage - Updating group message', [groupRollId, uniqueId, actor.name, roll.total, 'rollMode:', rollMode]);
       this.updateGroupRollMessage(groupRollId, uniqueId, roll, rollMode);
       
-      const msgId = message.id;
-      if (this.messagesScheduledForDeletion.has(msgId)) {
-        return;
-      }
-      this.messagesScheduledForDeletion.add(msgId);
-      
-      if (msgId) {
-        setTimeout(async () => {
-          LogUtil.log('interceptRollMessage - deletion', [msgId]);
-          try {
-            const msgExists = game.messages.get(msgId);
-            if (msgExists) {
-              if (ui.chat?.deleteMessage) {
-                await ui.chat.deleteMessage(msgId);
-              } else {
-                await message.delete();
-              }
-              LogUtil.log('interceptRollMessage - Deleted individual message', [msgId]);
-            } else {
-              LogUtil.log('interceptRollMessage - Message already deleted', [msgId]);
-            }
-          } catch (error) {
-            LogUtil.log('interceptRollMessage - Error deleting message', [msgId, error.message]);
-          } finally {
-            this.messagesScheduledForDeletion.delete(msgId);
-          }
-        }, 500);
-      }
+      this._scheduleMessageDeletion(message.id, 'interceptRollMessage');
     } else {
       // Player side - don't try to update the message (no permission)
       LogUtil.log('interceptRollMessage - Player roll intercepted, GM will handle update', [groupRollId]);
@@ -1671,7 +1668,181 @@ export class ChatMessageManager {
   static isGroupRoll(requestId) {
     return this.pendingRolls.has(requestId) || this.groupRollMessages.has(requestId);
   }
-  
+
+  /**
+   * Schedule a chat message for deletion when the rollComplete hook fires.
+   * Hides the message immediately and deletes it after the hook confirms the roll was processed.
+   * @param {string} msgId - The message ID to delete
+   * @param {string} [logPrefix='scheduleMessageDeletion'] - Prefix for log messages
+   */
+  static _scheduleMessageDeletion(msgId, logPrefix = 'scheduleMessageDeletion') {
+    if (!msgId || this.messagesScheduledForDeletion.has(msgId)) {
+      return;
+    }
+    this.messagesScheduledForDeletion.add(msgId);
+
+    const hideMessage = () => {
+      const msgElement = document.querySelector(`[data-message-id="${msgId}"]`);
+      if (msgElement) {
+        msgElement.style.display = 'none !important';
+        LogUtil.log(`${logPrefix} - Hidden message element`, [msgId]);
+      } else {
+        LogUtil.log(`${logPrefix} - Message element not found in DOM`, [msgId]);
+      }
+    };
+
+    hideMessage();
+    requestAnimationFrame(hideMessage);
+    setTimeout(hideMessage, 100);
+
+    const hookId = Hooks.once('flash-rolls-5e.rollComplete', async () => {
+      LogUtil.log(`${logPrefix} - rollComplete hook fired, deleting message`, [msgId]);
+      try {
+        const msgToDelete = game.messages.get(msgId);
+        if (msgToDelete) {
+          await msgToDelete.delete();
+          LogUtil.log(`${logPrefix} - Deleted individual message`, [msgId]);
+        } else {
+          LogUtil.log(`${logPrefix} - Message already deleted or not found`, [msgId]);
+        }
+      } catch (error) {
+        LogUtil.error(`${logPrefix} - Error deleting message`, [msgId, error]);
+      } finally {
+        this.messagesScheduledForDeletion.delete(msgId);
+      }
+    });
+
+    setTimeout(() => {
+      if (this.messagesScheduledForDeletion.has(msgId)) {
+        Hooks.off('flash-rolls-5e.rollComplete', hookId);
+        this.messagesScheduledForDeletion.delete(msgId);
+        LogUtil.log(`${logPrefix} - Fallback timeout, hook didn't fire`, [msgId]);
+        const msg = game.messages.get(msgId);
+        if (msg) msg.delete().catch(() => {});
+      }
+    }, 5000);
+  }
+
+  /**
+   * Find a matching pending roll request for an actor based on roll type from message.
+   * This allows intercepting rolls made from character sheets or other sources.
+   * @param {Actor} actor - The actor who made the roll
+   * @param {string} uniqueId - Token or actor ID
+   * @param {ChatMessage} message - The chat message with the roll
+   * @returns {string|null} The matching groupRollId or null
+   */
+  static _findMatchingPendingRoll(actor, uniqueId, message) {
+    const dnd5eRoll = message.flags?.dnd5e?.roll;
+    const isInitiativeRoll = message.flags?.core?.initiativeRoll;
+    if (!dnd5eRoll?.type && !isInitiativeRoll) return null;
+
+    const dndRollType = isInitiativeRoll ? 'initiative' : dnd5eRoll.type;
+    const rollKey = dnd5eRoll?.skillId || dnd5eRoll?.toolId || dnd5eRoll?.ability;
+
+    LogUtil.log('_findMatchingPendingRoll - searching', [actor.name, 'dndRollType:', dndRollType, 'rollKey:', rollKey, 'isInitiativeRoll:', isInitiativeRoll, 'pendingRolls count:', this.pendingRolls.size]);
+
+    for (const [groupRollId, pendingData] of this.pendingRolls.entries()) {
+      const actorEntry = pendingData.actorEntries?.find(entry =>
+        entry.actorId === actor.id ||
+        entry.uniqueId === uniqueId ||
+        entry.tokenId === uniqueId
+      );
+
+      if (!actorEntry) continue;
+
+      const pendingType = pendingData.rollType?.toLowerCase();
+      let matchesType = false;
+
+      if (dndRollType === 'skill' && (pendingType === ROLL_TYPES.SKILL)) {
+        matchesType = true;
+      } else if (dndRollType === 'tool' && pendingType === ROLL_TYPES.TOOL) {
+        matchesType = true;
+      } else if (dndRollType === 'ability' && (pendingType === ROLL_TYPES.ABILITY || pendingType === ROLL_TYPES.ABILITY_CHECK)) {
+        matchesType = true;
+      } else if (dndRollType === 'save' && (pendingType === ROLL_TYPES.SAVE || pendingType === ROLL_TYPES.SAVING_THROW)) {
+        matchesType = true;
+      } else if (dndRollType === 'attack' && pendingType === ROLL_TYPES.ATTACK) {
+        matchesType = true;
+      } else if (dndRollType === 'damage' && (pendingType === ROLL_TYPES.DAMAGE || pendingType === ROLL_TYPES.HEALING)) {
+        matchesType = true;
+      } else if (dndRollType === 'death' && pendingType === ROLL_TYPES.DEATH_SAVE) {
+        matchesType = true;
+      } else if (dndRollType === 'initiative' && pendingType === ROLL_TYPES.INITIATIVE) {
+        matchesType = true;
+      }
+
+      if (!matchesType) {
+        LogUtil.log('_findMatchingPendingRoll - type mismatch', [groupRollId, 'pending:', pendingType, 'dnd5e:', dndRollType]);
+        continue;
+      }
+
+      if (rollKey && pendingData.rollKey && rollKey !== pendingData.rollKey) {
+        LogUtil.log('_findMatchingPendingRoll - key mismatch', [groupRollId, 'pending:', pendingData.rollKey, 'dnd5e:', rollKey]);
+        continue;
+      }
+
+      const existingResult = pendingData.results?.get(uniqueId) || pendingData.results?.get(actor.id);
+      if (existingResult) {
+        LogUtil.log('_findMatchingPendingRoll - already rolled', [groupRollId, actor.name]);
+        continue;
+      }
+
+      LogUtil.log('_findMatchingPendingRoll - found match!', [groupRollId, actor.name]);
+      return groupRollId;
+    }
+
+    return null;
+  }
+
+  /**
+   * Process an external roll (from character sheet, macro, etc.) that matches a pending roll request.
+   * @param {ChatMessage} message - The chat message with the roll
+   * @param {HTMLElement} html - The rendered HTML element
+   * @param {Actor} actor - The actor who made the roll
+   * @param {string} uniqueId - Token or actor ID
+   * @param {string} groupRollId - The matching group roll ID
+   * @param {Roll} roll - The roll object
+   * @param {string|null} tokenId - Token ID if applicable
+   */
+  static _processMatchedExternalRoll(message, html, actor, uniqueId, groupRollId, roll, tokenId) {
+    if (!this.groupRollMessages.has(groupRollId)) {
+      const messages = game.messages.contents;
+      const groupMessage = messages.find(m =>
+        m.getFlag(MODULE_ID, 'groupRollId') === groupRollId &&
+        m.getFlag(MODULE_ID, 'isGroupRoll')
+      );
+
+      if (groupMessage) {
+        this.groupRollMessages.set(groupRollId, groupMessage);
+        LogUtil.log('_processMatchedExternalRoll - Registered group message', [groupRollId]);
+      } else {
+        LogUtil.log('_processMatchedExternalRoll - No group message found', [groupRollId]);
+        return;
+      }
+    }
+
+    let rollMode = CONST.DICE_ROLL_MODES.PUBLIC;
+    if (message.blind) {
+      rollMode = CONST.DICE_ROLL_MODES.BLIND;
+    } else if (message.whisper && message.whisper.length > 0) {
+      const gmUserIds = game.users.filter(u => u.isGM).map(u => u.id);
+      const isWhisperToGMOnly = message.whisper.every(id => gmUserIds.includes(id));
+      if (isWhisperToGMOnly) {
+        rollMode = CONST.DICE_ROLL_MODES.PRIVATE;
+      }
+    }
+
+    const htmlElement = html instanceof jQuery ? html[0] : (html?.[0] || html);
+    if (htmlElement && htmlElement.style) {
+      htmlElement.style.display = 'none';
+    }
+
+    LogUtil.log('_processMatchedExternalRoll - Updating group message', [groupRollId, uniqueId, actor.name, roll.total, 'rollMode:', rollMode]);
+    this.updateGroupRollMessage(groupRollId, uniqueId, roll, rollMode);
+
+    this._scheduleMessageDeletion(message.id, '_processMatchedExternalRoll');
+  }
+
   /**
    * Add groupRollId and Flash Roll metadata to message flags
    * @param {Object} messageConfig - The message configuration object
@@ -1760,7 +1931,7 @@ export class ChatMessageManager {
 
   /**
    * Schedule message hide and delete for midi-qol integration
-   * Hides message after 1 second, deletes after 10 seconds
+   * Hides message after 1 second, deletes shortly after
    * @param {ChatMessage} message - The chat message to hide/delete
    * @private
    */
@@ -1769,27 +1940,40 @@ export class ChatMessageManager {
 
     const SETTINGS = getSettings();
     const removeSaveMsgAfterRoll = SettingsUtil.get(SETTINGS.removeSaveMsgAfterRoll.tag);
-    if (!removeSaveMsgAfterRoll) return;
-    if (!GeneralUtil.isMidiWorkflowActive()) return;
+    if (!removeSaveMsgAfterRoll) {
+      LogUtil.log('_scheduleMessageRemoval - removeSaveMsgAfterRoll disabled, skipping');
+      return;
+    }
 
     const flagData = message.getFlag(MODULE_ID, 'rollData');
+    const midiRequestId = message.getFlag('midi-qol', 'requestId');
+    const fromMidiWorkflow = flagData?.fromMidiWorkflow || !!midiRequestId;
+
+    LogUtil.log('_scheduleMessageRemoval - checking', [message.id, 'rollType:', flagData?.rollType, 'fromMidiWorkflow:', fromMidiWorkflow, 'flagData.fromMidiWorkflow:', flagData?.fromMidiWorkflow, 'midiRequestId:', midiRequestId, 'full flagData:', flagData]);
+
+    if (!fromMidiWorkflow) return;
+
     const isSaveRoll = flagData?.rollType === ROLL_TYPES.SAVE || flagData?.rollType === ROLL_TYPES.SAVING_THROW;
     if (!isSaveRoll) return;
 
     LogUtil.log('_scheduleMessageRemoval - Scheduling hide/delete for save message', [message.id]);
 
-    setTimeout(() => {
-      const msgElement = document.querySelector(`[data-message-id="${message.id}"]`);
-      if (msgElement) {
-        msgElement.classList.add('flash-rolls-hidden');
-      }
-    }, 1000);
+    this._scheduleDelayedMessageRemoval(message.id, '_scheduleMessageRemoval');
+  }
 
-    setTimeout(() => {
-      message.delete().catch(err => {
-        LogUtil.error('_scheduleMessageRemoval - Failed to delete message', [err]);
-      });
-    }, 10000);
+  /**
+   * Schedule removal of individual Midi-QOL save roll messages.
+   * Called when interceptRollMessage detects a save roll with midi-qol.requestId flag.
+   * @param {ChatMessage} message - The chat message to hide/delete
+   * @private
+   */
+  static _scheduleMidiSaveRemoval(message) {
+    const SETTINGS = getSettings();
+    const removeSaveMsgAfterRoll = SettingsUtil.get(SETTINGS.removeSaveMsgAfterRoll.tag);
+    if (!removeSaveMsgAfterRoll) return;
+
+    LogUtil.log('_scheduleMidiSaveRemoval - Scheduling hide/delete for Midi-QOL save message', [message.id]);
+    this._scheduleDelayedMessageRemoval(message.id, '_scheduleMidiSaveRemoval');
   }
 
   /**
@@ -1805,25 +1989,54 @@ export class ChatMessageManager {
     const SETTINGS = getSettings();
     const removeSaveMsgAfterRoll = SettingsUtil.get(SETTINGS.removeSaveMsgAfterRoll.tag);
     if (!removeSaveMsgAfterRoll) return;
-    if (!GeneralUtil.isMidiWorkflowActive()) return;
+
+    const midiRequestId = message.getFlag('midi-qol', 'requestId');
+    const fromMidiWorkflow = message.getFlag(MODULE_ID, 'fromMidiWorkflow') || !!midiRequestId;
+    if (!fromMidiWorkflow) return;
 
     const isSaveRoll = rollType === ROLL_TYPES.SAVE || rollType === ROLL_TYPES.SAVING_THROW;
     if (!isSaveRoll) return;
 
-    LogUtil.log('_scheduleIndividualMessageRemoval - Scheduling hide/delete for individual save message', [message.id]);
+    LogUtil.log('_scheduleIndividualMessageRemoval - Scheduling hide/delete for individual save message', [message.id, 'midiRequestId:', midiRequestId]);
+
+    this._scheduleDelayedMessageRemoval(message.id, '_scheduleIndividualMessageRemoval');
+  }
+
+  /**
+   * Schedule message hide after 1 second and delete after 2 seconds.
+   * Used for Midi-QOL workflow where rolls are already complete.
+   * @param {string} msgId - The message ID to hide/delete
+   * @param {string} [logPrefix='scheduleDelayedMessageRemoval'] - Prefix for log messages
+   * @private
+   */
+  static _scheduleDelayedMessageRemoval(msgId, logPrefix = 'scheduleDelayedMessageRemoval') {
+    if (!msgId || this.messagesScheduledForDeletion.has(msgId)) {
+      return;
+    }
+    this.messagesScheduledForDeletion.add(msgId);
 
     setTimeout(() => {
-      const msgElement = document.querySelector(`[data-message-id="${message.id}"]`);
+      const msgElement = document.querySelector(`[data-message-id="${msgId}"]`);
       if (msgElement) {
-        msgElement.classList.add('flash-rolls-hidden');
+        msgElement.style.display = 'none';
+        LogUtil.log(`${logPrefix} - Hidden message element after 1s`, [msgId]);
       }
     }, 1000);
 
-    setTimeout(() => {
-      message.delete().catch(err => {
-        LogUtil.error('_scheduleIndividualMessageRemoval - Failed to delete message', [err]);
-      });
-    }, 10000);
+    setTimeout(async () => {
+      LogUtil.log(`${logPrefix} - Deleting message after 2s`, [msgId]);
+      try {
+        const msgToDelete = game.messages.get(msgId);
+        if (msgToDelete) {
+          await msgToDelete.delete();
+          LogUtil.log(`${logPrefix} - Deleted message`, [msgId]);
+        }
+      } catch (error) {
+        LogUtil.error(`${logPrefix} - Error deleting message`, [msgId, error]);
+      } finally {
+        this.messagesScheduledForDeletion.delete(msgId);
+      }
+    }, 2000);
   }
 
   /**

@@ -13,6 +13,7 @@ export class CustomRollDialog extends HandlebarsApplicationMixin(ApplicationV2) 
     this.actor = options.actor;
     this.callback = options.callback;
     this.diceCounts = {};
+    this.rollMode = options.rollMode || game.settings.get("core", "rollMode");
   }
 
   /**
@@ -74,10 +75,17 @@ export class CustomRollDialog extends HandlebarsApplicationMixin(ApplicationV2) 
    */
   async _prepareContext(options = {}) {
     const context = await super._prepareContext(options);
+    const rollModes = Object.entries(CONFIG.Dice.rollModes).map(([value, label]) => ({
+      value,
+      labelKey: typeof label === 'string' ? label : (label?.label || label?.name || value),
+      selected: value === this.rollMode
+    }));
     return {
       ...context,
       formula: this.formula,
-      readonly: this.readonly
+      readonly: this.readonly,
+      rollMode: this.rollMode,
+      rollModes
     };
   }
 
@@ -98,19 +106,26 @@ export class CustomRollDialog extends HandlebarsApplicationMixin(ApplicationV2) 
    */
   _attachPartListeners(partId, htmlElement, options) {
     super._attachPartListeners(partId, htmlElement, options);
-    
+
     const formulaInput = htmlElement.querySelector('#custom-roll-formula');
     const validationMessage = htmlElement.querySelector('#formula-validation-message');
-    
+    const rollModeSelect = htmlElement.querySelector('#custom-roll-mode');
+
     if (formulaInput && !this.readonly) {
       formulaInput.addEventListener('input', (event) => {
         this.formula = event.target.value.trim();
         this.updateValidationMessage(validationMessage);
       });
-      
+
       if (this.formula) {
         this.updateValidationMessage(validationMessage);
       }
+    }
+
+    if (rollModeSelect) {
+      rollModeSelect.addEventListener('change', (event) => {
+        this.rollMode = event.target.value;
+      });
     }
   }
   
@@ -221,11 +236,11 @@ export class CustomRollDialog extends HandlebarsApplicationMixin(ApplicationV2) 
       }));
       return;
     }
-    
+
     if (this.callback) {
-      await this.callback(this.formula);
+      await this.callback({ formula: this.formula, rollMode: this.rollMode });
     }
-    
+
     this.close();
   }
 
@@ -237,23 +252,26 @@ export class CustomRollDialog extends HandlebarsApplicationMixin(ApplicationV2) 
   }
 
   /**
-   * Show the dialog and return a promise for the formula
+   * Show the dialog and return a promise for the result
    * @param {Object} options
-   * @returns {Promise<string|null>}
+   * @param {string} [options.formula] - Initial formula value
+   * @param {boolean} [options.readonly] - Whether the formula is readonly
+   * @param {string} [options.rollMode] - Initial roll mode
+   * @returns {Promise<{formula: string, rollMode: string}|null>} Result object or null if cancelled
    */
   static async prompt(options = {}) {
     return new Promise((resolve) => {
       const dialog = new this({
         ...options,
-        callback: (formula) => resolve(formula)
+        callback: (result) => resolve(result)
       });
-      
+
       dialog.addEventListener("close", () => {
         if (!dialog._resolved) {
           resolve(null);
         }
       });
-      
+
       dialog.render(true);
     });
   }

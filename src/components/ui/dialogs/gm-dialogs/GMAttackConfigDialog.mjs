@@ -203,8 +203,8 @@ export class GMAttackConfigDialog extends GMRollConfigMixin(dnd5e.applications.d
       rollConfig.rolls[0].data.situational = options.situationalBonus;
     }
 
-    const rollMode = RollHelpers.determineRollMode(isPublicRollsOn);
-    
+    const rollMode = RollHelpers.determineRollMode(isPublicRollsOn, options.rollMode);
+
     const messageConfig = RollHelpers.createMessageConfig(actor, rollMode);
     
     const { position, ...dialogOptions } = originalDialog?.options || {};

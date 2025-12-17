@@ -17,6 +17,12 @@
   </div>
 
   <div class="form-group">
+    <label for="showRequestPrompt">{{fields.showRequestPrompt.label}}</label>
+    <input type="checkbox" name="showRequestPrompt" id="showRequestPrompt" {{#if showRequestPrompt}}checked{{/if}} />
+    <p class="hint">{{fields.showRequestPrompt.hint}}</p>
+  </div>
+
+  <div class="form-group">
     <label for="showOfflineNotifications">{{fields.showOfflineNotifications.label}}</label>
     <input type="checkbox" name="showOfflineNotifications" id="showOfflineNotifications" {{#if showOfflineNotifications}}checked{{/if}} />
     <p class="hint">{{fields.showOfflineNotifications.hint}}</p>

@@ -182,12 +182,24 @@ export class RollRequestManager {
       const normalizedRollType = requestData.rollType?.toLowerCase();
       LogUtil.log('executePlayerRollRequest - normalized roll type', [normalizedRollType]);
 
-      const isGroupRoll = !!requestData.groupRollId;
-      const disableDialogInPlayerGroupRoll = SettingsUtil.get(SETTINGS.disableDialogInPlayerGroupRoll.tag);
-      const shouldCancelRoll = isGroupRoll && disableDialogInPlayerGroupRoll && !game.user.isGM;
+      const showRequestPrompt = SettingsUtil.get(SETTINGS.showRequestPrompt.tag);
+      const isActivityRoll = [ROLL_TYPES.ATTACK, ROLL_TYPES.DAMAGE, ROLL_TYPES.ITEM].includes(normalizedRollType);
 
-      if (shouldCancelRoll) {
-        LogUtil.log('executePlayerRollRequest - Canceling player roll for group roll (player can use chat card button)', [actor.name]);
+      if (!showRequestPrompt && !game.user.isGM) {
+        if (isActivityRoll) {
+          LogUtil.log('executePlayerRollRequest - Activity roll with showRequestPrompt disabled, showing item card only', [actor.name, normalizedRollType]);
+          await this.showItemCardOnly(actor, requestData);
+          return;
+        }
+
+        LogUtil.log('executePlayerRollRequest - Skipping prompt (showRequestPrompt disabled)', [actor.name]);
+        if (requestData.groupRollId) {
+          await actor.setFlag(MODULE_ID, 'tempGroupRollId', requestData.groupRollId);
+          if (actor.isToken && actor.actor) {
+            await actor.actor.setFlag(MODULE_ID, 'tempGroupRollId', requestData.groupRollId);
+          }
+          LogUtil.log('executePlayerRollRequest - Set tempGroupRollId for manual roll interception', [requestData.groupRollId, actor.name]);
+        }
         return;
       }
 
@@ -214,7 +226,8 @@ export class RollRequestManager {
           isFlashRollRequest: true,
           rollType: requestData.rollType,
           rollKey: requestData.rollKey,
-          actorUniqueId: actorUniqueId
+          actorUniqueId: actorUniqueId,
+          fromMidiWorkflow: requestData.fromMidiWorkflow || false
         }
       };
 
@@ -242,7 +255,7 @@ export class RollRequestManager {
       const handler = RollHandlers[normalizedRollType];
 
       if (handler) {
-        LogUtil.log('executePlayerRollRequest - calling handler', [normalizedRollType]);
+        LogUtil.log('executePlayerRollRequest - calling handler', [normalizedRollType, 'dialogConfig.configure:', dialogConfig.configure]);
         await handler(actor, handlerRequestData, rollConfig, dialogConfig, messageConfig);
         LogUtil.log('executePlayerRollRequest - handler completed', [normalizedRollType]);
       } else {
@@ -257,5 +270,39 @@ export class RollRequestManager {
         actor: actor.name || 'Unknown Actor'
       }));
     }
+  }
+
+  /**
+   * Show item card without executing any rolls
+   * Used when showRequestPrompt is disabled for activity rolls
+   * @param {Actor} actor - The actor
+   * @param {RollRequestData} requestData - The roll request data
+   */
+  static async showItemCardOnly(actor, requestData) {
+    const item = actor.items.get(requestData.rollKey);
+    if (!item) {
+      LogUtil.warn('showItemCardOnly - Item not found', [requestData.rollKey]);
+      return;
+    }
+
+    const activity = requestData.activityId
+      ? item.system.activities?.get(requestData.activityId)
+      : item.system.activities?.contents?.[0];
+
+    if (!activity) {
+      LogUtil.warn('showItemCardOnly - Activity not found', [item.name, requestData.activityId]);
+      return;
+    }
+
+    LogUtil.log('showItemCardOnly - Displaying item card', [item.name, activity.name]);
+
+    await activity.use({
+      consume: { resources: false, spellSlot: false, action: false },
+      create: { measuredTemplate: false }
+    }, {
+      configure: false
+    }, {
+      create: true
+    });
   }
 }

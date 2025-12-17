@@ -201,7 +201,7 @@ export class GMRollConfigDialog extends GMRollConfigMixin(dnd5e.applications.dic
     
     const SETTINGS = getSettings();
     const isPublicRollsOn = SettingsUtil.get(SETTINGS.publicPlayerRolls.tag) === true;
-    const rollMode = RollHelpers.determineRollMode(isPublicRollsOn);
+    const rollMode = RollHelpers.determineRollMode(isPublicRollsOn, options.rollMode);
     
     const showDC = RollHelpers.shouldShowDC(normalizedRollType);
     const rollClass = RollHelpers.getRollClass(normalizedRollType);

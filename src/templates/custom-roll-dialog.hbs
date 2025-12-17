@@ -1,11 +1,11 @@
 <div class="flash5e-custom-roll-dialog">
-  
+
   <div class="formula-input">
     <label for="custom-roll-formula">{{localize "FLASH_ROLLS.ui.dialogs.rollFormula"}}</label>
     <input type="text" id="custom-roll-formula" name="formula" value="{{formula}}" placeholder="type formula or select below" {{#if readonly}}readonly{{/if}} />
     <div class="validation-message" id="formula-validation-message"></div>
   </div>
-  
+
   {{#unless readonly}}
   <div class="dice-buttons">
     <button type="button" class="dice-button" data-die="d4" data-tooltip="d4" data-tooltip-direction="UP" data-action="addDie"><i class="fas fa-dice-d4"></i></button>
@@ -17,5 +17,14 @@
     <button type="button" class="dice-button" data-die="d100" data-tooltip="d100" data-tooltip-direction="UP" data-action="addDie"><i class="fas fa-dice-d10"></i><i class="fas fa-dice-d10"></i></button>
   </div>
   {{/unless}}
-  
+
+  <div class="form-group roll-mode">
+    <label for="custom-roll-mode">{{localize "CHAT.RollVisibility"}}</label>
+    <select id="custom-roll-mode" name="rollMode">
+      {{#each rollModes}}
+      <option value="{{value}}" {{#if selected}}selected{{/if}}>{{localize labelKey}}</option>
+      {{/each}}
+    </select>
+  </div>
+
 </div>

@@ -129,10 +129,7 @@ export class RollMenuOrchestrator {
         actor: actor.name,
         owner: owner.name,
         useGroupId,
-        groupRollId,
-        'allActorEntries.length': allActorEntries.length,
-        'config.isContestedRoll': config.isContestedRoll,
-        groupRollsMsgEnabled
+        groupRollId
       });
 
       let currentRollKey = rollKey;
@@ -277,9 +274,9 @@ export class RollMenuOrchestrator {
     
     const rollOption = MODULE.ROLL_REQUEST_OPTIONS[requestType];
     const rollMethodName = (rollOption?.name || requestType)?.toLowerCase();
-    
+
     const originalRollKey = rollKey;
-    rollKey = await this.handleSpecialRollTypes(rollMethodName, rollKey, selectedUniqueIds, actorsData, actors, menu);
+    rollKey = await this.handleSpecialRollTypes(rollMethodName, rollKey, selectedUniqueIds, actorsData, actors, menu, config);
     if (rollKey === null && originalRollKey !== null) {
       return;
     }
@@ -310,16 +307,21 @@ export class RollMenuOrchestrator {
    * @param {Array} actorsData - Actor data array (modified by reference)
    * @param {Array} actors - Actors array (modified by reference)
    * @param {RollRequestsMenu} menu - Menu instance
+   * @param {Object} config - Config object (modified by reference for custom rolls)
    * @returns {Promise<string|null>} Modified rollKey or null if cancelled
    */
-  static async handleSpecialRollTypes(rollMethodName, rollKey, selectedUniqueIds, actorsData, actors, menu) {
+  static async handleSpecialRollTypes(rollMethodName, rollKey, selectedUniqueIds, actorsData, actors, menu, config = {}) {
     const SETTINGS = getSettings();
-    
+
     switch(rollMethodName) {
       case ROLL_TYPES.CUSTOM:
         if (!rollKey) {
-          rollKey = await RollMenuConfig.handleCustomRoll();
-          if (!rollKey) return null;
+          const customResult = await RollMenuConfig.handleCustomRoll({ rollMode: config.rollMode });
+          if (!customResult) return null;
+          rollKey = customResult.formula;
+          if (customResult.rollMode) {
+            config.rollMode = customResult.rollMode;
+          }
         }
         break;
         
@@ -478,11 +480,13 @@ export class RollMenuOrchestrator {
     delete cleanConfig.item;
     delete cleanConfig.activity;
     
-    const isPublicRollsOn = SettingsUtil.get(SETTINGS.publicPlayerRolls.tag) === true;
     const groupRollsMsgEnabled = SettingsUtil.get(SETTINGS.groupRollsMsgEnabled.tag) === true;
-    
-    if (isPublicRollsOn) {
-      cleanConfig.rollMode = CONST.DICE_ROLL_MODES.PUBLIC;
+
+    if (!cleanConfig.rollMode) {
+      const isPublicRollsOn = SettingsUtil.get(SETTINGS.publicPlayerRolls.tag) === true;
+      if (isPublicRollsOn) {
+        cleanConfig.rollMode = CONST.DICE_ROLL_MODES.PUBLIC;
+      }
     }
     
     const requestData = {
@@ -500,7 +504,8 @@ export class RollMenuOrchestrator {
       },
       skipRollDialog: config.skipRollDialog || false,
       targetTokenIds: Array.from(game.user.targets).map(t => t.id),
-      preserveTargets: SettingsUtil.get(SETTINGS.useGMTargetTokens.tag)
+      preserveTargets: SettingsUtil.get(SETTINGS.useGMTargetTokens.tag),
+      fromMidiWorkflow: config.fromMidiWorkflow ?? false
     };
 
     LogUtil.log('RollMenuOrchestrator.sendRollRequestToPlayer - sending request', {

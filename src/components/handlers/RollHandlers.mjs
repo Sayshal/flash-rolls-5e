@@ -211,7 +211,6 @@ export const RollHandlers = {
           ...(rollOptions.attackMode && { attackMode: rollOptions.attackMode }),
           ...(rollOptions.ammunition && { ammunition: rollOptions.ammunition }),
           ...(rollOptions.mastery !== undefined && { mastery: rollOptions.mastery }),
-          // Ensure spell slot and scaling information is applied
           ...(requestData.config.spell && { spell: requestData.config.spell }),
           ...(requestData.config.scaling !== undefined && { scaling: requestData.config.scaling }),
           ...(requestData.config.consume && { consume: requestData.config.consume }),
@@ -250,7 +249,8 @@ export const RollHandlers = {
    */
   async handleCustomRoll(actor, requestData, dialogConfig, messageConfig) {
     const formula = requestData.rollKey;
-    
+    LogUtil.log('handleCustomRoll', [actor.name, 'formula:', formula, 'requestData:', requestData, 'dialogConfig:', dialogConfig]);
+
     if (dialogConfig?.configure === false) {
       try {
         const roll = new Roll(formula, actor.getRollData());
@@ -270,7 +270,8 @@ export const RollHandlers = {
           flags: messageConfig?.data?.flags
         });
       } catch (error) {
-        FlashAPI.notify('error',game.i18n.format("FLASH_ROLLS.ui.notifications.invalidFormula", {formula: formula}));
+        LogUtil.error('handleCustomRoll - Roll evaluation failed', [error, 'formula:', formula]);
+        FlashAPI.notify('error',game.i18n.format("FLASH_ROLLS.notifications.invalidFormula", {formula: formula}));
       }
       return;
     }
@@ -279,27 +280,30 @@ export const RollHandlers = {
       formula: formula,
       readonly: true,
       actor: actor,
-      callback: async (confirmedFormula) => {
+      callback: async (result) => {
+        const confirmedFormula = typeof result === 'string' ? result : result.formula;
+        const confirmedRollMode = typeof result === 'string' ? requestData.config.rollMode : (result.rollMode || requestData.config.rollMode);
         try {
           const roll = new Roll(confirmedFormula, actor.getRollData());
-          
+
           roll.options = roll.options || {};
           roll.options.isRollRequest = true;
-          
+
           await roll.evaluate();
           await ChatMessageManager.addGroupRollFlag(messageConfig, requestData, actor);
-          
+
           await roll.toMessage({
             speaker: ChatMessage.getSpeaker({actor}),
             flavor: game.i18n.localize(`FLASH_ROLLS.rollTypes.${ROLL_TYPES.CUSTOM}`),
-            rollMode: requestData.config.rollMode,
+            rollMode: confirmedRollMode,
             isRollRequest: true,
             _showRequestedBy: true,
             _requestedBy: requestData.config.requestedBy || 'GM',
             flags: messageConfig?.data?.flags
           });
         } catch (error) {
-          FlashAPI.notify('error',game.i18n.format("FLASH_ROLLS.ui.notifications.invalidFormula", {formula: confirmedFormula}));
+          LogUtil.error('handleCustomRoll callback - Roll failed', [error, 'formula:', confirmedFormula]);
+          FlashAPI.notify('error',game.i18n.format("FLASH_ROLLS.notifications.invalidFormula", {formula: confirmedFormula}));
         }
       }
     });

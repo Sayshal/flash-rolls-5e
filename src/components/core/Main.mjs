@@ -56,6 +56,22 @@ export class Main {
     SocketUtil.registerCall(SOCKET_CALLS.handleRollRequest, Main.handleRollRequest);
     SocketUtil.registerCall(SOCKET_CALLS.removeTemplate, GeneralUtil.removeTemplate);
     SocketUtil.registerCall(SOCKET_CALLS.broadcastRollComplete, Main.handleBroadcastRollComplete);
+    SocketUtil.registerCall(SOCKET_CALLS.deleteChatMessage, Main.handleDeleteChatMessage);
+  }
+
+  /**
+   * Handle chat message deletion request from player side
+   * Only GM should delete messages to avoid permission issues with midi-qol template cleanup
+   * @param {string} messageId - The ID of the chat message to delete
+   */
+  static async handleDeleteChatMessage(messageId) {
+    if (!game.user.isGM) return;
+    const message = game.messages.get(messageId);
+    if (message) {
+      await message.delete().catch(err => {
+        LogUtil.error('Main.handleDeleteChatMessage - Failed to delete message', [err]);
+      });
+    }
   }
 
   /**

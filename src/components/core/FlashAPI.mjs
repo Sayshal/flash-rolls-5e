@@ -49,16 +49,17 @@ export class FlashAPI {
         return;
       }
 
-      const { requestType, rollKey = null, actorIds = [], dc, situationalBonus, advantage, disadvantage, rollMode, skipRollDialog, sendAsRequest = true, groupRollId = null, isContestedRoll = false } = options;
+      const { requestType, rollKey = null, actorIds = [], dc, situationalBonus, advantage, disadvantage, rollMode, skipRollDialog, sendAsRequest = true, groupRollId = null, isContestedRoll = false, workflowId = null } = options;
 
       if (!requestType) {
         ui.notifications.error(game.i18n.localize("FLASH_ROLLS.notifications.missingRequestType"));
         return;
       }
 
-      const config = { dc, situationalBonus, advantage, disadvantage, rollMode, skipRollDialog, sendAsRequest, groupRollId, isContestedRoll };
-      
-      LogUtil.log('FlashAPI.requestRoll', [requestType, rollKey, actorIds, config]);
+      const fromMidiWorkflow = !!workflowId;
+      const config = { dc, situationalBonus, advantage, disadvantage, rollMode, skipRollDialog, sendAsRequest, groupRollId, isContestedRoll, fromMidiWorkflow };
+
+      LogUtil.log('FlashAPI.requestRoll', [requestType, rollKey, actorIds, 'workflowId:', workflowId, 'fromMidiWorkflow:', fromMidiWorkflow, config]);
       
       // Find roll option by either uppercase key or lowercase name
       let rollOption = MODULE.ROLL_REQUEST_OPTIONS[requestType];

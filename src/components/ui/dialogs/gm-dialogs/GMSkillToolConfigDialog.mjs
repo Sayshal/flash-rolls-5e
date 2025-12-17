@@ -177,7 +177,7 @@ export class GMSkillToolConfigDialog extends GMRollConfigMixin(dnd5e.application
     const normalizedRollType = rollType?.toLowerCase();
     const SETTINGS = getSettings();
     const isPublicRollsOn = SettingsUtil.get(SETTINGS.publicPlayerRolls.tag) === true;
-    const rollMode = RollHelpers.determineRollMode(isPublicRollsOn);
+    const rollMode = RollHelpers.determineRollMode(isPublicRollsOn, options.rollMode);
     
     const showDC = RollHelpers.shouldShowDC(normalizedRollType);
     const rollClass = CONFIG.Dice.D20Roll;

@@ -14,6 +14,7 @@ import { OfflinePlayerManager } from '../managers/roll-menu/OfflinePlayerManager
 import { RollHelpers } from '../helpers/RollHelpers.mjs';
 import { HooksManager } from '../core/HooksManager.mjs';
 import { DiceConfigUtil } from '../utils/DiceConfigUtil.mjs';
+import { ChatMessageManager } from '../managers/ChatMessageManager.mjs';
 
 /**
  * Handles intercepting D&D5e rolls on the GM side and redirecting them to players
@@ -130,13 +131,15 @@ export class RollInterceptor {
       return;
     }
 
-    message.data = {
-      ...message.data,
-      flags: {
-        ...message.data.flags,
-        rsr5e: { 
-          ...message.data.flags.rsr5e,
-          processed: true, quickRoll: false
+    if (message?.data) {
+      message.data = {
+        ...message.data,
+        flags: {
+          ...message.data?.flags,
+          rsr5e: {
+            ...message.data?.flags?.rsr5e,
+            processed: true, quickRoll: false
+          }
         }
       }
     }
@@ -654,6 +657,29 @@ export class RollInterceptor {
     delete cleanConfig.item;
     delete cleanConfig.activity;
 
+    const groupRollsMsgEnabled = SettingsUtil.get(SETTINGS.groupRollsMsgEnabled.tag);
+    const useCondensedRollMessage = SettingsUtil.get(SETTINGS.useCondensedRollMessage.tag);
+    const isActivityRoll = [ROLL_TYPES.ATTACK, ROLL_TYPES.DAMAGE, ROLL_TYPES.ITEM].includes(normalizedRollType);
+    let groupRollId = null;
+
+    if (groupRollsMsgEnabled && useCondensedRollMessage && !isActivityRoll) {
+      groupRollId = foundry.utils.randomID();
+      const tokenId = actor.token?.id || canvas.tokens?.placeables.find(t => t.actor?.id === actor.id)?.id;
+      const actorEntry = {
+        actor,
+        uniqueId: tokenId || actor.id,
+        tokenId: tokenId || null
+      };
+      await ChatMessageManager.createGroupRollMessage(
+        [actorEntry],
+        normalizedRollType,
+        rollKey,
+        { ...cleanConfig, dc: cleanConfig.target },
+        groupRollId
+      );
+      LogUtil.log('_sendRollRequest - Created condensed group message', [groupRollId, actor.name]);
+    }
+
     const requestData = {
       type: "rollRequest",
       requestId: foundry.utils.randomID(),
@@ -661,16 +687,18 @@ export class RollInterceptor {
       rollType: normalizedRollType,
       rollKey,
       activityId,
+      groupRollId,
       rollProcessConfig: {
         ...cleanConfig,
-        _requestedBy: game.user.name  // Add who requested the roll
+        _requestedBy: game.user.name
       },
-      skipRollDialog: false, 
+      skipRollDialog: false,
       targetTokenIds: Array.from(game.user.targets).map(t => t.id),
-      preserveTargets: SettingsUtil.get(SETTINGS.useGMTargetTokens.tag)
+      preserveTargets: SettingsUtil.get(SETTINGS.useGMTargetTokens.tag),
+      fromMidiWorkflow: GeneralUtil.isMidiWorkflowActive()
     };
 
-    LogUtil.log('_sendRollRequest - requestData', [owner, requestData]);
+    LogUtil.log('_sendRollRequest - requestData', [owner, requestData, 'groupRollId:', groupRollId]);
     
     // Check if there's a valid active owner to send the request to
     if (!isOwnerActive) {

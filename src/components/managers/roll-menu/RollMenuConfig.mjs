@@ -59,6 +59,10 @@ export class RollMenuConfig {
         config.isContestedRoll = configOverrides.isContestedRoll || false;
       }
 
+      if (config && configOverrides.fromMidiWorkflow) {
+        config.fromMidiWorkflow = true;
+      }
+
       return config;
     } else {
       const config = {
@@ -90,28 +94,37 @@ export class RollMenuConfig {
         config.isContestedRoll = configOverrides.isContestedRoll || false;
       }
 
+      if (configOverrides.fromMidiWorkflow) {
+        config.fromMidiWorkflow = true;
+      }
+
       return config;
     }
   }
 
   /**
    * Handle custom roll dialog
-   * @returns {Promise<string|null>} The roll formula or null if cancelled
+   * @param {Object} [options={}] - Options for the dialog
+   * @param {string} [options.rollMode] - Initial roll mode
+   * @returns {Promise<{formula: string, rollMode: string}|null>} Result with formula and rollMode, or null if cancelled
    */
-  static async handleCustomRoll() {
-    const formula = await this.showCustomRollDialog();
-    return formula; // Will be null if cancelled
+  static async handleCustomRoll(options = {}) {
+    const result = await this.showCustomRollDialog(options);
+    return result;
   }
 
   /**
    * Show custom roll dialog
-   * @returns {Promise<string|null>} The roll formula or null if cancelled
+   * @param {Object} [options={}] - Options for the dialog
+   * @param {string} [options.rollMode] - Initial roll mode
+   * @returns {Promise<{formula: string, rollMode: string}|null>} Result with formula and rollMode, or null if cancelled
    */
-  static async showCustomRollDialog() {
+  static async showCustomRollDialog(options = {}) {
     LogUtil.log('showCustomRollDialog');
     return CustomRollDialog.prompt({
       formula: "",
-      readonly: false
+      readonly: false,
+      rollMode: options.rollMode
     });
   }
 }
