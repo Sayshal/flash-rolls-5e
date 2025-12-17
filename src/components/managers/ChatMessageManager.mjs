@@ -183,7 +183,8 @@ export class ChatMessageManager {
    * @param {Object} context - Rendering context
    */
   static onRenderChatMessage(message, html, context) {
-    const midiRequestId = message.getFlag('midi-qol', 'requestId');
+    const isMidiActive = GeneralUtil.isModuleOn('midi-qol');
+    const midiRequestId = isMidiActive ? message.getFlag('midi-qol', 'requestId') : null;
     const dnd5eRollType = message.flags?.dnd5e?.roll?.type;
     LogUtil.log("ChatMessageManager.onRenderChatMessage #0", [message.id, 'speaker:', message.speaker?.alias, 'midiRequestId:', midiRequestId, 'dnd5eRollType:', dnd5eRollType]);
 
@@ -1583,12 +1584,14 @@ export class ChatMessageManager {
         this._broadcastIndividualRollComplete(actor, roll, rollType, rollKey, tokenId);
       }
 
-      const midiRequestId = message.getFlag('midi-qol', 'requestId');
-      if (midiRequestId && game.user.isGM) {
-        const dnd5eRollType = message.flags?.dnd5e?.roll?.type;
-        if (dnd5eRollType === 'save') {
-          LogUtil.log('interceptRollMessage - Midi-QOL save roll detected, scheduling removal', [actor.name, midiRequestId]);
-          this._scheduleMidiSaveRemoval(message);
+      if (GeneralUtil.isModuleOn('midi-qol')) {
+        const midiRequestId = message.getFlag('midi-qol', 'requestId');
+        if (midiRequestId && game.user.isGM) {
+          const dnd5eRollType = message.flags?.dnd5e?.roll?.type;
+          if (dnd5eRollType === 'save') {
+            LogUtil.log('interceptRollMessage - Midi-QOL save roll detected, scheduling removal', [actor.name, midiRequestId]);
+            this._scheduleMidiSaveRemoval(message);
+          }
         }
       }
       return;
@@ -1946,7 +1949,7 @@ export class ChatMessageManager {
     }
 
     const flagData = message.getFlag(MODULE_ID, 'rollData');
-    const midiRequestId = message.getFlag('midi-qol', 'requestId');
+    const midiRequestId = GeneralUtil.isModuleOn('midi-qol') ? message.getFlag('midi-qol', 'requestId') : null;
     const fromMidiWorkflow = flagData?.fromMidiWorkflow || !!midiRequestId;
 
     LogUtil.log('_scheduleMessageRemoval - checking', [message.id, 'rollType:', flagData?.rollType, 'fromMidiWorkflow:', fromMidiWorkflow, 'flagData.fromMidiWorkflow:', flagData?.fromMidiWorkflow, 'midiRequestId:', midiRequestId, 'full flagData:', flagData]);
@@ -1990,7 +1993,7 @@ export class ChatMessageManager {
     const removeSaveMsgAfterRoll = SettingsUtil.get(SETTINGS.removeSaveMsgAfterRoll.tag);
     if (!removeSaveMsgAfterRoll) return;
 
-    const midiRequestId = message.getFlag('midi-qol', 'requestId');
+    const midiRequestId = GeneralUtil.isModuleOn('midi-qol') ? message.getFlag('midi-qol', 'requestId') : null;
     const fromMidiWorkflow = message.getFlag(MODULE_ID, 'fromMidiWorkflow') || !!midiRequestId;
     if (!fromMidiWorkflow) return;
 

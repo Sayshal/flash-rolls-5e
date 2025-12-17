@@ -23,7 +23,6 @@ export const getSettings = () => {
       hint: game.i18n.localize("FLASH_ROLLS.settings.moduleSettingsMenu.hint"),
       propType: Object,
       fields: [
-        'showMenuOnLoad',
         'skipRollDialog',
         'skipRollDialogOption',
         'skipToRollResolver',
@@ -38,7 +37,6 @@ export const getSettings = () => {
         'disableNotifications'
       ],
       default: {
-        showMenuOnLoad: false,
         skipRollDialog: false,
         skipRollDialogOption: 1,
         skipToRollResolver: false,
@@ -74,7 +72,7 @@ export const getSettings = () => {
         'lockMenuPosition'
       ],
       default: {
-        showMenuOnLoad: false,
+        showMenuOnLoad: true,
         showTokenVisionOnHover: true,
         compactMode: true,
         menuLayout: "vertical",
@@ -543,12 +541,12 @@ export const getSettings = () => {
     },
 
     showMenuOnLoad: {
-      tag: "show-menu-on-world-load",
+      tag: "show-menu-on-load",
       label: game.i18n.localize("FLASH_ROLLS.settings.showMenuOnLoad.label"),
       hint: game.i18n.localize("FLASH_ROLLS.settings.showMenuOnLoad.hint"),
       propType: Boolean,
       inputType: SETTING_INPUT.checkbox,
-      default: false,
+      default: true,
       scope: SETTING_SCOPE.world,
       config: false
     },
