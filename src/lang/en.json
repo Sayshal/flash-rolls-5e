@@ -68,7 +68,8 @@
       "alreadyTransformed": "{count} actor(s) are already transformed",
       "gmOnly": "Only the GM can perform this action",
       "rollRequestsDisabled": "Roll requests are currently disabled",
-      "libWrapperRecommended": "Flash Rolls 5e: libWrapper module is not required, but is recoomended"
+      "libWrapperRecommended": "Flash Rolls 5e: libWrapper module is not required, but is recommended",
+      "autoRollTimeout": "Flash Token Bar: Auto-rolling for {actor} (Midi-QoL timeout expired)"
     },
     "contextMenu": {
       "addToFavorites": "Add to Flash Token Bar Menu",
