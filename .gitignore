@@ -11,3 +11,6 @@ foundry-config.yaml
 
 .*/
 !.github/
+
+docs/*
+tools/ddb-proxy-poc

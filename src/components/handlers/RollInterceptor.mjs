@@ -115,6 +115,12 @@ export class RollInterceptor {
       actor = config.subject?.actor || config.subject || config.actor;
     }
 
+    const ddbGameLogFlag = message?.data?.flags?.['ddb-game-log'];
+    if (ddbGameLogFlag?.cls) {
+      LogUtil.log('_onPreRollIntercept - skipping roll with ddb-game-log.cls flag (DDB roll)', [ddbGameLogFlag]);
+      return;
+    }
+
     // Calculate these variables before using them
     const owner = GeneralUtil.getActorOwner(actor);
     const isPC = owner?.id === game.user.id && owner?.active;
