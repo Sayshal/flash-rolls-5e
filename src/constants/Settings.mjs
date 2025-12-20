@@ -684,6 +684,56 @@ export const getSettings = () => {
       default: [],
       scope: SETTING_SCOPE.world,
       config: false
+    },
+
+    ddbCampaignId: {
+      tag: "ddb-campaign-id",
+      label: game.i18n.localize("FLASH_ROLLS.settings.ddbCampaignId.label"),
+      hint: game.i18n.localize("FLASH_ROLLS.settings.ddbCampaignId.hint"),
+      propType: String,
+      default: "",
+      scope: SETTING_SCOPE.world,
+      config: false
+    },
+
+    ddbUserId: {
+      tag: "ddb-user-id",
+      label: game.i18n.localize("FLASH_ROLLS.settings.ddbUserId.label"),
+      hint: game.i18n.localize("FLASH_ROLLS.settings.ddbUserId.hint"),
+      propType: String,
+      default: "",
+      scope: SETTING_SCOPE.world,
+      config: false
+    },
+
+    ddbCobaltCookie: {
+      tag: "ddb-cobalt-cookie",
+      label: game.i18n.localize("FLASH_ROLLS.settings.ddbCobaltCookie.label"),
+      hint: game.i18n.localize("FLASH_ROLLS.settings.ddbCobaltCookie.hint"),
+      propType: String,
+      default: "",
+      scope: SETTING_SCOPE.world,
+      config: false
+    },
+
+    proxyApiKey: {
+      tag: "proxy-api-key",
+      label: game.i18n.localize("FLASH_ROLLS.settings.proxyApiKey.label"),
+      hint: game.i18n.localize("FLASH_ROLLS.settings.proxyApiKey.hint"),
+      propType: String,
+      default: "",
+      scope: SETTING_SCOPE.world,
+      config: false
+    },
+
+    ddbCharacterMappings: {
+      tag: "ddb-character-mappings",
+      label: game.i18n.localize("FLASH_ROLLS.settings.ddbCharacterMappings.label"),
+      hint: game.i18n.localize("FLASH_ROLLS.settings.ddbCharacterMappings.hint"),
+      propType: Object,
+      default: {},
+      scope: SETTING_SCOPE.world,
+      config: false
     }
   };
 };

@@ -21,6 +21,7 @@
       "invalidMacroData": "Invalid macro data - options must be an object",
       "missingRequestType": "Invalid macro data - requestType is required",
       "macroExecutionFailed": "Failed to execute roll request. Please check the macro configuration and try again.",
+      "clickMapToPlaceTemplate": "Click on the map to place the template",
       "macroDataMalformed": "Macro execution failed. The macro data may be malformed.",
       "unknownRequestType": "Unknown request type '{requestType}'. Please check the macro configuration.",
       "macroCreated": "Macro \"{macroName}\" created successfully",
@@ -69,7 +70,9 @@
       "gmOnly": "Only the GM can perform this action",
       "rollRequestsDisabled": "Roll requests are currently disabled",
       "libWrapperRecommended": "Flash Rolls 5e: libWrapper module is not required, but is recommended",
-      "autoRollTimeout": "Flash Token Bar: Auto-rolling for {actor} (Midi-QoL timeout expired)"
+      "autoRollTimeout": "Flash Token Bar: Auto-rolling for {actor} (Midi-QoL timeout expired)",
+      "ddbConnected": "Connected to D&D Beyond.",
+      "ddbConnectionFailed": "Failed to connect to D&D Beyond. Check your settings and try again."
     },
     "contextMenu": {
       "addToFavorites": "Add to Flash Token Bar Menu",
@@ -265,6 +268,99 @@
         "buttonLabel": "Patreon support",
         "hint": "If you like Flash Token Bar 5e and my other modules, consider giving your support to the development on Patreon."
       },
+      "premiumFeatures": {
+        "label": "Premium Features",
+        "buttonLabel": "Premium Features",
+        "title": "Premium Features",
+        "hint": "Configure premium features including D&D Beyond Rolls integration (Patreon supporters only).",
+        "description": "Premium features require a Patreon subscription. Click 'Authenticate with Patreon' to get your API key, then paste it here.",
+        "tabs": {
+          "authentication": "Member Authentication",
+          "ddbSettings": "D&D Beyond Options"
+        },
+        "patreonAuth": "Patreon Authentication",
+        "apiKey": "API Key",
+        "apiKeyHint": "Click 'Authenticate with Patreon' - after you log in, get your API key and paste it here.",
+        "authenticateBtn": "Authenticate with Patreon",
+        "testConnectionBtn": "Test Connection",
+        "testGameLogBtn": "Test DDB Connection",
+        "ddbSettings": "D&D Beyond Integration",
+        "ddbWarning": "To enable D&D Beyond features, add your cobalt cookie, campaign id and user id. For rolls to be fully captured, all characters must be in the campaign and linked to a Foundry actor. Import uses DDB Importer module, if available.",
+        "ddbWarningImportItems": "If characters have homebrewed items or spells, it is recommended to munch with DDB Importer before importing, or sync after munching.",
+        "noApiKey": "Please enter an API key first.",
+        "connectionSuccess": "Connection successful! Welcome, {name}.",
+        "connectionFailed": "Authentication failed. Please re-authenticate with Patreon.",
+        "connectionError": "Connection error. Please check your internet connection.",
+        "notPatron": "Your Patreon membership does not have access. Reason: {reason}",
+        "patreonVerified": "Patreon membership verified",
+        "patreonNotVerified": "Patreon membership not verified",
+        "statusConnected": "Connected to D&D Beyond",
+        "statusConnecting": "Testing connection...",
+        "statusDisconnected": "Disconnected",
+        "statusError": "Connection failed",
+        "statusNotTested": "Not tested",
+        "missingDDBCredentials": "Please fill in all D&D Beyond fields first.",
+        "gameLogTestSuccess": "D&D Beyond connection verified!",
+        "gameLogTestFailed": "D&D Beyond test failed. {error}",
+        "campaignCharacters": "Campaign Characters",
+        "refreshCharacters": "Refresh Characters",
+        "loadingCharacters": "Loading characters...",
+        "noCharacters": "No characters found in campaign.",
+        "mappedTo": "Linked to",
+        "notMapped": "Not linked",
+        "mapCharacter": "Link Character",
+        "unlinkCharacter": "Unlink Character",
+        "unlinkConfirm": "This will remove \"{name}\" from the Actors Directory. Proceed? You can still reimport from D&D Beyond later.",
+        "syncCharacter": "Sync with DDB Importer",
+        "importCharacter": "Import with DDB Importer",
+        "selectActor": "Select Actor",
+        "noActor": "No Actor",
+        "mapCharacterTitle": "Link D&D Beyond Character",
+        "characterMapped": "Character <-> Actor link saved.",
+        "characterUnmapped": "Character link removed.",
+        "ddbImporterRequired": "DDB Importer module is required for this feature",
+        "ddbImporterNeedsCobalt": "D&D Beyond Importer needs its Cobalt Cookie configured. Open DDB Importer settings and set your Cobalt Cookie first.",
+        "importingCharacter": "Importing {name} from D&D Beyond...",
+        "characterImported": "{name} imported successfully.",
+        "ddbImporterAPINotFound": "D&D Beyond Importer API not found. Make sure the module is installed and enabled.",
+        "importFailed": "Failed to import character: {error}",
+        "syncingCharacter": "Syncing {name} from D&D Beyond...",
+        "characterSynced": "{name} synced successfully.",
+        "syncFailed": "Failed to sync character: {error}",
+        "actorNotFound": "Actor not found for syncing.",
+        "ddbImporterHint": "Install D&D Beyond Importer module to enable importing and syncing characters directly from D&D Beyond.",
+        "characterCountText": "{count} character(s) found",
+        "importAll": "Import All",
+        "syncAll": "Sync All",
+        "importAllTooltip": "Import all unmapped characters from D&D Beyond",
+        "syncAllTooltip": "Sync all mapped characters from D&D Beyond",
+        "noCharactersToImport": "No unmapped characters to import.",
+        "noCharactersToSync": "No mapped characters to sync.",
+        "bulkImportProgress": "Importing {current}/{total}: {name}...",
+        "bulkSyncProgress": "Syncing {current}/{total}: {name}...",
+        "bulkImportComplete": "Import complete: {imported} imported, {failed} failed.",
+        "bulkSyncComplete": "Sync complete: {synced} synced, {failed} failed."
+      },
+      "ddbCampaignId": {
+        "label": "D&D Beyond Campaign ID",
+        "hint": "ID found in your campaign URL: dndbeyond.com/campaigns/XXXXXX)."
+      },
+      "ddbUserId": {
+        "label": "D&D Beyond User ID",
+        "hint": "User ID found in browser console - go to campaign page and type console.log(Cobalt.User.ID) in the developer console. This is required to capture D&D Beyond rolls"
+      },
+      "ddbCobaltCookie": {
+        "label": "Cobalt Session Cookie",
+        "hint": "Your CobaltSession cookie value from D&D Beyond (required for authentication)"
+      },
+      "proxyApiKey": {
+        "label": "Proxy API Key",
+        "hint": "API key for the Carolingian proxy service (obtained after Patreon authentication)"
+      },
+      "ddbCharacterMappings": {
+        "label": "D&D Beyond Character Mappings",
+        "hint": "Link D&D Beyond character IDs to Foundry actor IDs"
+      },
       "compactMode": {
         "label": "Use Compact Mode",
         "hint": "Use compact layout for the roll requests menu. The character information will only show on hover."
@@ -366,6 +462,7 @@
         "save": "Save",
         "reloadButton": "Reload",
         "cancelButton": "Cancel",
+        "delete": "Delete",
         "createMacro": "Create Macro",
         "request": "Request",
         "showCode": "Show Code"

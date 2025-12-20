@@ -121,6 +121,12 @@ export class RollInterceptor {
       return;
     }
 
+    const flash5eFlags = message?.data?.flags?.['flash-rolls-5e'];
+    if (flash5eFlags?.isDnDBRoll) {
+      LogUtil.log('_onPreRollIntercept - skipping roll with flash-rolls-5e.isDnDBRoll flag (DDB roll)', [flash5eFlags]);
+      return;
+    }
+
     // Calculate these variables before using them
     const owner = GeneralUtil.getActorOwner(actor);
     const isPC = owner?.id === game.user.id && owner?.active;

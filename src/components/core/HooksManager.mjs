@@ -26,6 +26,7 @@ import { UpdateNewsUtil } from "../utils/UpdateNewsUtil.mjs";
 import { MidiActivityManager } from "../managers/MidiActivityManager.mjs";
 import { LibWrapperUtil } from "../utils/LibWrapperUtil.mjs";
 import { MonksActiveTilesIntegration } from "../integrations/MonksActiveTilesIntegration.mjs";
+import { DnDBeyondIntegration } from "../integrations/DnDBeyondIntegration.mjs";
 
 /**
  * Utility class for managing all module hooks in one place
@@ -290,6 +291,8 @@ export class HooksManager {
     globalThis.FlashAPI = FlashAPI;
     globalThis.FlashRolls5e = FlashAPI;
     Hooks.call("flash-rolls-5e.ready");
+
+    DnDBeyondIntegration.initialize();
   }
   
   /**

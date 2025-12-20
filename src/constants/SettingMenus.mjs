@@ -1,18 +1,5 @@
 import { ModuleSettingsMenu } from '../components/ui/dialogs/ModuleSettingsMenu.mjs';
-
-// Opens Patreon URL when instantiated
-class PatreonSupport extends FormApplication {
-  constructor(...args) {
-    super(...args);
-    window.open('https://www.patreon.com/c/carolingiandev/membership', '_blank');
-    this.close();
-  }
-  
-  render() {
-    this.close();
-    return this;
-  }
-}
+import { PremiumFeaturesDialog } from '../components/ui/dialogs/PremiumFeaturesDialog.mjs';
 
 export function getSettingMenus() {
   return {
@@ -20,21 +7,21 @@ export function getSettingMenus() {
       tab: '',
       tag: game.i18n.localize("FLASH_ROLLS.settings.moduleSettingsMenu.title"),
       name: game.i18n.localize("FLASH_ROLLS.settings.moduleSettingsMenu.title"),
-      label: game.i18n.localize("FLASH_ROLLS.settings.moduleSettingsMenu.label"), 
+      label: game.i18n.localize("FLASH_ROLLS.settings.moduleSettingsMenu.label"),
       hint: game.i18n.localize("FLASH_ROLLS.settings.moduleSettingsMenu.hint"),
-      icon: "fas fa-cog",  
+      icon: "fas fa-cog",
       propType: ModuleSettingsMenu,
       restricted: true
     },
-    supportPatreon: {
+    premiumFeatures: {
       tab: '',
-      tag: game.i18n.localize("FLASH_ROLLS.settings.supportPatreon.label"),
-      name: game.i18n.localize("FLASH_ROLLS.settings.supportPatreon.label"),
-      label: game.i18n.localize("FLASH_ROLLS.settings.supportPatreon.buttonLabel"), 
-      hint: game.i18n.localize("FLASH_ROLLS.settings.supportPatreon.hint"),
-      icon: "fas fa-heart",  
-      propType: PatreonSupport,
-      restricted: false
+      tag: game.i18n.localize("FLASH_ROLLS.settings.premiumFeatures.label"),
+      name: game.i18n.localize("FLASH_ROLLS.settings.premiumFeatures.label"),
+      label: game.i18n.localize("FLASH_ROLLS.settings.premiumFeatures.buttonLabel"),
+      hint: game.i18n.localize("FLASH_ROLLS.settings.premiumFeatures.hint"),
+      icon: "fas fa-gem",
+      propType: PremiumFeaturesDialog,
+      restricted: true
     }
   };
 }

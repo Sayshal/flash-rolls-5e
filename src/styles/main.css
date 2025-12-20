@@ -11,6 +11,7 @@
 @import './contested-roll-dialog.css';
 @import './token-associations.css';
 @import './transform-dialog.css';
+@import './premium-features.css';
 
 body{
   --current-sidebar-width: 0px;
@@ -442,5 +443,81 @@ body:not(.crlngn-ui) #flash-rolls-settings {
   fieldset {
     gap: 0;
     margin: 1rem 0;
+  }
+}
+
+
+/* D&D Beyond Roll Chat Messages */
+.flash5e-ddb-roll {
+  border: 1px solid var(--color-border-light-2);
+  border-radius: 4px;
+  padding: 0.5rem;
+  background: var(--fr5e-secondary-bg-05);
+
+  .roll-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.25rem;
+    border-bottom: 1px solid var(--color-border-light-2);
+  }
+
+  .roll-action {
+    font-weight: 600;
+    flex: 1;
+  }
+
+  .roll-type {
+    font-size: var(--font-size-12);
+    color: var(--color-text-light-heading);
+  }
+
+  .roll-source {
+    font-size: 1rem;
+    cursor: help;
+  }
+
+  .roll-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .dice-results {
+    display: flex;
+    gap: 0.25rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .dice-results .die {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.5rem;
+    height: 1.5rem;
+    padding: 0.25rem;
+    border-radius: 3px;
+    font-weight: 600;
+    font-size: var(--font-size-12);
+    background: var(--color-cool-4);
+    color: var(--color-light-1);
+  }
+
+  .dice-results .die.d20 {
+    background: var(--color-warm-2);
+  }
+
+  .roll-formula {
+    font-size: var(--font-size-11);
+    color: var(--color-text-light-heading);
+  }
+
+  .roll-total {
+    font-size: var(--font-size-20);
+    font-weight: 700;
+    color: var(--color-text-primary);
   }
 }

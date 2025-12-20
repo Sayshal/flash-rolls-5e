@@ -199,6 +199,23 @@ export function clearTargetTokens(user = game.user) {
 }
 
 /**
+ * Get target descriptors from current user's targets for damage application
+ * @returns {Array<Object>} Array of target descriptors with name, img, uuid, ac
+ */
+export function getTargetDescriptors() {
+  const targets = new Map();
+  for (const token of game.user.targets) {
+    const { name } = token;
+    const { img, system, uuid, statuses } = token.actor ?? {};
+    if (uuid) {
+      const ac = statuses?.has?.("coverTotal") ? null : system?.attributes?.ac?.value;
+      targets.set(uuid, { name, img, uuid, ac: ac ?? null });
+    }
+  }
+  return Array.from(targets.values());
+}
+
+/**
  * Format a notification message for multiple actors
  * @param {Array<string>} actorNames - Array of actor names
  * @param {string} action - The action being performed

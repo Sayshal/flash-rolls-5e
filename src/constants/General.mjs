@@ -70,6 +70,16 @@ export const BUTTON_ACTION_TYPES = {
   ROLL_DAMAGE: "rollDamage"
 }
 
+export const DICE_OPTIONS = {
+  'd4': 'd4',
+  'd6': 'd6',
+  'd8': 'd8',
+  'd10': 'd10',
+  'd12': 'd12',
+  'd20': 'd20',
+  'd100': 'd100'
+};
+
 /**
  * Roll types used throughout the module
  * @constant

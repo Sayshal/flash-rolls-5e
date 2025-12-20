@@ -1,19 +1,9 @@
-import { MODULE_ID, ROLL_TYPES, ROLL_REQUEST_OPTIONS } from '../../constants/General.mjs';
+import { MODULE_ID, ROLL_TYPES, ROLL_REQUEST_OPTIONS, DICE_OPTIONS } from '../../constants/General.mjs';
 import { LogUtil } from '../utils/LogUtil.mjs';
 import { FlashAPI } from '../core/FlashAPI.mjs';
 import { getActorData } from '../helpers/Helpers.mjs';
 import { TokenTeleportManager } from '../managers/TokenTeleportManager.mjs';
 import { GeneralUtil } from '../utils/GeneralUtil.mjs';
-
-const DICE_OPTIONS = {
-  'd4': 'd4',
-  'd6': 'd6',
-  'd8': 'd8',
-  'd10': 'd10',
-  'd12': 'd12',
-  'd20': 'd20',
-  'd100': 'd100'
-};
 
 /**
  * Integration with Monk's Active Tiles module
@@ -35,7 +25,7 @@ export class MonksActiveTilesIntegration {
     Hooks.on("setupTileActions", (app) => {
       LogUtil.log('MonksActiveTilesIntegration: Registering Flash Rolls 5e tile actions');
 
-      app.registerTileGroup(MODULE_ID, 'Flash Rolls 5e');
+      app.registerTileGroup(MODULE_ID, 'Flash Token Bar 5e');
       this._registerRequestRollAction(app);
       this._registerHealAllAction(app);
       this._registerKillAllAction(app);
