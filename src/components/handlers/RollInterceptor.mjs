@@ -15,6 +15,7 @@ import { RollHelpers } from '../helpers/RollHelpers.mjs';
 import { HooksManager } from '../core/HooksManager.mjs';
 import { DiceConfigUtil } from '../utils/DiceConfigUtil.mjs';
 import { ChatMessageManager } from '../managers/ChatMessageManager.mjs';
+import { DnDBMidiIntegration } from '../integrations/dnd-beyond/DnDBMidiIntegration.mjs';
 
 /**
  * Handles intercepting D&D5e rolls on the GM side and redirecting them to players
@@ -121,9 +122,15 @@ export class RollInterceptor {
       return;
     }
 
-    const flash5eFlags = message?.data?.flags?.['flash-rolls-5e'];
+    const flash5eFlags = message?.data?.flags?.[MODULE_ID];
+    LogUtil.log('_onPreRollIntercept - flags', [flash5eFlags, message, message?.data, message?.data?.flags, MODULE_ID]);
     if (flash5eFlags?.isDnDBRoll) {
       LogUtil.log('_onPreRollIntercept - skipping roll with flash-rolls-5e.isDnDBRoll flag (DDB roll)', [flash5eFlags]);
+      return;
+    }
+
+    if (DnDBMidiIntegration.hasPendingRoll()) {
+      LogUtil.log('_onPreRollIntercept - skipping roll with pending DnDB roll');
       return;
     }
 

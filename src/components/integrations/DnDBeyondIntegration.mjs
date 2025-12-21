@@ -126,18 +126,13 @@ export class DnDBeyondIntegration {
     if (actor) {
       const playerOwner = getPlayerOwner(actor);
       const shouldPlayerExecute = this._shouldPlayerExecute(playerOwner);
+      LogUtil.log("DnDBeyondIntegration: shouldPlayerExecute", [shouldPlayerExecute]);
 
       if (shouldPlayerExecute) {
         LogUtil.log("DnDBeyondIntegration: Sending roll to player", [
-          playerOwner.name,
-          actor.name,
           "category:", category.category
         ]);
         const success = await this._sendRollToPlayer(actor, rollInfo, category, playerOwner);
-        LogUtil.log("DnDBeyondIntegration: Player execution result", [
-          "success:", success,
-          "category:", category.category
-        ]);
         if (success) return;
         LogUtil.log("DnDBeyondIntegration: Player execution failed, falling back to GM");
       }
@@ -155,11 +150,18 @@ export class DnDBeyondIntegration {
    * @returns {boolean} Whether the player should execute the roll
    */
   static _shouldPlayerExecute(playerOwner) {
-    if (!playerOwner) return false;
-    if (!playerOwner.active) return false;
-
     const SETTINGS = getSettings();
     const rollOwnership = SettingsUtil.get(SETTINGS.ddbRollOwnership.tag) ?? 0;
+
+    LogUtil.log("DnDBeyondIntegration._shouldPlayerExecute", [
+      "playerOwner:", playerOwner?.name,
+      "playerActive:", playerOwner?.active,
+      "rollOwnership setting:", rollOwnership,
+      "result:", rollOwnership === 1 && !!playerOwner && playerOwner.active
+    ]);
+
+    if (!playerOwner) return false;
+    if (!playerOwner.active) return false;
     return rollOwnership === 1;
   }
 

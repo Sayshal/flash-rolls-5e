@@ -6,6 +6,7 @@ import { getSettings } from '../../constants/Settings.mjs';
 import { getConsumptionConfig, getCreateConfig, isPlayerOwned, showConsumptionConfig, getTargetDescriptors, getPlayerOwner } from '../helpers/Helpers.mjs';
 import { DnDBRollExecutor } from '../integrations/dnd-beyond/DnDBRollExecutor.mjs';
 import { DnDBRollUtil } from '../integrations/dnd-beyond/DnDBRollUtil.mjs';
+import { DnDBMidiIntegration } from '../integrations/dnd-beyond/DnDBMidiIntegration.mjs';
 import { RollHelpers } from '../helpers/RollHelpers.mjs';
 import { HooksManager } from '../core/HooksManager.mjs';
 import { VanillaActivityManager } from './VanillaActivityManager.mjs';
@@ -211,7 +212,8 @@ export class BaseActivityManager {
     config.consume = getConsumptionConfig(config.consume || {}, isLocalRoll);
     config.create = getCreateConfig(config.create || {}, isLocalRoll);
 
-    if (actorOwner && !actorOwner.isGM && !isLocalRoll) {
+    const isDnDBRoll = DnDBMidiIntegration.hasPendingRoll();
+    if (actorOwner && !actorOwner.isGM && !isLocalRoll && !isDnDBRoll) {
       if(this.isMidiActive){
         LogUtil.log("BaseActivityManager.onPreUseActivityGM - Marking Midi message to suppress rendering for player-owned actor", [actor.name]);
         if (!message.data) message.data = {};

@@ -66,7 +66,8 @@ export const HOOKS_SOCKET = {
  */
 export const HOOKS_MIDI_QOL = {
   READY: "midi-qol.ready",
-  PRE_ITEM_ROLL: "midi-qol.preItemRoll"
+  PRE_ITEM_ROLL: "midi-qol.preItemRoll",
+  PRE_DAMAGE_ROLL: "midi-qol.preDamageRoll"
 }
 
 /**
@@ -153,6 +154,17 @@ export const HOOKS_DND5E = {
   BUILD_ROLL_CONFIG: "dnd5e.buildRollConfig",
   POST_BUILD_ROLL_CONFIG: "dnd5e.postBuildRollConfig",
   POST_ROLL_CONFIG: "dnd5e.postRollConfiguration",
+
+  // Pre-Roll Hooks (before dialog)
+  PRE_ROLL_ATTACK: "dnd5e.preRollAttack",
+  PRE_ROLL_DAMAGE: "dnd5e.preRollDamage",
+
+  // Post Roll Configuration Hooks (after config, before evaluation)
+  POST_ATTACK_ROLL_CONFIGURATION: "dnd5e.postAttackRollConfiguration",
+  POST_DAMAGE_ROLL_CONFIGURATION: "dnd5e.postDamageRollConfiguration",
+  POST_ABILITY_CHECK_ROLL_CONFIGURATION: "dnd5e.postAbilityCheckRollConfiguration",
+  POST_SKILL_CHECK_ROLL_CONFIGURATION: "dnd5e.postSkillCheckRollConfiguration",
+  POST_SAVING_THROW_ROLL_CONFIGURATION: "dnd5e.postSavingThrowRollConfiguration",
 
   // Rendering
   RENDER_ROLL_CONFIGURATION_DIALOG: "renderRollConfigurationDialog",

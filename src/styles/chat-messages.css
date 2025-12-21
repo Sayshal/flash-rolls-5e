@@ -410,9 +410,11 @@
 
 .chat-message .message-content .select-targeted {
   position: absolute;
-  margin-top: -3.25em;
   right: 0;
   z-index: 10;
+  top: 0rem;
+  height: 1.4rem;
+  width: 1.4rem;
 }
 
 .chat-message.flash-rolls-hidden {

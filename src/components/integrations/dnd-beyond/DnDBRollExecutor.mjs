@@ -86,13 +86,18 @@ export class DnDBRollExecutor {
 
   /**
    * Execute a saving throw
+   * Sets pending roll so hook can inject DnDB values before evaluation
    */
   static async _executeSave(actor, rollInfo, category) {
-    const ddbRoll = rollInfo.rawRolls[0];
+    DnDBMidiIntegration.setPendingRoll(rollInfo);
+
+    const owner = getPlayerOwner(actor) || game.user;
     const dialogConfig = { configure: false };
     const messageConfig = {
-      create: false,
+      create: true,
       data: {
+        speaker: ChatMessage.getSpeaker({ actor }),
+        author: owner.id,
         flags: {
           ...this._buildFlags(rollInfo),
           rsr5e: { processed: true, quickRoll: false }
@@ -106,34 +111,28 @@ export class DnDBRollExecutor {
       messageConfig
     );
 
-    if (!rolls || rolls.length < 1) return false;
-
-    DnDBRollUtil.injectDnDBDiceValues(rolls[0], ddbRoll);
-
-    const owner = getPlayerOwner(actor) || game.user;
-    const rollMode = game.settings.get("core", "rollMode");
-    await rolls[0].toMessage({
-      speaker: ChatMessage.getSpeaker({ actor }),
-      author: owner.id,
-      flavor: this._buildFlavor(rollInfo, "save"),
-      flags: {
-        ...this._buildFlags(rollInfo),
-        rsr5e: { processed: true, quickRoll: false }
-      }
-    }, { rollMode });
+    if (!rolls || rolls.length < 1) {
+      DnDBMidiIntegration.clearPendingRoll();
+      return false;
+    }
 
     return true;
   }
 
   /**
    * Execute an ability check
+   * Sets pending roll so hook can inject DnDB values before evaluation
    */
   static async _executeAbilityCheck(actor, rollInfo, category) {
-    const ddbRoll = rollInfo.rawRolls[0];
+    DnDBMidiIntegration.setPendingRoll(rollInfo);
+
+    const owner = getPlayerOwner(actor) || game.user;
     const dialogConfig = { configure: false };
     const messageConfig = {
-      create: false,
+      create: true,
       data: {
+        speaker: ChatMessage.getSpeaker({ actor }),
+        author: owner.id,
         flags: {
           ...this._buildFlags(rollInfo),
           rsr5e: { processed: true, quickRoll: false }
@@ -147,34 +146,28 @@ export class DnDBRollExecutor {
       messageConfig
     );
 
-    if (!rolls || rolls.length < 1) return false;
-
-    DnDBRollUtil.injectDnDBDiceValues(rolls[0], ddbRoll);
-
-    const owner = getPlayerOwner(actor) || game.user;
-    const rollMode = game.settings.get("core", "rollMode");
-    await rolls[0].toMessage({
-      speaker: ChatMessage.getSpeaker({ actor }),
-      author: owner.id,
-      flavor: this._buildFlavor(rollInfo, "check"),
-      flags: {
-        ...this._buildFlags(rollInfo),
-        rsr5e: { processed: true, quickRoll: false }
-      }
-    }, { rollMode });
+    if (!rolls || rolls.length < 1) {
+      DnDBMidiIntegration.clearPendingRoll();
+      return false;
+    }
 
     return true;
   }
 
   /**
    * Execute a skill check
+   * Sets pending roll so hook can inject DnDB values before evaluation
    */
   static async _executeSkillCheck(actor, rollInfo, category) {
-    const ddbRoll = rollInfo.rawRolls[0];
+    DnDBMidiIntegration.setPendingRoll(rollInfo);
+
+    const owner = getPlayerOwner(actor) || game.user;
     const dialogConfig = { configure: false };
     const messageConfig = {
-      create: false,
+      create: true,
       data: {
+        speaker: ChatMessage.getSpeaker({ actor }),
+        author: owner.id,
         flags: {
           ...this._buildFlags(rollInfo),
           rsr5e: { processed: true, quickRoll: false }
@@ -188,40 +181,34 @@ export class DnDBRollExecutor {
       messageConfig
     );
 
-    if (!rolls || rolls.length < 1) return false;
-
-    DnDBRollUtil.injectDnDBDiceValues(rolls[0], ddbRoll);
-
-    const owner = getPlayerOwner(actor) || game.user;
-    const rollMode = game.settings.get("core", "rollMode");
-    await rolls[0].toMessage({
-      speaker: ChatMessage.getSpeaker({ actor }),
-      author: owner.id,
-      flavor: this._buildFlavor(rollInfo, "skill"),
-      flags: {
-        ...this._buildFlags(rollInfo),
-        rsr5e: { processed: true, quickRoll: false }
-      }
-    }, { rollMode });
+    if (!rolls || rolls.length < 1) {
+      DnDBMidiIntegration.clearPendingRoll();
+      return false;
+    }
 
     return true;
   }
 
   /**
    * Execute a tool check
+   * Sets pending roll so hook can inject DnDB values before evaluation
    */
   static async _executeToolCheck(actor, rollInfo, category) {
-    const ddbRoll = rollInfo.rawRolls[0];
     const tool = category.tool;
 
     if (!tool) {
       return await this._executeAbilityCheck(actor, rollInfo, { ability: "dex" });
     }
 
+    DnDBMidiIntegration.setPendingRoll(rollInfo);
+
+    const owner = getPlayerOwner(actor) || game.user;
     const dialogConfig = { configure: false };
     const messageConfig = {
-      create: false,
+      create: true,
       data: {
+        speaker: ChatMessage.getSpeaker({ actor }),
+        author: owner.id,
         flags: {
           ...this._buildFlags(rollInfo),
           rsr5e: { processed: true, quickRoll: false }
@@ -231,21 +218,10 @@ export class DnDBRollExecutor {
 
     const rolls = await tool.rollToolCheck(dialogConfig, messageConfig);
 
-    if (!rolls || rolls.length < 1) return false;
-
-    DnDBRollUtil.injectDnDBDiceValues(rolls[0], ddbRoll);
-
-    const owner = getPlayerOwner(actor) || game.user;
-    const rollMode = game.settings.get("core", "rollMode");
-    await rolls[0].toMessage({
-      speaker: ChatMessage.getSpeaker({ actor }),
-      author: owner.id,
-      flavor: this._buildFlavor(rollInfo, "tool"),
-      flags: {
-        ...this._buildFlags(rollInfo),
-        rsr5e: { processed: true, quickRoll: false }
-      }
-    }, { rollMode });
+    if (!rolls || rolls.length < 1) {
+      DnDBMidiIntegration.clearPendingRoll();
+      return false;
+    }
 
     return true;
   }
@@ -462,26 +438,45 @@ export class DnDBRollExecutor {
 
     const ddbRoll = rollInfo.rawRolls[0];
     const targets = getTargetDescriptors();
-    LogUtil.log("DnDBRollExecutor: Building damage roll from DnDB data (attack activity)", ["targets:", targets.length]);
-    const damageRoll = DnDBRollUtil.createRollFromDnDB(ddbRoll);
-    if (!damageRoll) {
-      LogUtil.warn("DnDBRollExecutor: Failed to create damage roll from DnDB data");
+    LogUtil.log("DnDBRollExecutor: Rolling damage via activity (attack activity)", ["targets:", targets.length]);
+
+    const rollConfig = {};
+    const rolls = await activity.rollDamage(rollConfig, dialogConfig, {
+      create: false,
+      data: {
+        speaker: ChatMessage.getSpeaker({ actor }),
+        targets: targets,
+        flags: {
+          dnd5e: { targets: targets }
+        }
+      }
+    });
+
+    if (!rolls || rolls.length < 1) {
+      LogUtil.warn("DnDBRollExecutor: rollDamage returned no rolls");
       return false;
     }
 
-    LogUtil.log("DnDBRollExecutor: Creating damage message");
+    DnDBRollUtil.injectDnDBDiceValues(rolls[0], ddbRoll);
+
+    LogUtil.log("DnDBRollExecutor: Creating damage message with targets");
     const messageConfig = {
       speaker: ChatMessage.getSpeaker({ actor }),
       author: owner.id,
-      flavor: `${item.name}: ${game.i18n.localize("DND5E.Damage")}`,
+      flavor: `${item.name} - ${activity.damageFlavor}`,
       flags: {
         ...this._buildFlags(rollInfo),
-        dnd5e: { roll: { type: "damage" }, targets: targets },
+        dnd5e: {
+          ...activity.messageFlags,
+          messageType: "roll",
+          roll: { type: "damage" },
+          targets: targets
+        },
         rsr5e: { processed: true, quickRoll: false }
       }
     };
 
-    await damageRoll.toMessage(messageConfig, { rollMode });
+    await rolls[0].toMessage(messageConfig, { rollMode });
     LogUtil.log("DnDBRollExecutor: Damage message created");
 
     return true;
