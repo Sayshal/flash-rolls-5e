@@ -1,0 +1,24 @@
+<section
+  class="form-content tab {{#if tab.active}} active{{/if}}" data-group="{{tab.group}}" data-tab="{{tab.id}}"
+>
+  <h4><i class="fas fa-globe"></i> {{localize "FLASH_ROLLS.ui.dialogs.worldSettingsLabel"}} <span class="toggle-hint">{{localize 'FLASH_ROLLS.ui.dialogs.toggleHints'}}</span></h4>
+  <hr/>
+
+  <fieldset>
+    <legend>{{localize "FLASH_ROLLS.settings.moduleSettingsMenu.fieldsets.dndBeyond"}}</legend>
+
+    <div class="form-group">
+      <label for="ddbRollOwnership">{{fields.ddbRollOwnership.label}}</label>
+      <select name="ddbRollOwnership" id="ddbRollOwnership" data-current-value="{{ddbRollOwnership}}">
+        {{#each fields.ddbRollOwnership.choices}}
+        <option value="{{@key}}" {{#if (eq @key ../ddbRollOwnership)}}selected{{/if}}>
+          {{this}}
+        </option>
+        {{/each}}
+      </select>
+      <p class="hint">{{{fields.ddbRollOwnership.hint}}}</p>
+    </div>
+
+  </fieldset>
+
+</section>

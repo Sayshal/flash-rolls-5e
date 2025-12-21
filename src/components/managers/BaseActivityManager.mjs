@@ -3,7 +3,9 @@ import { ROLL_TYPES, MODULE_ID, ACTIVITY_TYPES } from '../../constants/General.m
 import { GeneralUtil } from '../utils/GeneralUtil.mjs';
 import { SettingsUtil } from '../utils/SettingsUtil.mjs';
 import { getSettings } from '../../constants/Settings.mjs';
-import { getConsumptionConfig, getCreateConfig, isPlayerOwned, showConsumptionConfig } from '../helpers/Helpers.mjs';
+import { getConsumptionConfig, getCreateConfig, isPlayerOwned, showConsumptionConfig, getTargetDescriptors, getPlayerOwner } from '../helpers/Helpers.mjs';
+import { DnDBRollExecutor } from '../integrations/dnd-beyond/DnDBRollExecutor.mjs';
+import { DnDBRollUtil } from '../integrations/dnd-beyond/DnDBRollUtil.mjs';
 import { RollHelpers } from '../helpers/RollHelpers.mjs';
 import { HooksManager } from '../core/HooksManager.mjs';
 import { VanillaActivityManager } from './VanillaActivityManager.mjs';
@@ -280,15 +282,15 @@ export class BaseActivityManager {
       }
     }
 
-    // if (activity.type === ACTIVITY_TYPES.SAVE && activity.damage?.parts?.length > 0 && !this.isMidiActive && isLocalRoll) {
-    //   LogUtil.log("BaseActivityManager.onPostUseActivityGM - triggering vanilla save damage roll for local roll", [activity, config]);
+    if (activity.type === ACTIVITY_TYPES.SAVE && activity.damage?.parts?.length > 0 && !this.isMidiActive && isLocalRoll) {
+      LogUtil.log("BaseActivityManager.onPostUseActivityGM - triggering vanilla save damage roll for local roll", [activity, config]);
 
-    //   const shouldShowDialog = config.skipRollDialog !== undefined ? !config.skipRollDialog : (isOwnerActive && !skipRollDialog);
+      const shouldShowDialog = config.skipRollDialog !== undefined ? !config.skipRollDialog : (isOwnerActive && !skipRollDialog);
 
-    //   activity.rollDamage(config, {
-    //     configure: shouldShowDialog
-    //   }, {});
-    // }
+      activity.rollDamage(config, {
+        configure: shouldShowDialog
+      }, {});
+    }
   }
 
   /**
@@ -327,23 +329,89 @@ export class BaseActivityManager {
    * Configures Midi-QOL options and triggers save damage if needed
    */
   static onPostUseActivityPlayer(activity, config, results) {
-    LogUtil.log("BaseActivityManager.onPostUseActivityPlayer", [activity, config, results, activity.target?.template.count]);
+    const isDnDBRoll = config.create?._isDnDBRoll === true;
+    LogUtil.log("BaseActivityManager.onPostUseActivityPlayer", [activity.type, isDnDBRoll, config.create, activity.target?.template?.count]);
 
-    // For Midi, call Midi-specific POST-use handler
     if (this.isMidiActive) {
       MidiActivityManager.onPostUseActivityPlayer(activity, config, results);
       return;
     }
 
     if (activity.type === ACTIVITY_TYPES.SAVE && activity.damage?.parts?.length > 0) {
-      LogUtil.log("BaseActivityManager.onPostUseActivityPlayer - triggering vanilla save damage roll", [activity, config]);
-      const shouldShowDialog = config.skipRollDialog !== undefined ? !config.skipRollDialog : true;
-
-      activity.rollDamage(config, {
-        configure: shouldShowDialog
-      }, {
-        create: true
-      });
+      if (isDnDBRoll) {
+        this._handleDnDBSaveDamageRoll(activity, config);
+      } else {
+        LogUtil.log("BaseActivityManager.onPostUseActivityPlayer - triggering vanilla save damage roll", [activity, config]);
+        const shouldShowDialog = config.skipRollDialog !== undefined ? !config.skipRollDialog : true;
+        activity.rollDamage(config, {
+          configure: shouldShowDialog
+        }, {
+          create: true
+        });
+      }
     }
+  }
+
+  /**
+   * Handle damage roll for DnDB save spells
+   * Calls rollDamage with create:false, injects DnDB dice values, and posts message with proper targets
+   * Note: This method is async but called from a sync hook - it handles its own promise chain
+   */
+  static _handleDnDBSaveDamageRoll(activity, config) {
+    const pendingRollInfo = DnDBRollExecutor.consumePendingDamageRoll();
+    if (!pendingRollInfo) {
+      LogUtil.warn("BaseActivityManager._handleDnDBSaveDamageRoll - No pending DnDB roll found");
+      return;
+    }
+
+    const ddbRoll = pendingRollInfo.rawRolls?.[0];
+    if (!ddbRoll) {
+      LogUtil.warn("BaseActivityManager._handleDnDBSaveDamageRoll - No raw roll data found");
+      return;
+    }
+
+    LogUtil.log("BaseActivityManager._handleDnDBSaveDamageRoll - Processing DnDB damage", [activity.item.name]);
+
+    activity.rollDamage(config, { configure: false }, { create: false }).then(rolls => {
+      if (!rolls?.length) {
+        LogUtil.warn("BaseActivityManager._handleDnDBSaveDamageRoll - rollDamage returned no rolls");
+        return;
+      }
+
+      DnDBRollUtil.injectDnDBDiceValues(rolls[0], ddbRoll);
+
+      const targets = getTargetDescriptors();
+      const actor = activity.actor;
+      const owner = getPlayerOwner(actor) || game.user;
+      const rollMode = game.settings.get("core", "rollMode");
+
+      LogUtil.log("BaseActivityManager._handleDnDBSaveDamageRoll - Creating message", ["targets:", targets.length]);
+
+      const messageConfig = {
+        speaker: ChatMessage.getSpeaker({ actor }),
+        author: owner.id,
+        flavor: `${activity.item.name} - ${activity.damageFlavor}`,
+        flags: {
+          [MODULE_ID]: {
+            isDnDBRoll: true,
+            ddbCharacterId: pendingRollInfo.characterId,
+            ddbSource: pendingRollInfo.source,
+            rollType: pendingRollInfo.rollType,
+            action: pendingRollInfo.action
+          },
+          dnd5e: {
+            ...activity.messageFlags,
+            messageType: "roll",
+            roll: { type: "damage", damageOnSave: activity.damage?.onSave },
+            targets: targets
+          },
+          rsr5e: { processed: true, quickRoll: false }
+        }
+      };
+
+      rolls[0].toMessage(messageConfig, { rollMode }).then(() => {
+        LogUtil.log("BaseActivityManager._handleDnDBSaveDamageRoll - Damage message created");
+      });
+    });
   }
 }

@@ -35,6 +35,12 @@ export class DnDBActivityUtil {
 
     const usageConfig = activity._prepareUsageConfig(usage);
 
+    if (usage.create?._isDnDBRoll) {
+      usageConfig.create = usageConfig.create || {};
+      usageConfig.create._isDnDBRoll = true;
+    }
+    LogUtil.log("DnDBActivityUtil.ddbUse - usageConfig after _prepareUsageConfig", ["_isDnDBRoll:", usageConfig.create?._isDnDBRoll, usageConfig.create]);
+
     if (usageConfig.create?.measuredTemplate) {
       ui.notifications?.info(game.i18n.localize("FLASH_ROLLS.notifications.clickMapToPlaceTemplate"));
     }
@@ -95,10 +101,11 @@ export class DnDBActivityUtil {
     messageConfig.data.rolls = (messageConfig.data.rolls ?? []).concat(updates.rolls);
 
     activity._finalizeMessageConfig(usageConfig, messageConfig, results);
-    results.message = await this._createUsageMessage(activity, messageConfig);
+    results.message = await activity._createUsageMessage(messageConfig);
 
     await activity._finalizeUsage(usageConfig, results);
 
+    LogUtil.log("DnDBActivityUtil.ddbUse - About to call postUseActivity hook", ["_isDnDBRoll:", usageConfig.create?._isDnDBRoll]);
     if (Hooks.call("dnd5e.postUseActivity", activity, usageConfig, results) === false) return results;
 
     if (usageConfig.subsequentActions !== false) {

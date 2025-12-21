@@ -148,8 +148,25 @@ export const getSettings = () => {
         removeSaveMsgAfterRoll: false
       },
       scope: SETTING_SCOPE.world,
-      config: false, 
-      requiresReload: false 
+      config: false,
+      requiresReload: false
+    },
+
+    integrationSettings: {
+      tag: "flash5e-integration-settings",
+      label: game.i18n.localize("FLASH_ROLLS.settings.moduleSettingsMenu.label"),
+      title: game.i18n.localize("FLASH_ROLLS.settings.moduleSettingsMenu.title"),
+      hint: game.i18n.localize("FLASH_ROLLS.settings.moduleSettingsMenu.hint"),
+      propType: Object,
+      fields: [
+        'ddbRollOwnership'
+      ],
+      default: {
+        ddbRollOwnership: 0
+      },
+      scope: SETTING_SCOPE.world,
+      config: false,
+      requiresReload: false
     },
 
     showGroupDCToPlayers: {
@@ -732,6 +749,21 @@ export const getSettings = () => {
       hint: game.i18n.localize("FLASH_ROLLS.settings.ddbCharacterMappings.hint"),
       propType: Object,
       default: {},
+      scope: SETTING_SCOPE.world,
+      config: false
+    },
+
+    ddbRollOwnership: {
+      tag: "ddb-roll-ownership",
+      label: game.i18n.localize("FLASH_ROLLS.settings.ddbRollOwnership.label"),
+      hint: game.i18n.localize("FLASH_ROLLS.settings.ddbRollOwnership.hint"),
+      propType: Number,
+      inputType: SETTING_INPUT.select,
+      choices: {
+        0: game.i18n.localize("FLASH_ROLLS.settings.ddbRollOwnership.choices.0"),
+        1: game.i18n.localize("FLASH_ROLLS.settings.ddbRollOwnership.choices.1")
+      },
+      default: 0,
       scope: SETTING_SCOPE.world,
       config: false
     }

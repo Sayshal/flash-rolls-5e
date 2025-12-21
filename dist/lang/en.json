@@ -208,7 +208,8 @@
           "generalSettings": "General Settings",
           "interfaceSettings": "Interface",
           "groupRolls": "Group Rolls",
-          "rollRequests": "Roll Requests"
+          "rollRequests": "Roll Requests",
+          "integrations": "Integrations"
         },
         "fieldsets": {
           "rollDialog": "Roll Dialog",
@@ -217,7 +218,16 @@
           "otherOptions": "Other Options",
           "rollActivation": "Request Activations",
           "chatMessages": "Chat Messages",
-          "visibility": "Visibility"
+          "visibility": "Visibility",
+          "dndBeyond": "D&D Beyond Integration"
+        }
+      },
+      "ddbRollOwnership": {
+        "label": "Who executes D&D Beyond Rolls",
+        "hint": "If GM executes, they will place templates and select targets. If roll is sent for player, their targets and templates will be used. Always falls back to GM if player is offline.",
+        "choices": {
+          "0": "Execute on GM client",
+          "1": "Send to Player"
         }
       },
       "initiateCombatOnRequest": {

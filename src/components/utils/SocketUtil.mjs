@@ -48,10 +48,12 @@ export class SocketUtil {
    * @param {Function} func - The function to be executed remotely.
    */
   static registerCall = (name, func) => {
-    LogUtil.log('registerCall', [name]);
+    LogUtil.log('registerCall', [name, "hasSocket:", !!SocketUtil.socket]);
     if (SocketUtil.socket) {
       SocketUtil.socket.register(name, func);
+      LogUtil.log('registerCall - Registered successfully', [name]);
     } else {
+      LogUtil.warn('registerCall - Socket not ready, registration failed!', [name]);
     }
   }
 
@@ -115,27 +117,14 @@ export class SocketUtil {
     if(userId === game.user.id){
       return null; // Break the recursion
     }
-    const executionKey = `${handler}-${userId}`;
-    
-    LogUtil.log('execForUser #2', [SocketUtil._activeExecutions.has(executionKey)]);
-    // Check if this exact execution is already in progress
-    if (SocketUtil._activeExecutions.has(executionKey)) {
-        return null; // Break the recursion
-    }
-    // Mark this execution as active
-    SocketUtil._activeExecutions.set(executionKey, true);
-    
+
     try {
       const resp = await SocketUtil.socket.executeAsUser(handler, userId, ...parameters);
-      LogUtil.log('execForUser #3 - response', [resp]);
+      LogUtil.log('execForUser #2 - response', [resp]);
       return resp;
     } catch (error) {
-      LogUtil.error('execForUser #4 - error', [error]);
+      LogUtil.error('execForUser #3 - error', [error]);
       return null;
-    } finally {
-      LogUtil.log('execForUser #5 - success', []);
-      // Always clean up, even if there was an error
-      SocketUtil._activeExecutions.delete(executionKey);
     }
   }
 

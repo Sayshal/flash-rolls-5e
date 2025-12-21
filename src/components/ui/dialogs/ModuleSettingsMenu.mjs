@@ -77,6 +77,11 @@ export class ModuleSettingsMenu extends HandlebarsApplicationMixin(ApplicationV2
       template: "modules/flash-rolls-5e/templates/settings-roll-requests.hbs",
       isGMOnly: true
     },
+    integrations: {
+      menuKey: "integrationSettings",
+      template: "modules/flash-rolls-5e/templates/settings-integrations.hbs",
+      isGMOnly: true
+    },
     footer: {
       template: "templates/generic/form-footer.hbs",
       isGMOnly: false

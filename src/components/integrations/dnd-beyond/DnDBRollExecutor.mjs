@@ -4,12 +4,34 @@ import { getPlayerOwner, getTargetDescriptors } from "../../helpers/Helpers.mjs"
 import { DnDBRollParser } from "./DnDBRollParser.mjs";
 import { DnDBRollUtil } from "./DnDBRollUtil.mjs";
 import { DnDBActivityUtil } from "./DnDBActivityUtil.mjs";
+import { DnDBMidiIntegration } from "./DnDBMidiIntegration.mjs";
 
 /**
  * Executes rolls in Foundry using DnDB dice values
  * Intercepts Foundry roll methods and injects DnDB results
  */
 export class DnDBRollExecutor {
+
+  static _pendingVanillaDamageRoll = null;
+
+  static setPendingDamageRoll(rollInfo) {
+    this._pendingVanillaDamageRoll = rollInfo;
+    LogUtil.log("DnDBRollExecutor.setPendingDamageRoll", [rollInfo?.action]);
+  }
+
+  static clearPendingDamageRoll() {
+    this._pendingVanillaDamageRoll = null;
+  }
+
+  static consumePendingDamageRoll() {
+    const roll = this._pendingVanillaDamageRoll;
+    this._pendingVanillaDamageRoll = null;
+    return roll;
+  }
+
+  static hasPendingDamageRoll() {
+    return this._pendingVanillaDamageRoll !== null;
+  }
 
   /**
    * Execute a roll based on the category
@@ -257,6 +279,7 @@ export class DnDBRollExecutor {
 
   /**
    * Execute an attack roll
+   * Uses Midi-QOL workflow when available for full integration
    */
   static async _executeAttack(actor, rollInfo, category) {
     const item = DnDBRollParser.findItemByAction(actor, category.action);
@@ -271,6 +294,18 @@ export class DnDBRollExecutor {
       return await this._createSimpleMessage(actor, rollInfo);
     }
 
+    if (DnDBMidiIntegration.isActive()) {
+      LogUtil.log("DnDBRollExecutor._executeAttack - Using Midi-QOL workflow");
+      return await DnDBMidiIntegration.executeAttackWithMidi(actor, activity, rollInfo);
+    }
+
+    return await this._executeAttackVanilla(actor, item, activity, rollInfo);
+  }
+
+  /**
+   * Execute an attack roll using vanilla DnD5e system
+   */
+  static async _executeAttackVanilla(actor, item, activity, rollInfo) {
     const ddbRoll = rollInfo.rawRolls[0];
     const dialogConfig = { configure: false };
     const targets = getTargetDescriptors();
@@ -305,7 +340,7 @@ export class DnDBRollExecutor {
 
     DnDBRollUtil.injectDnDBDiceValues(rolls[0], ddbRoll);
 
-    LogUtil.log("DnDBRollExecutor._executeAttack - after inject", [rolls[0]]);
+    LogUtil.log("DnDBRollExecutor._executeAttackVanilla - after inject", [rolls[0]]);
 
     const usageConfig = {
       subsequentActions: false,
@@ -339,15 +374,21 @@ export class DnDBRollExecutor {
     usageResults.message.author = owner.id;
     const rollMode = game.settings.get("core", "rollMode");
     const card = await ChatMessage.implementation.create(usageResults.message, { rollMode });
-    LogUtil.log("DnDBRollExecutor._executeAttack - created card", [card]);
+    LogUtil.log("DnDBRollExecutor._executeAttackVanilla - created card", [card]);
 
     return true;
   }
 
   /**
    * Execute a damage roll
+   * Uses Midi-QOL workflow when available for full integration
    */
   static async _executeDamage(actor, rollInfo, category) {
+    LogUtil.log("DnDBRollExecutor._executeDamage - Entry", [
+      "action:", category.action,
+      "isGM:", game.user.isGM
+    ]);
+
     const item = DnDBRollParser.findItemByAction(actor, category.action);
     if (!item) {
       LogUtil.warn("DnDBRollExecutor: Item not found for damage", [category.action]);
@@ -360,19 +401,46 @@ export class DnDBRollExecutor {
       return await this._createSimpleMessage(actor, rollInfo);
     }
 
-    const ddbRoll = rollInfo.rawRolls[0];
+    if (DnDBMidiIntegration.isActive()) {
+      LogUtil.log("DnDBRollExecutor._executeDamage - Checking Midi-QOL workflow routing", [
+        "isGM:", game.user.isGM
+      ]);
+      const midiResult = await DnDBMidiIntegration.executeDamageWithMidi(actor, activity, rollInfo);
+      if (midiResult) return true;
+      LogUtil.log("DnDBRollExecutor._executeDamage - Midi returned false, using vanilla flow", [
+        "isGM:", game.user.isGM
+      ]);
+    }
+
+    return await this._executeDamageVanilla(actor, item, activity, rollInfo);
+  }
+
+  /**
+   * Execute a damage roll using vanilla DnD5e system
+   * For SAVE activities, stores pending roll info and lets onPostUseActivityPlayer handle the damage roll
+   */
+  static async _executeDamageVanilla(actor, item, activity, rollInfo) {
     const dialogConfig = { configure: false };
     const owner = getPlayerOwner(actor) || game.user;
     const rollMode = game.settings.get("core", "rollMode");
+    const hasTemplate = activity.target?.template?.type;
 
     if (!activity.attack) {
-      LogUtil.log("DnDBRollExecutor: Damage-only activity, triggering usage first", [item.name]);
+      LogUtil.log("DnDBRollExecutor: Damage-only activity (SAVE), setting pending roll and triggering usage", [
+        "item:", item.name,
+        "hasTemplate:", hasTemplate
+      ]);
+
+      this.setPendingDamageRoll(rollInfo);
+
       const usageConfig = {
         subsequentActions: false,
-        consume: { resources: true, spellSlot: true }
+        consume: { resources: true, spellSlot: true },
+        create: { measuredTemplate: !!hasTemplate, _isDnDBRoll: true }
       };
 
-      await DnDBActivityUtil.ddbUse(activity, usageConfig, dialogConfig, {
+      LogUtil.log("DnDBRollExecutor: About to call ddbUse (will wait for template if needed)");
+      const usageResult = await DnDBActivityUtil.ddbUse(activity, usageConfig, dialogConfig, {
         create: true,
         rollMode: rollMode,
         data: {
@@ -385,25 +453,23 @@ export class DnDBRollExecutor {
           }
         }
       });
+      LogUtil.log("DnDBRollExecutor: ddbUse completed", [
+        "templates:", usageResult?.templates?.length
+      ]);
+
+      return true;
     }
 
+    const ddbRoll = rollInfo.rawRolls[0];
     const targets = getTargetDescriptors();
-    const rollConfig = {};
-    const rolls = await activity.rollDamage(rollConfig, dialogConfig, {
-      create: false,
-      data: {
-        speaker: ChatMessage.getSpeaker({ actor }),
-        targets: targets,
-        flags: {
-          dnd5e: { targets: targets }
-        }
-      }
-    });
+    LogUtil.log("DnDBRollExecutor: Building damage roll from DnDB data (attack activity)", ["targets:", targets.length]);
+    const damageRoll = DnDBRollUtil.createRollFromDnDB(ddbRoll);
+    if (!damageRoll) {
+      LogUtil.warn("DnDBRollExecutor: Failed to create damage roll from DnDB data");
+      return false;
+    }
 
-    if (!rolls || rolls.length < 1) return false;
-
-    DnDBRollUtil.injectDnDBDiceValues(rolls[0], ddbRoll);
-
+    LogUtil.log("DnDBRollExecutor: Creating damage message");
     const messageConfig = {
       speaker: ChatMessage.getSpeaker({ actor }),
       author: owner.id,
@@ -415,13 +481,15 @@ export class DnDBRollExecutor {
       }
     };
 
-    await rolls[0].toMessage(messageConfig, { rollMode });
+    await damageRoll.toMessage(messageConfig, { rollMode });
+    LogUtil.log("DnDBRollExecutor: Damage message created");
 
     return true;
   }
 
   /**
    * Execute a healing roll
+   * Uses Midi-QOL workflow when available for full integration
    */
   static async _executeHealing(actor, rollInfo, category) {
     const item = DnDBRollParser.findItemByAction(actor, category.action);
@@ -436,12 +504,24 @@ export class DnDBRollExecutor {
       return await this._createSimpleMessage(actor, rollInfo);
     }
 
+    if (DnDBMidiIntegration.isActive()) {
+      LogUtil.log("DnDBRollExecutor._executeHealing - Using Midi-QOL workflow");
+      return await DnDBMidiIntegration.executeHealingWithMidi(actor, activity, rollInfo);
+    }
+
+    return await this._executeHealingVanilla(actor, item, activity, rollInfo);
+  }
+
+  /**
+   * Execute a healing roll using vanilla DnD5e system
+   */
+  static async _executeHealingVanilla(actor, item, activity, rollInfo) {
     const ddbRoll = rollInfo.rawRolls[0];
     const dialogConfig = { configure: false };
     const owner = getPlayerOwner(actor) || game.user;
     const rollMode = game.settings.get("core", "rollMode");
 
-    LogUtil.log("DnDBRollExecutor: Healing activity, triggering usage first", [item.name]);
+    LogUtil.log("DnDBRollExecutor: Healing activity (vanilla), triggering usage first", [item.name]);
     const usageConfig = {
       subsequentActions: false,
       consume: { resources: true, spellSlot: true }

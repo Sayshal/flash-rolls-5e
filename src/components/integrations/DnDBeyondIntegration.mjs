@@ -2,9 +2,16 @@ import { MODULE_ID } from "../../constants/General.mjs";
 import { getSettings } from "../../constants/Settings.mjs";
 import { LogUtil } from "../utils/LogUtil.mjs";
 import { SettingsUtil } from "../utils/SettingsUtil.mjs";
+import { SocketUtil } from "../utils/SocketUtil.mjs";
+import { getPlayerOwner } from "../helpers/Helpers.mjs";
 import { DnDBConnection } from "./dnd-beyond/DnDBConnection.mjs";
 import { DnDBRollParser } from "./dnd-beyond/DnDBRollParser.mjs";
 import { DnDBRollExecutor } from "./dnd-beyond/DnDBRollExecutor.mjs";
+import { DnDBMidiIntegration } from "./dnd-beyond/DnDBMidiIntegration.mjs";
+
+const SOCKET_HANDLERS = {
+  EXECUTE_DDB_ROLL: "executeDnDBRoll"
+};
 
 /**
  * Integration with D&D Beyond Game Log via proxy server
@@ -18,6 +25,9 @@ export class DnDBeyondIntegration {
    * Only runs for GM users with valid configuration
    */
   static async initialize() {
+    DnDBMidiIntegration.registerHooks();
+    this._registerSocketHandlers();
+
     if (!game.user.isGM) {
       return;
     }
@@ -36,6 +46,45 @@ export class DnDBeyondIntegration {
 
     DnDBConnection.setRollEventHandler((data) => this._onRollEvent(data));
     await DnDBConnection.connect();
+  }
+
+  /**
+   * Register socket handlers for player-side roll execution
+   */
+  static _registerSocketHandlers() {
+    LogUtil.log("DnDBeyondIntegration._registerSocketHandlers - Attempting registration", [
+      "hasSocket:", !!SocketUtil.socket,
+      "isGM:", game.user?.isGM
+    ]);
+    SocketUtil.registerCall(SOCKET_HANDLERS.EXECUTE_DDB_ROLL, this._handleSocketRollExecution.bind(this));
+    LogUtil.log("DnDBeyondIntegration: Registered socket handlers");
+  }
+
+  /**
+   * Handle roll execution request received via socket (runs on player's client)
+   * @param {Object} data - The roll execution data
+   * @param {string} data.actorId - The actor ID
+   * @param {Object} data.rollInfo - The parsed roll info
+   * @param {Object} data.category - The roll category
+   * @returns {Promise<boolean>} Success status
+   */
+  static async _handleSocketRollExecution(data) {
+    const { actorId, rollInfo, category } = data;
+    LogUtil.log("DnDBeyondIntegration._handleSocketRollExecution - Received roll request", [
+      "actorId:", actorId,
+      "action:", rollInfo.action,
+      "rollType:", rollInfo.rollType,
+      "category:", category.category,
+      "isGM:", game.user.isGM
+    ]);
+
+    const actor = game.actors.get(actorId);
+    if (!actor) {
+      LogUtil.warn("DnDBeyondIntegration._handleSocketRollExecution - Actor not found", [actorId]);
+      return false;
+    }
+
+    return await DnDBRollExecutor.execute(actor, rollInfo, category);
   }
 
   /**
@@ -75,11 +124,73 @@ export class DnDBeyondIntegration {
     ]);
 
     if (actor) {
+      const playerOwner = getPlayerOwner(actor);
+      const shouldPlayerExecute = this._shouldPlayerExecute(playerOwner);
+
+      if (shouldPlayerExecute) {
+        LogUtil.log("DnDBeyondIntegration: Sending roll to player", [
+          playerOwner.name,
+          actor.name,
+          "category:", category.category
+        ]);
+        const success = await this._sendRollToPlayer(actor, rollInfo, category, playerOwner);
+        LogUtil.log("DnDBeyondIntegration: Player execution result", [
+          "success:", success,
+          "category:", category.category
+        ]);
+        if (success) return;
+        LogUtil.log("DnDBeyondIntegration: Player execution failed, falling back to GM");
+      }
+
       const success = await DnDBRollExecutor.execute(actor, rollInfo, category);
       if (success) return;
     }
 
     await this._createFallbackMessage(rollInfo);
+  }
+
+  /**
+   * Check if a player should execute the roll based on settings and online status
+   * @param {User|null} playerOwner - The player owner of the actor
+   * @returns {boolean} Whether the player should execute the roll
+   */
+  static _shouldPlayerExecute(playerOwner) {
+    if (!playerOwner) return false;
+    if (!playerOwner.active) return false;
+
+    const SETTINGS = getSettings();
+    const rollOwnership = SettingsUtil.get(SETTINGS.ddbRollOwnership.tag) ?? 0;
+    return rollOwnership === 1;
+  }
+
+  /**
+   * Send roll execution request to player via socket
+   * @param {Actor} actor - The actor performing the roll
+   * @param {Object} rollInfo - The parsed roll info
+   * @param {Object} category - The roll category
+   * @param {User} playerOwner - The player to send the roll to
+   * @returns {Promise<boolean>} Success status
+   */
+  static async _sendRollToPlayer(actor, rollInfo, category, playerOwner) {
+    try {
+      const data = {
+        actorId: actor.id,
+        rollInfo: rollInfo,
+        category: category
+      };
+
+      const result = await SocketUtil.execForUser(
+        SOCKET_HANDLERS.EXECUTE_DDB_ROLL,
+        playerOwner.id,
+        data
+      );
+
+      LogUtil.log("DnDBeyondIntegration._sendRollToPlayer - Result", [result]);
+      return result === true;
+    } catch (error) {
+      LogUtil.error("DnDBeyondIntegration._sendRollToPlayer - Failed", [error]);
+      return false;
+    }
   }
 
   /**

@@ -47,6 +47,7 @@ export class DnDBRollUtil {
 
   /**
    * Create a Foundry Roll object from DnDB roll data
+   * Creates proper Die terms with pre-evaluated results so formula displays correctly
    * @param {Object} ddbRoll - The DnDB roll data
    * @returns {Roll} A Foundry Roll object
    */
@@ -54,19 +55,34 @@ export class DnDBRollUtil {
     const notation = ddbRoll.diceNotation;
     if (!notation) return null;
 
-    const parts = [];
+    const terms = [];
     for (const set of notation.set || []) {
-      const diceValues = set.dice.map(d => d.dieValue);
-      parts.push(`{${diceValues.join(",")}}${set.dieType}`);
+      const faces = parseInt(set.dieType.replace("d", ""), 10);
+      const results = set.dice.map((d, i) => ({
+        result: d.dieValue,
+        active: true,
+        indexThrow: i
+      }));
+
+      const die = new Die({ faces, number: set.count });
+      die._evaluated = true;
+      die.results = results;
+      terms.push(die);
     }
 
     if (notation.constant) {
-      const sign = notation.constant >= 0 ? "+" : "";
-      parts.push(`${sign}${notation.constant}`);
+      const OperatorTerm = foundry.dice.terms.OperatorTerm;
+      const NumericTerm = foundry.dice.terms.NumericTerm;
+      const operator = notation.constant >= 0 ? "+" : "-";
+      const operatorTerm = new OperatorTerm({ operator });
+      operatorTerm._evaluated = true;
+      terms.push(operatorTerm);
+      const numericTerm = new NumericTerm({ number: Math.abs(notation.constant) });
+      numericTerm._evaluated = true;
+      terms.push(numericTerm);
     }
 
-    const formula = parts.join(" ");
-    const roll = new Roll(formula);
+    const roll = Roll.fromTerms(terms);
     roll._evaluated = true;
     roll._total = ddbRoll.result?.total || 0;
 

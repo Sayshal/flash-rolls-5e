@@ -22,7 +22,7 @@
     margin-top: 1rem;
 
     &.campaign-characters {
-      max-height: 15rem;
+      max-height: 18rem;
       overflow: auto;
     }
 
