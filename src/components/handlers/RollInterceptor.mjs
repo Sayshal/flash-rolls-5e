@@ -130,21 +130,26 @@ export class RollInterceptor {
     }
 
     if (DnDBMidiIntegration.hasPendingRoll()) {
-      LogUtil.log('_onPreRollIntercept - skipping roll with pending DnDB roll');
+      LogUtil.log('_onPreRollIntercept - skipping interception: pending DnDB roll');
+      dialog.configure = false;
       return;
     }
 
     // Calculate these variables before using them
     const owner = GeneralUtil.getActorOwner(actor);
-    const isPC = owner?.id === game.user.id && owner?.active;
-    const areSkipKeysPressed = GeneralUtil.areSkipKeysPressed(config.event);
+    const isOwnerActive = owner && owner?.active && !owner?.isGM;
     const skipToRollResolver = SettingsUtil.get(SETTINGS.skipToRollResolver.tag);
     const hasNonDigitalDice = skipToRollResolver && DiceConfigUtil.hasNonDigitalDice();
-    const skipRollDialog = areSkipKeysPressed || SettingsUtil.get(SETTINGS.skipRollDialog.tag) || hasNonDigitalDice;
+    const skipRollDialog = RollHelpers.shouldSkipRollDialog({
+      event: config.event,
+      isPC: isOwnerActive,
+      isNPC: !isOwnerActive,
+      hasNonDigitalDice
+    });
 
     if (!requestsEnabled || !rollInterceptionEnabled || config.isRollRequest === false) {
       if(!isMidiOn) {
-        const shouldSkip = areSkipKeysPressed || (config.isRollRequest === undefined && skipRollDialog);
+        const shouldSkip = config.isRollRequest === undefined && skipRollDialog;
         dialog.configure = !shouldSkip;
       }
       return;
@@ -409,22 +414,26 @@ export class RollInterceptor {
     LogUtil.log('_showGMConfigDialog - config', [rollType, dialog, config, message]);
     const SETTINGS = getSettings();
     const rollRequestsEnabled = SettingsUtil.get(SETTINGS.rollRequestsEnabled.tag);
-    const areSkipKeysPressed = GeneralUtil.areSkipKeysPressed(config.event);
 
     try {
       const normalizedRollType = rollType?.toLowerCase();
-      
+
       if (normalizedRollType === ROLL_TYPES.INITIATIVE) {
         const shouldContinue = await this._handleInitiativePreChecks(actor);
         if (!shouldContinue) return;
       }
-      
+
       const DialogClass = this._getDialogClass(rollType);
       const { rollKey, rollConfig } = this._extractRollConfiguration(rollType, config, dialog, actor);
       const isOwnerActive = owner && owner?.active && !owner?.isGM;
-      
+
       let result;
-      const shouldSkipDialog = dialog.configure===true ? false : areSkipKeysPressed || dialog.configure===false || RollHelpers.shouldSkipRollDialog(isOwnerActive ? rollRequestsEnabled : false, {isPC: isOwnerActive, isNPC: !isOwnerActive});
+      const shouldSkipDialog = RollHelpers.shouldSkipRollDialog({
+        event: config.event,
+        isPC: isOwnerActive,
+        isNPC: !isOwnerActive,
+        sendRequest: isOwnerActive ? rollRequestsEnabled : false
+      });
       LogUtil.log('_showGMConfigDialog - rollConfig', [rollConfig, rollKey, shouldSkipDialog, isOwnerActive, owner]);
       // Check if dialog should be skipped - pass rollRequestsEnabled as the sendRequest context
       if (shouldSkipDialog) {
@@ -726,7 +735,7 @@ export class RollInterceptor {
       const defaultDialogResult = {
         ...cleanConfig,
         rollMode: config.rollMode || game.settings.get("core", "rollMode"),
-        skipRollDialog: RollHelpers.shouldSkipRollDialog(false, {isPC: false, isNPC: true})
+        skipRollDialog: RollHelpers.shouldSkipRollDialog({isPC: false, isNPC: true, sendRequest: false})
       };
       await this._executeInterceptedRoll(actor, rollType, config, defaultDialogResult);
       return;

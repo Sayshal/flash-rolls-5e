@@ -1,3 +1,6 @@
+#flash-rolls-settings{
+  min-width: 500px;
+}
 #flash-rolls-settings .form-group.column {
   flex-direction: column;
   justify-content: flex-start;

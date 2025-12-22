@@ -278,6 +278,8 @@ export class TokenMovementManager {
    * @param {object} updateData - Update data
    */
   static async onCombatStart(combat, updateData) {
+    if (!game.user.isGM) return;
+
     const SETTINGS = getSettings();
     const autoBlock = SettingsUtil.get(SETTINGS.autoBlockMovementInCombat?.tag);
 
@@ -313,6 +315,8 @@ export class TokenMovementManager {
    * @param {object} current - The current turn state
    */
   static async onCombatTurnChange(combat, prior, current) {
+    if (!game.user.isGM) return;
+
     const SETTINGS = getSettings();
     const autoBlock = SettingsUtil.get(SETTINGS.autoBlockMovementInCombat?.tag);
 
@@ -344,6 +348,8 @@ export class TokenMovementManager {
    * @param {Combat} combat - The combat instance
    */
   static async onCombatEnd(combat) {
+    if (!game.user.isGM) return;
+
     LogUtil.log('TokenMovementManager: Combat ended, removing movement restrictions');
 
     const tokensToUnblock = [];
@@ -429,6 +435,8 @@ export class TokenMovementManager {
    * @param {string} userId - The user ID who created the combatant
    */
   static async onCreateCombatant(combatant, options, userId) {
+    if (!game.user.isGM) return;
+
     const SETTINGS = getSettings();
     const autoBlock = SettingsUtil.get(SETTINGS.autoBlockMovementInCombat?.tag);
 
@@ -455,6 +463,8 @@ export class TokenMovementManager {
    * Called when the module initializes to handle existing active combat
    */
   static async initializeCombatMovementRestrictions() {
+    if (!game.user.isGM) return;
+
     const SETTINGS = getSettings();
     const autoBlock = SettingsUtil.get(SETTINGS.autoBlockMovementInCombat?.tag);
 

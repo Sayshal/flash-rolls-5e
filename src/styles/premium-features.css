@@ -1,6 +1,12 @@
 
 /* Premium Features Dialog */
 #flash5e-premium-features-dialog {
+  max-height: 80vh;
+
+  .window-content {
+    max-height: calc(80vh - 30px);
+    overflow-y: auto;
+  }
 
   .premium-features-content {
     display: flex;
@@ -20,11 +26,6 @@
 
   fieldset {
     margin-top: 1rem;
-
-    &.campaign-characters {
-      max-height: 18rem;
-      overflow: auto;
-    }
 
     legend {
       font-weight: 600;
@@ -270,6 +271,8 @@
     display: flex;
     flex-direction: column;
     gap: 1px;
+    max-height: 14rem;
+    overflow-y: auto;
   }
 
   .character-item {

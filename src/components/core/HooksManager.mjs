@@ -3,6 +3,7 @@ import { getSettings } from "../../constants/Settings.mjs";
 import { SettingsUtil } from "../utils/SettingsUtil.mjs";
 import { DiceConfigUtil } from "../utils/DiceConfigUtil.mjs";
 import { RollInterceptor } from "../handlers/RollInterceptor.mjs";
+import { RollHelpers } from "../helpers/RollHelpers.mjs";
 import { updateSidebarClass, isSidebarExpanded } from "../helpers/Helpers.mjs";
 import { SidebarController } from "../managers/SidebarController.mjs";
 import { LogUtil } from "../utils/LogUtil.mjs";
@@ -683,7 +684,7 @@ export class HooksManager {
       return true;
     }
 
-    const skipRollDialog = SettingsUtil.get(SETTINGS.skipRollDialog.tag);
+    const skipRollDialog = RollHelpers.shouldSkipRollDialog({isPC: true, sendRequest: true});
     const groupRollId = foundry.utils.randomID();
 
     FlashAPI.requestRoll({

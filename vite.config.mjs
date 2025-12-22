@@ -23,6 +23,7 @@ export default defineConfig({
   },
   build: {
     sourcemap: true,
+    chunkSizeWarningLimit: 600,
     rollupOptions: {
       input: "src/module.mjs",
       output: {

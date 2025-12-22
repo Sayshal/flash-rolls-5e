@@ -8,6 +8,7 @@ import { getSettings } from "../../constants/Settings.mjs";
 import { RollHelpers } from "../helpers/RollHelpers.mjs";
 import { ChatMessageManager } from "../managers/ChatMessageManager.mjs";
 import { ModuleSettingsMenu } from "../ui/dialogs/ModuleSettingsMenu.mjs";
+import { PremiumFeaturesDialog } from "../ui/dialogs/PremiumFeaturesDialog.mjs";
 import { RollMenuEventManager } from "../managers/roll-menu/RollMenuEventManager.mjs";
 import { TokenMovementManager } from "../utils/TokenMovementManager.mjs";
 import { RollMenuStateManager } from "../managers/roll-menu/RollMenuStateManager.mjs";
@@ -605,6 +606,13 @@ export class FlashAPI {
    */
   static openSettings() {
     new ModuleSettingsMenu().render(true);
+  }
+
+  /**
+   * Open the premium features dialog
+   */
+  static openPremiumFeatures() {
+    new PremiumFeaturesDialog().render(true);
   }
 
   /**

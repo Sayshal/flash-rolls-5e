@@ -230,8 +230,13 @@ export class ContestedRollDialog extends HandlebarsApplicationMixin(ApplicationV
     LogUtil.log('_executeRollForActor', [actor.name, type, key, 'tokenId:', tokenId, 'groupRollId:', groupRollId]);
 
     const SETTINGS = getSettings();
-    const skipRollDialog = SettingsUtil.get(SETTINGS.skipRollDialog.tag);
+    const isPlayerOwned = RollHelpers.isPlayerOwned(actor);
     const rollRequestsEnabled = SettingsUtil.get(SETTINGS.rollRequestsEnabled.tag);
+    const skipRollDialog = RollHelpers.shouldSkipRollDialog({
+      isPC: isPlayerOwned,
+      isNPC: !isPlayerOwned,
+      sendRequest: isPlayerOwned && rollRequestsEnabled
+    });
 
     try {
       if (type === 'dice') {
@@ -269,8 +274,6 @@ export class ContestedRollDialog extends HandlebarsApplicationMixin(ApplicationV
         await roll.toMessage(messageData);
       } else {
         const requestType = type === 'ability' ? 'abilitycheck' : type;
-        const isPlayerOwned = RollHelpers.isPlayerOwned(actor);
-
         const uniqueId = tokenId || actor.id;
 
         await FlashAPI.requestRoll({

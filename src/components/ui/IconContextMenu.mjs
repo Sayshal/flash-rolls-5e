@@ -191,6 +191,9 @@ export class IconContextMenu {
         case 'open-settings':
           macroCommand = this._generateActionMacro('openSettings', 'Open Flash Rolls Settings');
           break;
+        case 'premium-features':
+          macroCommand = this._generateActionMacro('openPremiumFeatures', 'Open Premium Features');
+          break;
         case 'select-all':
           macroCommand = this._generateSelectAllMacro();
           break;

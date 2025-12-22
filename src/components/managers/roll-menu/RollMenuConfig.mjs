@@ -29,7 +29,11 @@ export class RollMenuConfig {
     if (configOverrides.hasOwnProperty('skipRollDialog')) {
       confirmedSkipDialog = configOverrides.skipRollDialog;
     } else {
-      confirmedSkipDialog = RollHelpers.shouldSkipRollDialog(sendAsRequest, {isPC: pcActors.length > 0, isNPC: npcActors.length > 0});
+      confirmedSkipDialog = RollHelpers.shouldSkipRollDialog({
+        isPC: pcActors.length > 0,
+        isNPC: npcActors.length > 0,
+        sendRequest: sendAsRequest
+      });
     }
 
     LogUtil.log('getRollConfiguration', [configOverrides]);

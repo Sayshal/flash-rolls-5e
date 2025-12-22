@@ -14,6 +14,8 @@ const PROXY_BASE_URL = "https://proxy.carolingian.io";
  * @extends {HandlebarsApplicationMixin(ApplicationV2)}
  */ 
 export class PremiumFeaturesDialog extends HandlebarsApplicationMixin(ApplicationV2) {
+  static FLAG_LAST_TAB = "premiumDialogLastTab";
+
   constructor(options = {}) {
     super(options);
     this._authStatus = null;
@@ -22,6 +24,22 @@ export class PremiumFeaturesDialog extends HandlebarsApplicationMixin(Applicatio
     this._patronVerified = false;
     this._ddbGameLogStatus = "unknown";
     this._initialDataLoaded = false;
+  }
+
+  /**
+   * Get the last active tab from user flags
+   * @returns {string} The last active tab id
+   */
+  static getLastActiveTab() {
+    return game.user.getFlag(MODULE.ID, PremiumFeaturesDialog.FLAG_LAST_TAB) || "authentication";
+  }
+
+  /**
+   * Save the last active tab to user flags
+   * @param {string} tabId - The tab id to save
+   */
+  static setLastActiveTab(tabId) {
+    game.user.setFlag(MODULE.ID, PremiumFeaturesDialog.FLAG_LAST_TAB, tabId);
   }
 
   /**
@@ -86,6 +104,19 @@ export class PremiumFeaturesDialog extends HandlebarsApplicationMixin(Applicatio
       labelPrefix: ""
     }
   };
+
+  /**
+   * Override changeTab to remember the last active tab
+   * @param {string} tab - The tab id to activate
+   * @param {string} group - The tab group
+   * @param {object} options - Additional options
+   */
+  changeTab(tab, group, options = {}) {
+    super.changeTab(tab, group, options);
+    if (group === "primary") {
+      PremiumFeaturesDialog.setLastActiveTab(tab);
+    }
+  }
 
   /**
    * Prepare application rendering context
@@ -935,18 +966,21 @@ export class PremiumFeaturesDialog extends HandlebarsApplicationMixin(Applicatio
   }
 
   /**
-   * Pre-first-render hook - load initial data before the application renders
-   * This prevents the size flash by ensuring data is loaded before layout
+   * Load initial data in background - does not block rendering
    */
-  async _preFirstRender(context, options) {
-    await super._preFirstRender(context, options);
+  async _loadInitialData() {
+    if (this._initialDataLoaded) return;
+    this._initialDataLoaded = true;
+
     const SETTINGS = getSettings();
     const proxyApiKey = SettingsUtil.get(SETTINGS.proxyApiKey.tag);
 
     if (proxyApiKey) {
       await this._verifyPatreonStatus();
+      this._updatePatreonStatusIndicator();
       if (this._patronVerified) {
-        await this._fetchCampaignCharacters(false);
+        this.render({ parts: ["ddbSettings"] });
+        await this._fetchCampaignCharacters();
       }
     }
   }
@@ -992,6 +1026,15 @@ export class PremiumFeaturesDialog extends HandlebarsApplicationMixin(Applicatio
     });
 
     this._attachCharacterClickListeners();
+
+    this._loadInitialData();
+
+    if (options.isFirstRender) {
+      const lastTab = PremiumFeaturesDialog.getLastActiveTab();
+      if (lastTab !== "authentication") {
+        this.changeTab(lastTab, "primary");
+      }
+    }
   }
 
   /**

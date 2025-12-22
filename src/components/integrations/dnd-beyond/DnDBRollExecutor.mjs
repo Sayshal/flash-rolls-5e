@@ -92,6 +92,7 @@ export class DnDBRollExecutor {
     DnDBMidiIntegration.setPendingRoll(rollInfo);
 
     const owner = getPlayerOwner(actor) || game.user;
+    const rollConfig = { ability: category.ability, sendRequest: false };
     const dialogConfig = { configure: false };
     const messageConfig = {
       create: true,
@@ -106,7 +107,7 @@ export class DnDBRollExecutor {
     };
 
     const rolls = await actor.rollSavingThrow(
-      { ability: category.ability },
+      rollConfig,
       dialogConfig,
       messageConfig
     );
@@ -127,6 +128,7 @@ export class DnDBRollExecutor {
     DnDBMidiIntegration.setPendingRoll(rollInfo);
 
     const owner = getPlayerOwner(actor) || game.user;
+    const rollConfig = { ability: category.ability, sendRequest: false };
     const dialogConfig = { configure: false };
     const messageConfig = {
       create: true,
@@ -141,7 +143,7 @@ export class DnDBRollExecutor {
     };
 
     const rolls = await actor.rollAbilityCheck(
-      { ability: category.ability },
+      rollConfig,
       dialogConfig,
       messageConfig
     );
@@ -162,6 +164,7 @@ export class DnDBRollExecutor {
     DnDBMidiIntegration.setPendingRoll(rollInfo);
 
     const owner = getPlayerOwner(actor) || game.user;
+    const rollConfig = { skill: category.skill, sendRequest: false };
     const dialogConfig = { configure: false };
     const messageConfig = {
       create: true,
@@ -176,7 +179,7 @@ export class DnDBRollExecutor {
     };
 
     const rolls = await actor.rollSkill(
-      { skill: category.skill },
+      rollConfig,
       dialogConfig,
       messageConfig
     );
@@ -203,6 +206,7 @@ export class DnDBRollExecutor {
     DnDBMidiIntegration.setPendingRoll(rollInfo);
 
     const owner = getPlayerOwner(actor) || game.user;
+    const rollConfig = { sendRequest: false };
     const dialogConfig = { configure: false };
     const messageConfig = {
       create: true,
@@ -216,7 +220,15 @@ export class DnDBRollExecutor {
       }
     };
 
-    const rolls = await tool.rollToolCheck(dialogConfig, messageConfig);
+    const toolConfig = {
+      ...rollConfig,
+      ability: tool.system.ability,
+      bonus: tool.system.bonus,
+      prof: tool.system.prof,
+      item: tool,
+      tool: tool.system.type.baseItem
+    };
+    const rolls = await actor.rollToolCheck(toolConfig, dialogConfig, messageConfig);
 
     if (!rolls || rolls.length < 1) {
       DnDBMidiIntegration.clearPendingRoll();
@@ -282,6 +294,8 @@ export class DnDBRollExecutor {
    * Execute an attack roll using vanilla DnD5e system
    */
   static async _executeAttackVanilla(actor, item, activity, rollInfo) {
+    DnDBMidiIntegration.setPendingRoll(rollInfo);
+
     const ddbRoll = rollInfo.rawRolls[0];
     const dialogConfig = { configure: false };
     const targets = getTargetDescriptors();
@@ -289,6 +303,7 @@ export class DnDBRollExecutor {
       subsequentActions: false,
       consume: { resources: false, spellSlot: false },
       target: targets.length === 1 ? targets[0].ac : undefined,
+      sendRequest: false,
       flags: {
         ...this._buildFlags(rollInfo),
         dnd5e: { roll: { type: "attack" } }
@@ -304,6 +319,7 @@ export class DnDBRollExecutor {
         speaker: ChatMessage.getSpeaker({ actor }),
         targets: targets,
         flags: {
+          ...this._buildFlags(rollInfo),
           dnd5e: { targets: targets }
         }
       }
@@ -436,17 +452,20 @@ export class DnDBRollExecutor {
       return true;
     }
 
+    DnDBMidiIntegration.setPendingRoll(rollInfo);
+
     const ddbRoll = rollInfo.rawRolls[0];
     const targets = getTargetDescriptors();
     LogUtil.log("DnDBRollExecutor: Rolling damage via activity (attack activity)", ["targets:", targets.length]);
 
-    const rollConfig = {};
+    const rollConfig = { sendRequest: false };
     const rolls = await activity.rollDamage(rollConfig, dialogConfig, {
       create: false,
       data: {
         speaker: ChatMessage.getSpeaker({ actor }),
         targets: targets,
         flags: {
+          ...this._buildFlags(rollInfo),
           dnd5e: { targets: targets }
         }
       }
@@ -511,6 +530,8 @@ export class DnDBRollExecutor {
    * Execute a healing roll using vanilla DnD5e system
    */
   static async _executeHealingVanilla(actor, item, activity, rollInfo) {
+    DnDBMidiIntegration.setPendingRoll(rollInfo);
+
     const ddbRoll = rollInfo.rawRolls[0];
     const dialogConfig = { configure: false };
     const owner = getPlayerOwner(actor) || game.user;
@@ -537,13 +558,14 @@ export class DnDBRollExecutor {
     });
 
     const targets = getTargetDescriptors();
-    const rollConfig = {};
+    const rollConfig = { sendRequest: false };
     const rolls = await activity.rollDamage(rollConfig, dialogConfig, {
       create: false,
       data: {
         speaker: ChatMessage.getSpeaker({ actor }),
         targets: targets,
         flags: {
+          ...this._buildFlags(rollInfo),
           dnd5e: { targets: targets }
         }
       }

@@ -246,10 +246,14 @@ export class BaseActivityManager {
     const actorOwner = GeneralUtil.getActorOwner(actor);
     const isOwnerActive = actorOwner && actorOwner.active && actorOwner.id !== game.user.id;
     const isLocalRoll = !isOwnerActive || config.isRollRequest===false;
-        
+
     LogUtil.log("BaseActivityManager.onPostUseActivityGM #1 ", [isLocalRoll, isOwnerActive, this.isMidiActive]);
     if (this.isMidiActive && isLocalRoll) return;
-    const skipRollDialog = RollHelpers.shouldSkipRollDialog(isOwnerActive, {isPC: isOwnerActive, isNPC: !isOwnerActive});
+    const skipRollDialog = RollHelpers.shouldSkipRollDialog({
+      isPC: isOwnerActive,
+      isNPC: !isOwnerActive,
+      sendRequest: isOwnerActive
+    });
     results.configure = config.skipRollDialog !== undefined ? !config.skipRollDialog : (isOwnerActive && !skipRollDialog);
 
     LogUtil.log("BaseActivityManager.onPostUseActivityGM - skipRollDialog", [skipRollDialog, config.skipRollDialog]);

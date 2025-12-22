@@ -59,6 +59,14 @@ export const MODULE_ACTION_ICONS = {
     tooltipKey: "FLASH_ROLLS.ui.inputs.openSettings",
     element: "flash5e-open-settings",
     type: "button"
+  },
+  "premium-features": {
+    id: "premium-features",
+    icon: "fa-gem",
+    labelKey: "FLASH_ROLLS.ui.inputs.premiumFeatures",
+    tooltipKey: "FLASH_ROLLS.ui.inputs.premiumFeatures",
+    element: "flash5e-premium-features",
+    type: "button"
   }
 };
 
@@ -225,7 +233,8 @@ export function getDefaultIconLayout() {
       { id: "skip-dialogs", icon: "fa-square-question", enabled: true, order: 2 },
       { id: "group-rolls", icon: "fa-users-rectangle", enabled: true, order: 3 },
       { id: "show-options", icon: "fa-bars-sort", enabled: true, order: 4 },
-      { id: "open-settings", icon: "fa-cog", enabled: true, order: 5 }
+      { id: "open-settings", icon: "fa-cog", enabled: true, order: 5 },
+      { id: "premium-features", icon: "fa-gem", enabled: true, order: 6 }
     ],
     actorActions: [
       { id: "filter-actors", icon: "fa-filter-list", enabled: true, order: 0 },

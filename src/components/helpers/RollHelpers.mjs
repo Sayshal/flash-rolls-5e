@@ -778,32 +778,86 @@ export const RollHelpers = {
   },
 
   /**
-   * Determine if roll dialog should be skipped based on settings and context
-   * @param {boolean} [sendRequest] - Whether this is a roll request (for interceptions)
+   * Centralized method to determine if roll dialog should be skipped.
+   * Handles all skip dialog logic for both GM and player contexts.
+   * @param {Object} options - Configuration options
+   * @param {Event} [options.event] - The triggering event (for modifier key detection)
+   * @param {boolean} [options.isPC=false] - Whether the actor is a PC with active player owner
+   * @param {boolean} [options.isNPC=false] - Whether the actor is an NPC
+   * @param {boolean} [options.sendRequest] - Whether this is a roll request
+   * @param {boolean} [options.hasNonDigitalDice=false] - Whether user has non-digital dice configured
+   * @param {boolean} [options.forceSkip] - Force skip (explicit override, e.g. from config.skipRollDialog)
+   * @param {boolean} [options.forceShow] - Force show dialog (explicit override)
    * @returns {boolean} Whether to skip the roll dialog
    */
-  shouldSkipRollDialog(sendRequest = null, {isPC = false, isNPC = false}) {
+  shouldSkipRollDialog({event = null, isPC = false, isNPC = false, sendRequest = null, hasNonDigitalDice = false, forceSkip = false, forceShow = false} = {}) {
+    if (forceShow === true) {
+      return false;
+    }
+    if (forceSkip === true) {
+      return true;
+    }
+    if (this._areSkipKeysPressed(event)) {
+      return true;
+    }
+    if (hasNonDigitalDice) {
+      return true;
+    }
+    if (game.user.isGM) {
+      return this._shouldSkipDialogGM({isPC, isNPC, sendRequest});
+    }
+    return false;
+  },
+
+  /**
+   * GM-specific skip dialog logic based on settings.
+   * @private
+   * @param {Object} options
+   * @param {boolean} [options.isPC=false] - Whether the actor is a PC with active player owner
+   * @param {boolean} [options.isNPC=false] - Whether the actor is an NPC
+   * @param {boolean} [options.sendRequest] - Whether this is a roll request
+   * @returns {boolean} Whether GM should skip the dialog
+   */
+  _shouldSkipDialogGM({isPC = false, isNPC = false, sendRequest = null} = {}) {
     const SETTINGS = getSettings();
     const skipRollDialog = SettingsUtil.get(SETTINGS.skipRollDialog.tag);
-    
-    // 1. If skipRollDialog setting is false, always return false
+
     if (!skipRollDialog) {
       return false;
     }
-    
+
     const skipRollDialogOption = SettingsUtil.get(SETTINGS.skipRollDialogOption.tag);
     const rollRequestsEnabled = SettingsUtil.get(SETTINGS.rollRequestsEnabled.tag);
-    
+
     switch (skipRollDialogOption) {
       case 1: // all rolls
         return true;
-      case 2: // Only request rolls
+      case 2: // Only request rolls (PC actors being sent as request)
         return (isPC===true && sendRequest===true) || (isPC===true && sendRequest !== false && rollRequestsEnabled === true);
-      case 3: // Only non-request rolls
+      case 3: // Only non-request rolls (NPC/local rolls)
         return isNPC===true;
       default:
         return false;
     }
+  },
+
+  /**
+   * Check if skip dialog modifier keys are pressed.
+   * @private
+   * @param {Event} event - The triggering event
+   * @returns {boolean} Whether skip keys are pressed
+   */
+  _areSkipKeysPressed(event) {
+    if (!event) return false;
+
+    const { areKeysPressed } = game.dnd5e?.utils || {};
+    if (!areKeysPressed) {
+      return event.shiftKey || event.altKey || event.ctrlKey || event.metaKey || false;
+    }
+
+    return areKeysPressed(event, "skipDialogNormal") ||
+           areKeysPressed(event, "skipDialogAdvantage") ||
+           areKeysPressed(event, "skipDialogDisadvantage");
   }
 };
 

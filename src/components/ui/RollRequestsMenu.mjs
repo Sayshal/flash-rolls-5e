@@ -26,6 +26,7 @@ import { RollMenuExecutor } from '../managers/roll-menu/RollMenuExecutor.mjs';
 import { RollMenuStateManager } from '../managers/roll-menu/RollMenuStateManager.mjs';
 import { RollMenuStatusManager } from '../managers/roll-menu/RollMenuStatusManager.mjs';
 import { ModuleSettingsMenu } from '../ui/dialogs/ModuleSettingsMenu.mjs';
+import { PremiumFeaturesDialog } from '../ui/dialogs/PremiumFeaturesDialog.mjs';
 import { IconLayoutUtil } from '../utils/IconLayoutUtil.mjs';
     
 
@@ -441,10 +442,18 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
   async _onOpenSettings(event) {
     event.preventDefault();
     event.stopPropagation();
-    
     new ModuleSettingsMenu().render(true);
   }
-  
+
+  /**
+   * Handle open premium features button click
+   */
+  async _onOpenPremiumFeatures(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    new PremiumFeaturesDialog().render(true);
+  }
+
   /**
    * Check if the current user can drop actors into the menu
    * @param {string} selector - The drop target selector
