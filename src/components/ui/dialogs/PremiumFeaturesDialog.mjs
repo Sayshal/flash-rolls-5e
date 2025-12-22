@@ -24,6 +24,7 @@ export class PremiumFeaturesDialog extends HandlebarsApplicationMixin(Applicatio
     this._patronVerified = false;
     this._ddbGameLogStatus = "unknown";
     this._initialDataLoaded = false;
+    this.tabGroups["primary"] = PremiumFeaturesDialog.getLastActiveTab();
   }
 
   /**
@@ -113,7 +114,7 @@ export class PremiumFeaturesDialog extends HandlebarsApplicationMixin(Applicatio
    */
   changeTab(tab, group, options = {}) {
     super.changeTab(tab, group, options);
-    if (group === "primary") {
+    if (group === "primary-tabs") {
       PremiumFeaturesDialog.setLastActiveTab(tab);
     }
   }
@@ -1028,13 +1029,6 @@ export class PremiumFeaturesDialog extends HandlebarsApplicationMixin(Applicatio
     this._attachCharacterClickListeners();
 
     this._loadInitialData();
-
-    if (options.isFirstRender) {
-      const lastTab = PremiumFeaturesDialog.getLastActiveTab();
-      if (lastTab !== "authentication") {
-        this.changeTab(lastTab, "primary");
-      }
-    }
   }
 
   /**
