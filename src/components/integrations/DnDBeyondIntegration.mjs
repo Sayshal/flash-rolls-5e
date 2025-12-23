@@ -33,19 +33,15 @@ export class DnDBeyondIntegration {
       return;
     }
 
-    const config = DnDBConnection.getConfig();
-    if (!config.proxyApiKey) {
-      return;
-    }
-
-    if (!config.isValid) {
-      LogUtil.log("DnDBeyondIntegration: API key set but missing DnDB credentials - skipping auto-connect");
-      return;
-    }
-
     const patronStatus = await PatronSessionManager.getInstance().validateSession();
     if (!patronStatus.isPatron) {
       LogUtil.log("DnDBeyondIntegration: Not a patron - skipping auto-connect");
+      return;
+    }
+
+    const config = DnDBConnection.getConfig();
+    if (!config.isValid) {
+      LogUtil.log("DnDBeyondIntegration: Missing DnDB credentials - skipping auto-connect");
       return;
     }
 

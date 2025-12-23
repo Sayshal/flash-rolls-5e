@@ -34,17 +34,17 @@ export class DnDBConnection {
    */
   static getConfig() {
     const SETTINGS = getSettings();
-    const proxyApiKey = SettingsUtil.get(SETTINGS.proxyApiKey.tag)?.trim() || "";
     const campaignId = SettingsUtil.get(SETTINGS.ddbCampaignId.tag)?.trim() || "";
     const userId = SettingsUtil.get(SETTINGS.ddbUserId.tag)?.trim() || "";
     const cobaltCookie = SettingsUtil.get(SETTINGS.ddbCobaltCookie.tag)?.trim() || "";
+    const sessionToken = PatronSessionManager.getSessionToken();
 
     return {
-      proxyApiKey,
       campaignId,
       userId,
       cobaltCookie,
-      isValid: !!(proxyApiKey && campaignId && userId && cobaltCookie)
+      sessionToken,
+      isValid: !!(sessionToken && campaignId && userId && cobaltCookie)
     };
   }
 
