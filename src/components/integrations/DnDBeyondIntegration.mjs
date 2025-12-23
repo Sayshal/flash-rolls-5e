@@ -8,6 +8,7 @@ import { DnDBConnection } from "./dnd-beyond/DnDBConnection.mjs";
 import { DnDBRollParser } from "./dnd-beyond/DnDBRollParser.mjs";
 import { DnDBRollExecutor } from "./dnd-beyond/DnDBRollExecutor.mjs";
 import { DnDBMidiIntegration } from "./dnd-beyond/DnDBMidiIntegration.mjs";
+import { PatronSessionManager } from "../managers/PatronSessionManager.mjs";
 
 const SOCKET_HANDLERS = {
   EXECUTE_DDB_ROLL: "executeDnDBRoll"
@@ -39,6 +40,12 @@ export class DnDBeyondIntegration {
 
     if (!config.isValid) {
       LogUtil.log("DnDBeyondIntegration: API key set but missing DnDB credentials - skipping auto-connect");
+      return;
+    }
+
+    const patronStatus = await PatronSessionManager.getInstance().validateSession();
+    if (!patronStatus.isPatron) {
+      LogUtil.log("DnDBeyondIntegration: Not a patron - skipping auto-connect");
       return;
     }
 

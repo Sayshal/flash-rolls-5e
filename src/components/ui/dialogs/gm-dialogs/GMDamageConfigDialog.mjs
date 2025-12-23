@@ -224,7 +224,7 @@ export class GMDamageConfigDialog extends GMRollConfigMixin(dnd5e.applications.d
       isCritical: firstRoll?.options?.isCritical || firstRoll?.isCritical || false,
       sendRequest: result.sendRequest,
       isRollRequest: result.sendRequest,
-      skipRollDialog: result.sendRequest ? options.skipRollDialog || false : true,
+      skipRollDialog: result.config?.skipRollDialog ?? (result.sendRequest ? false : true),
       chatMessage: true,
       // Preserve spell slot and scaling information from activity usage
       spell: storedActivityConfig.spell || originalConfig.spell || {},

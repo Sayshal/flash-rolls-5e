@@ -1,34 +1,50 @@
 <section class="tab form-content {{tab.cssClass}}" data-group="primary-tabs" data-tab="{{tab.id}}">
-  <p class="notes">{{localize "FLASH_ROLLS.settings.premiumFeatures.description"}}</p>
+  <p class="hint on">{{localize "FLASH_ROLLS.settings.premiumFeatures.description"}}</p>
 
   <fieldset>
     <legend>{{localize "FLASH_ROLLS.settings.premiumFeatures.patreonAuth"}}</legend>
 
-    <div class="form-group">
-      <label>{{localize "FLASH_ROLLS.settings.premiumFeatures.apiKey"}}</label>
-      <div class="form-fields">
-        <input type="password" name="proxyApiKey" value="{{proxyApiKey}}"
-              placeholder="crlngn_..." autocomplete="off" />
+    {{#if patronStatus.isPatron}}
+      <div class="form-group patron-info">
+        <div class="status-card success">
+          <div class="status-header">
+            <h3>{{localize "FLASH_ROLLS.settings.premiumFeatures.connected"}}</h3>
+          </div>
+          <div class="patron-details">
+            <p><strong>{{localize "FLASH_ROLLS.settings.premiumFeatures.patronName"}}:</strong> {{patronStatus.name}}</p>
+            <p><strong>{{localize "FLASH_ROLLS.settings.premiumFeatures.patronTier"}}:</strong> ${{patronTierDollars}}/month</p>
+          </div>
+        </div>
       </div>
-      <p class="hint">{{localize "FLASH_ROLLS.settings.premiumFeatures.apiKeyHint"}}</p>
-    </div>
 
-    <div class="form-group buttons-row">
-      <button type="button" data-action="authenticatePatreon" class="patreon-btn">
-        <i class="fab fa-patreon"></i>
-        {{localize "FLASH_ROLLS.settings.premiumFeatures.authenticateBtn"}}
-      </button>
-      <button type="button" data-action="testConnection" class="test-btn" {{#unless hasApiKey}}disabled{{/unless}}>
-        <i class="fas fa-plug"></i>
-        {{localize "FLASH_ROLLS.settings.premiumFeatures.testConnectionBtn"}}
-      </button>
-    </div>
-
-    <div class="form-group connection-status patreon-status">
-      <div class="status-indicator {{patreonStatusClass}}">
-        <i class="fas {{patreonStatusIcon}}"></i>
-        <span>{{patreonStatusText}}</span>
+      <div class="form-group buttons-row">
+        <button type="button" data-action="refreshSession" class="refresh-btn">
+          <i class="fas fa-sync-alt"></i>
+          {{localize "FLASH_ROLLS.settings.premiumFeatures.refreshBtn"}}
+        </button>
+        <button type="button" data-action="logout" class="logout-btn">
+          <i class="fas fa-sign-out-alt"></i>
+          {{localize "FLASH_ROLLS.settings.premiumFeatures.logoutBtn"}}
+        </button>
       </div>
-    </div>
+    {{else}}
+      <div class="form-group">
+        <p class="hint">{{localize "FLASH_ROLLS.settings.premiumFeatures.notConnected"}}</p>
+      </div>
+
+      <div class="form-group buttons-row">
+        <button type="button" data-action="authenticatePatreon" class="patreon-btn">
+          <i class="fab fa-patreon"></i>
+          {{localize "FLASH_ROLLS.settings.premiumFeatures.authenticateBtn"}}
+        </button>
+      </div>
+
+      <div class="form-group connection-status patreon-status">
+        <div class="status-indicator {{patreonStatusClass}}">
+          <i class="fas {{patreonStatusIcon}}"></i>
+          <span>{{patreonStatusText}}</span>
+        </div>
+      </div>
+    {{/if}}
   </fieldset>
 </section>

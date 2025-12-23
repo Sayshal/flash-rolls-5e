@@ -28,6 +28,7 @@ import { MidiActivityManager } from "../managers/MidiActivityManager.mjs";
 import { LibWrapperUtil } from "../utils/LibWrapperUtil.mjs";
 import { MonksActiveTilesIntegration } from "../integrations/MonksActiveTilesIntegration.mjs";
 import { DnDBeyondIntegration } from "../integrations/DnDBeyondIntegration.mjs";
+import { PatronSessionManager } from "../managers/PatronSessionManager.mjs";
 
 /**
  * Utility class for managing all module hooks in one place
@@ -235,6 +236,7 @@ export class HooksManager {
     ActorDirectoryIconUtil.initialize();
     SidebarController.addSidebarControls(ui.sidebar, ui.sidebar?.element);
     UpdateNewsUtil.init();
+    PatronSessionManager.initialize();
 
     if (game.user.isGM) {
       LibWrapperUtil.showMissingLibWrapperNotification();

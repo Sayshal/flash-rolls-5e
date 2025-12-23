@@ -1,0 +1,62 @@
+/* Patron Status Indicator Animations */
+
+@keyframes patron-pulse {
+  0%, 100% {
+    text-shadow: none;
+  }
+  50% {
+    text-shadow: 0 0 12px var(--color-warm-2), 0 0 12px var(--color-warm-2);
+  }
+}
+
+/* Status classes for gem icon in Flash Token Bar */
+.flash-rolls-menu .action-icons .gem-icon.patron-connected-ddb {
+  animation: patron-pulse 2s ease-in-out infinite;
+}
+
+.flash-rolls-menu .action-icons .gem-icon.patron-connected {
+  color: var(--color-text-primary);
+  opacity: 1;
+}
+
+.flash-rolls-menu .action-icons .gem-icon.patron-disconnected {
+  color: var(--color-text-primary);
+  opacity: 0.45;
+}
+
+/* Premium authentication tab status card */
+#flash5e-premium-features-dialog .status-card {
+  background: transparent;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 1rem;
+  margin: 12px 0;
+  color: var(--color-text-primary);
+}
+
+#flash5e-premium-features-dialog .status-card.success {
+  border-color: var(--color-warm-2);
+}
+
+#flash5e-premium-features-dialog .status-card .status-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+#flash5e-premium-features-dialog .status-card .status-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+#flash5e-premium-features-dialog .patron-details p {
+  margin: 4px 0;
+}
+
+/* Button styling */
+#flash5e-premium-features-dialog .refresh-btn,
+#flash5e-premium-features-dialog .logout-btn {
+  margin: 4px;
+}

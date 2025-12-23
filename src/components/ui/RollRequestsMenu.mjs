@@ -28,6 +28,7 @@ import { RollMenuStatusManager } from '../managers/roll-menu/RollMenuStatusManag
 import { ModuleSettingsMenu } from '../ui/dialogs/ModuleSettingsMenu.mjs';
 import { PremiumFeaturesDialog } from '../ui/dialogs/PremiumFeaturesDialog.mjs';
 import { IconLayoutUtil } from '../utils/IconLayoutUtil.mjs';
+import { PatronSessionManager } from '../managers/PatronSessionManager.mjs';
     
 
 /**
@@ -232,9 +233,11 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
     this._updateItemHook = Hooks.on(HOOKS_CORE.UPDATE_ITEM, this._onItemUpdate.bind(this));
     this._createItemHook = Hooks.on(HOOKS_CORE.CREATE_ITEM, this._onItemUpdate.bind(this));
     this._deleteItemHook = Hooks.on(HOOKS_CORE.DELETE_ITEM, this._onItemUpdate.bind(this));
-    
+    this._patronStatusHook = Hooks.on(`${MODULE.ID}.patronStatusChanged`, this._onPatronStatusChange.bind(this));
+
     ActorDragUtil.initializeActorDrag(this);
     this._updateRequestTypesVisibilityNoRender();
+    this._updateGemIconStatus();
 
     RollMenuEventManager.attachListeners(this, this.element);
   }
@@ -271,6 +274,51 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
 
       this._tokenUpdateTimeout = null;
     }, 100);
+  }
+
+  /**
+   * Handle patron status changes from PatronSessionManager
+   * Updates the gem icon visual state
+   */
+  _onPatronStatusChange(status) {
+    if (!this.rendered) return;
+    this._updateGemIconStatus();
+  }
+
+  /**
+   * Update the gem icon CSS classes and tooltip based on patron status
+   */
+  _updateGemIconStatus() {
+    if (!this.element) return;
+
+    const premiumBtn = this.element.querySelector('#flash5e-premium-features');
+    const gemIcon = premiumBtn?.querySelector('i.fa-gem');
+    if (!gemIcon) return;
+
+    gemIcon.classList.remove('patron-connected-ddb', 'patron-connected', 'patron-disconnected');
+
+    const patronStatus = PatronSessionManager.getStatus();
+
+    if (patronStatus.isPatron && patronStatus.ddbConnected) {
+      gemIcon.classList.add('patron-connected-ddb', 'gem-icon');
+    } else if (patronStatus.isPatron) {
+      gemIcon.classList.add('patron-connected', 'gem-icon');
+    } else {
+      gemIcon.classList.add('patron-disconnected', 'gem-icon');
+    }
+
+    const title = game.i18n.localize("FLASH_ROLLS.settings.premiumFeatures.label");
+    const patreonLabel = game.i18n.localize("FLASH_ROLLS.settings.premiumFeatures.tooltipPatreon");
+    const ddbLabel = game.i18n.localize("FLASH_ROLLS.settings.premiumFeatures.tooltipDDB");
+    const verifiedText = patronStatus.isPatron
+      ? game.i18n.localize("FLASH_ROLLS.settings.premiumFeatures.tooltipVerified")
+      : game.i18n.localize("FLASH_ROLLS.settings.premiumFeatures.tooltipNotVerified");
+    const ddbText = patronStatus.ddbConnected
+      ? game.i18n.localize("FLASH_ROLLS.settings.premiumFeatures.tooltipOn")
+      : game.i18n.localize("FLASH_ROLLS.settings.premiumFeatures.tooltipOff");
+
+    const tooltip = `<strong>${title}</strong><br/><b>${patreonLabel}</b> ${verifiedText}<br/><b>${ddbLabel}</b> ${ddbText}`;
+    premiumBtn.setAttribute('data-tooltip', tooltip);
   }
 
   _scrollToActor(uniqueId) {
@@ -452,6 +500,38 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
     event.preventDefault();
     event.stopPropagation();
     new PremiumFeaturesDialog().render(true);
+  }
+
+  /**
+   * Handle context menu on premium features button
+   * @param {MouseEvent} event - The context menu event
+   */
+  _onPremiumFeaturesContextMenu(event) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    const patronStatus = PatronSessionManager.getStatus();
+    const menuItems = [];
+
+    if (!patronStatus.isPatron) {
+      menuItems.push({
+        name: game.i18n.localize("FLASH_ROLLS.settings.premiumFeatures.contextReconnect"),
+        icon: '<i class="fab fa-patreon"></i>',
+        callback: () => {
+          new PremiumFeaturesDialog().render(true);
+        }
+      });
+    }
+
+    if (menuItems.length === 0) return;
+
+    const contextMenu = new foundry.applications.ui.ContextMenu(
+      this.element,
+      '#flash5e-premium-features',
+      menuItems,
+      { eventName: 'contextmenu' }
+    );
+    contextMenu.render(event.currentTarget, { event });
   }
 
   /**
@@ -1156,9 +1236,10 @@ export default class RollRequestsMenu extends HandlebarsApplicationMixin(Applica
       { hook: HOOKS_CORE.CONTROL_TOKEN, property: '_tokenControlHook' },
       { hook: HOOKS_CORE.UPDATE_ITEM, property: '_updateItemHook' },
       { hook: HOOKS_CORE.CREATE_ITEM, property: '_createItemHook' },
-      { hook: HOOKS_CORE.DELETE_ITEM, property: '_deleteItemHook' }
+      { hook: HOOKS_CORE.DELETE_ITEM, property: '_deleteItemHook' },
+      { hook: `${MODULE.ID}.patronStatusChanged`, property: '_patronStatusHook' }
     ];
-    
+
     hooks.forEach(({ hook, property }) => {
       if (this[property]) {
         Hooks.off(hook, this[property]);

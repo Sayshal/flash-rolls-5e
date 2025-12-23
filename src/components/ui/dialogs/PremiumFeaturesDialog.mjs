@@ -3,6 +3,7 @@ import { getSettings } from "../../../constants/Settings.mjs";
 import { LogUtil } from "../../utils/LogUtil.mjs";
 import { SettingsUtil } from "../../utils/SettingsUtil.mjs";
 import { DnDBeyondIntegration } from "../../integrations/DnDBeyondIntegration.mjs";
+import { PatronSessionManager } from "../../managers/PatronSessionManager.mjs";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -61,6 +62,8 @@ export class PremiumFeaturesDialog extends HandlebarsApplicationMixin(Applicatio
     },
     actions: {
       authenticatePatreon: PremiumFeaturesDialog.#onAuthenticatePatreon,
+      refreshSession: PremiumFeaturesDialog.#onRefreshSession,
+      logout: PremiumFeaturesDialog.#onLogout,
       testConnection: PremiumFeaturesDialog.#onTestConnection,
       testGameLog: PremiumFeaturesDialog.#onTestGameLog,
       refreshCharacters: PremiumFeaturesDialog.#onRefreshCharacters,
@@ -145,14 +148,15 @@ export class PremiumFeaturesDialog extends HandlebarsApplicationMixin(Applicatio
     const ddbCampaignId = SettingsUtil.get(SETTINGS.ddbCampaignId.tag) || "";
     const ddbUserId = SettingsUtil.get(SETTINGS.ddbUserId.tag) || "";
     const ddbCobaltCookie = SettingsUtil.get(SETTINGS.ddbCobaltCookie.tag) || "";
-    const proxyApiKey = SettingsUtil.get(SETTINGS.proxyApiKey.tag) || "";
+    const hasSessionToken = !!PatronSessionManager.getSessionToken();
 
     const ddbStatusInfo = this._getDDBConnectionStatusInfo(this._ddbGameLogStatus);
     const patreonStatusInfo = this._getPatreonStatusInfo();
-    const canTestGameLog = this._patronVerified && ddbCampaignId && ddbUserId && ddbCobaltCookie;
+    const patronStatus = PatronSessionManager.getStatus();
+    const canTestGameLog = patronStatus.isPatron && ddbCampaignId && ddbUserId && ddbCobaltCookie;
 
     const hasDDBImporter = game.modules.get("ddb-importer")?.active;
-    const canShowCharacters = this._patronVerified && ddbCampaignId && ddbCobaltCookie;
+    const canShowCharacters = patronStatus.isPatron && ddbCampaignId && ddbCobaltCookie;
 
     const charactersWithMapping = this._campaignCharacters.map(char => {
       const mappingInfo = this._findActorForCharacter(char.id, char.name);
@@ -180,22 +184,25 @@ export class PremiumFeaturesDialog extends HandlebarsApplicationMixin(Applicatio
         const characterCountText = game.i18n.format("FLASH_ROLLS.settings.premiumFeatures.characterCountText", {
           count: charactersWithMapping.length
         });
+        const patronStatus = PatronSessionManager.getStatus();
+        const patronTierDollars = patronStatus.tier ? (patronStatus.tier / 100).toFixed(2) : "0.00";
         Object.assign(partContext, {
           ddbCampaignId,
           ddbUserId,
           ddbCobaltCookie,
-          proxyApiKey,
-          hasApiKey: !!proxyApiKey,
+          hasSessionToken,
           proxyAuthUrl: `${PROXY_BASE_URL}/auth/patreon`,
+          patronStatus,
+          patronTierDollars,
           patreonStatusClass: patreonStatusInfo.cssClass,
           patreonStatusIcon: patreonStatusInfo.icon,
           patreonStatusText: patreonStatusInfo.text,
           ddbStatusClass: ddbStatusInfo.cssClass,
           ddbStatusIcon: ddbStatusInfo.icon,
           ddbStatusText: ddbStatusInfo.text,
-          patronVerified: this._patronVerified,
-          canShowCharacters,
-          canTestGameLog,
+          patronVerified: patronStatus.isPatron,
+          canShowCharacters: patronStatus.isPatron && canShowCharacters,
+          canTestGameLog: patronStatus.isPatron && canTestGameLog,
           isLoadingCharacters: this._isLoadingCharacters,
           campaignCharacters: charactersWithMapping,
           hasCharacters: charactersWithMapping.length > 0,
@@ -252,7 +259,8 @@ export class PremiumFeaturesDialog extends HandlebarsApplicationMixin(Applicatio
    * @returns {Object} Status display information
    */
   _getPatreonStatusInfo() {
-    if (this._patronVerified) {
+    const patronStatus = PatronSessionManager.getStatus();
+    if (patronStatus.isPatron) {
       return {
         cssClass: "connected",
         icon: "fa-circle-check",
@@ -295,7 +303,7 @@ export class PremiumFeaturesDialog extends HandlebarsApplicationMixin(Applicatio
       case "unknown":
         return {
           cssClass: "unknown",
-          icon: "fa-circle-question",
+          icon: "",
           text: game.i18n.localize("FLASH_ROLLS.settings.premiumFeatures.statusNotTested")
         };
       default:
@@ -313,11 +321,11 @@ export class PremiumFeaturesDialog extends HandlebarsApplicationMixin(Applicatio
    */
   async _fetchCampaignCharacters(showLoading = true) {
     const SETTINGS = getSettings();
-    const proxyApiKey = SettingsUtil.get(SETTINGS.proxyApiKey.tag);
     const campaignId = SettingsUtil.get(SETTINGS.ddbCampaignId.tag);
     const cobaltCookie = SettingsUtil.get(SETTINGS.ddbCobaltCookie.tag);
+    const sessionToken = PatronSessionManager.getSessionToken();
 
-    if (!proxyApiKey || !campaignId || !cobaltCookie) {
+    if (!sessionToken || !campaignId || !cobaltCookie) {
       return [];
     }
 
@@ -327,7 +335,7 @@ export class PremiumFeaturesDialog extends HandlebarsApplicationMixin(Applicatio
 
       const response = await fetch(`${PROXY_BASE_URL}/ddb/campaign/${campaignId}/characters`, {
         headers: {
-          "X-API-Key": proxyApiKey,
+          "Authorization": `Bearer ${sessionToken}`,
           "X-Cobalt-Cookie": cobaltCookie
         }
       });
@@ -481,17 +489,16 @@ export class PremiumFeaturesDialog extends HandlebarsApplicationMixin(Applicatio
    * Verify Patreon status
    */
   async _verifyPatreonStatus() {
-    const SETTINGS = getSettings();
-    const proxyApiKey = SettingsUtil.get(SETTINGS.proxyApiKey.tag);
+    const sessionToken = PatronSessionManager.getSessionToken();
 
-    if (!proxyApiKey) {
+    if (!sessionToken) {
       this._patronVerified = false;
       return;
     }
 
     try {
       const response = await fetch(`${PROXY_BASE_URL}/auth/status`, {
-        headers: { "X-API-Key": proxyApiKey }
+        headers: { "Authorization": `Bearer ${sessionToken}` }
       });
       const data = await response.json();
       this._patronVerified = data.authenticated && data.isPatron;
@@ -509,7 +516,6 @@ export class PremiumFeaturesDialog extends HandlebarsApplicationMixin(Applicatio
     const ddbCampaignId = this.element.querySelector('input[name="ddbCampaignId"]')?.value;
     const ddbUserId = this.element.querySelector('input[name="ddbUserId"]')?.value;
     const ddbCobaltCookie = this.element.querySelector('input[name="ddbCobaltCookie"]')?.value;
-    const proxyApiKey = this.element.querySelector('input[name="proxyApiKey"]')?.value;
 
     if (ddbCampaignId !== undefined) {
       await SettingsUtil.set(SETTINGS.ddbCampaignId.tag, ddbCampaignId);
@@ -520,9 +526,6 @@ export class PremiumFeaturesDialog extends HandlebarsApplicationMixin(Applicatio
     if (ddbCobaltCookie !== undefined) {
       await SettingsUtil.set(SETTINGS.ddbCobaltCookie.tag, ddbCobaltCookie);
     }
-    if (proxyApiKey !== undefined) {
-      await SettingsUtil.set(SETTINGS.proxyApiKey.tag, proxyApiKey);
-    }
 
     ui.notifications.info(game.i18n.localize("FLASH_ROLLS.notifications.settingsUpdated"));
     this.close();
@@ -532,25 +535,109 @@ export class PremiumFeaturesDialog extends HandlebarsApplicationMixin(Applicatio
    * Handle Patreon authentication button click
    */
   static async #onAuthenticatePatreon(event, target) {
-    window.open(`${PROXY_BASE_URL}/auth/patreon`, "_blank");
+    console.log(`${MODULE.ID} | Opening Patreon authentication popup`);
+
+    const messageHandler = async (event) => {
+      if (event.origin !== new URL(PROXY_BASE_URL).origin) {
+        console.log(`${MODULE.ID} | Ignoring message from unexpected origin: ${event.origin}`);
+        return;
+      }
+
+      if (event.data && event.data.type === 'patreon-auth-success') {
+        console.log(`${MODULE.ID} | Received auth success message from popup`, event.data);
+        window.removeEventListener('message', messageHandler);
+
+        try {
+          const sessionToken = event.data.sessionToken;
+          if (sessionToken) {
+            PatronSessionManager.setSessionToken(sessionToken);
+            LogUtil.log("Session token received and stored");
+          } else {
+            LogUtil.warn("No session token in auth success message");
+          }
+          const status = await PatronSessionManager.getInstance().validateSession(true);
+          LogUtil.log("Session validated successfully", [status]);
+
+          const instance = PremiumFeaturesDialog.getInstance();
+          if (instance && instance.rendered) {
+            LogUtil.log("Refreshing existing dialog");
+            instance.render();
+          } else {
+            LogUtil.log("Opening new dialog");
+            new PremiumFeaturesDialog().render(true);
+          }
+
+          if (status.isPatron) {
+            ui.notifications.info(
+              game.i18n.format("FLASH_ROLLS.settings.premiumFeatures.connectionSuccess", {
+                name: status.name || "Patron"
+              })
+            );
+            DnDBeyondIntegration.initialize();
+          } else {
+            ui.notifications.warn(game.i18n.localize("FLASH_ROLLS.settings.premiumFeatures.patreonNotVerified"));
+          }
+        } catch (err) {
+          LogUtil.error("Session validation failed:", [err]);
+          ui.notifications.error(game.i18n.localize("FLASH_ROLLS.settings.premiumFeatures.connectionFailed"));
+        }
+      }
+    };
+
+    window.addEventListener('message', messageHandler);
+
+    const authWindow = window.open(
+      `${PROXY_BASE_URL}/auth/patreon`,
+      'patreon-auth',
+      'width=600,height=800,left=200,top=100'
+    );
+
+    if (!authWindow) {
+      console.error(`${MODULE.ID} | Popup blocked`);
+      window.removeEventListener('message', messageHandler);
+      ui.notifications.error(game.i18n.localize("FLASH_ROLLS.settings.premiumFeatures.popupBlocked"));
+      return;
+    }
+
+    console.log(`${MODULE.ID} | Popup opened, waiting for success message`);
+
+    setTimeout(() => {
+      window.removeEventListener('message', messageHandler);
+      console.log(`${MODULE.ID} | Message listener timeout after 2 minutes`);
+    }, 120000);
   }
 
   /**
-   * Handle test connection button click
+   * Handle refresh session button click
+   */
+  static async #onRefreshSession(event, target) {
+    await PatronSessionManager.getInstance().validateSession(true);
+    this.render();
+  }
+
+  /**
+   * Handle logout button click
+   */
+  static async #onLogout(event, target) {
+    await PatronSessionManager.logout();
+    this.render();
+  }
+
+  /**
+   * Handle test connection button click - validates the current session
    */
   static async #onTestConnection(event, target) {
-    const apiKeyInput = this.element.querySelector('input[name="proxyApiKey"]');
-    const proxyApiKey = apiKeyInput?.value?.trim();
+    const sessionToken = PatronSessionManager.getSessionToken();
 
-    if (!proxyApiKey) {
-      ui.notifications.warn(game.i18n.localize("FLASH_ROLLS.settings.premiumFeatures.noApiKey"));
+    if (!sessionToken) {
+      ui.notifications.warn(game.i18n.localize("FLASH_ROLLS.settings.premiumFeatures.notConnected"));
       return;
     }
 
     try {
       const response = await fetch(`${PROXY_BASE_URL}/auth/status`, {
         headers: {
-          "X-API-Key": proxyApiKey
+          "Authorization": `Bearer ${sessionToken}`
         }
       });
 
@@ -592,12 +679,23 @@ export class PremiumFeaturesDialog extends HandlebarsApplicationMixin(Applicatio
    * Handle test game log button click - tests the DDB credentials
    */
   static async #onTestGameLog(event, target) {
+    const patronStatus = PatronSessionManager.getStatus();
+    const sessionToken = PatronSessionManager.getSessionToken();
+
+    if (!patronStatus.isPatron || !sessionToken) {
+      await foundry.applications.api.DialogV2.prompt({
+        window: { title: game.i18n.localize("FLASH_ROLLS.settings.premiumFeatures.label") },
+        content: `<p>${game.i18n.localize("FLASH_ROLLS.settings.premiumFeatures.patreonRequired")}</p>`,
+        ok: { label: game.i18n.localize("Close") }
+      });
+      return;
+    }
+
     const campaignId = this.element.querySelector('input[name="ddbCampaignId"]')?.value?.trim();
     const userId = this.element.querySelector('input[name="ddbUserId"]')?.value?.trim();
     const cobaltCookie = this.element.querySelector('input[name="ddbCobaltCookie"]')?.value?.trim();
-    const proxyApiKey = this.element.querySelector('input[name="proxyApiKey"]')?.value?.trim();
 
-    if (!campaignId || !userId || !cobaltCookie || !proxyApiKey) {
+    if (!campaignId || !userId || !cobaltCookie) {
       ui.notifications.warn(game.i18n.localize("FLASH_ROLLS.settings.premiumFeatures.missingDDBCredentials"));
       return;
     }
@@ -610,7 +708,7 @@ export class PremiumFeaturesDialog extends HandlebarsApplicationMixin(Applicatio
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-API-Key": proxyApiKey
+          "Authorization": `Bearer ${sessionToken}`
         },
         body: JSON.stringify({ cobaltCookie, userId, gameId: campaignId })
       });
@@ -973,10 +1071,9 @@ export class PremiumFeaturesDialog extends HandlebarsApplicationMixin(Applicatio
     if (this._initialDataLoaded) return;
     this._initialDataLoaded = true;
 
-    const SETTINGS = getSettings();
-    const proxyApiKey = SettingsUtil.get(SETTINGS.proxyApiKey.tag);
+    const sessionToken = PatronSessionManager.getSessionToken();
 
-    if (proxyApiKey) {
+    if (sessionToken) {
       await this._verifyPatreonStatus();
       this._updatePatreonStatusIndicator();
       if (this._patronVerified) {
@@ -990,23 +1087,12 @@ export class PremiumFeaturesDialog extends HandlebarsApplicationMixin(Applicatio
    * Render callback
    */
   async _onRender(context, options) {
-    const apiKeyInput = this.element.querySelector('input[name="proxyApiKey"]');
-    const testBtn = this.element.querySelector('[data-action="testConnection"]');
-
-    if (apiKeyInput && testBtn) {
-      const updateTestButton = () => {
-        testBtn.disabled = !apiKeyInput.value.trim();
-      };
-      apiKeyInput.addEventListener("input", updateTestButton);
-      updateTestButton();
-    }
-
     const campaignIdInput = this.element.querySelector('input[name="ddbCampaignId"]');
     const userIdInput = this.element.querySelector('input[name="ddbUserId"]');
     const cobaltCookieInput = this.element.querySelector('input[name="ddbCobaltCookie"]');
 
     const debouncedRefresh = this._debounce(async () => {
-      if (!this._patronVerified) return;
+      if (!PatronSessionManager.isPatron()) return;
 
       const SETTINGS = getSettings();
       const campaignId = campaignIdInput?.value?.trim();

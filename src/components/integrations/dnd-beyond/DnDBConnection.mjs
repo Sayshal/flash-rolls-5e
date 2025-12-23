@@ -2,6 +2,7 @@ import { getSettings } from "../../../constants/Settings.mjs";
 import { LogUtil } from "../../utils/LogUtil.mjs";
 import { SettingsUtil } from "../../utils/SettingsUtil.mjs";
 import { PremiumFeaturesDialog } from "../../ui/dialogs/PremiumFeaturesDialog.mjs";
+import { PatronSessionManager } from "../../managers/PatronSessionManager.mjs";
 
 const PROXY_BASE_URL = "https://proxy.carolingian.io";
 
@@ -66,12 +67,17 @@ export class DnDBConnection {
     this._notifyStatusChange();
 
     try {
+      const sessionToken = PatronSessionManager.getSessionToken();
+      const headers = {
+        "Content-Type": "application/json"
+      };
+      if (sessionToken) {
+        headers["Authorization"] = `Bearer ${sessionToken}`;
+      }
       const response = await fetch(`${PROXY_BASE_URL}/ddb/connect`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-API-Key": config.proxyApiKey
-        },
+        credentials: "include",
+        headers,
         body: JSON.stringify({
           gameId: config.campaignId,
           userId: config.userId,
@@ -110,8 +116,8 @@ export class DnDBConnection {
       return;
     }
 
-    const config = this.getConfig();
-    const eventUrl = `${PROXY_BASE_URL}/ddb/events/${this._sessionId}?key=${encodeURIComponent(config.proxyApiKey)}`;
+    const sessionToken = PatronSessionManager.getSessionToken();
+    const eventUrl = `${PROXY_BASE_URL}/ddb/events/${this._sessionId}?token=${encodeURIComponent(sessionToken || '')}`;
 
     this._eventSource = new EventSource(eventUrl, {
       withCredentials: false
@@ -119,6 +125,7 @@ export class DnDBConnection {
 
     this._eventSource.onopen = () => {
       LogUtil.log("DnDBConnection: Event stream opened");
+      PatronSessionManager.setDDBConnected(true);
     };
 
     this._eventSource.onmessage = (event) => {
@@ -162,7 +169,7 @@ export class DnDBConnection {
   /**
    * Schedule a reconnection attempt
    */
-  static _scheduleReconnect() {
+  static async _scheduleReconnect() {
     if (this._reconnectTimer) {
       clearTimeout(this._reconnectTimer);
     }
@@ -172,6 +179,21 @@ export class DnDBConnection {
       ui.notifications.error(
         game.i18n.localize("FLASH_ROLLS.notifications.ddbConnectionFailed")
       );
+      PatronSessionManager.setDDBConnected(false);
+      return;
+    }
+
+    const patronStatus = PatronSessionManager.getStatus();
+    if (!patronStatus.isPatron) {
+      LogUtil.warn("DnDBConnection: Not a patron - stopping reconnection attempts");
+      PatronSessionManager.setDDBConnected(false);
+      return;
+    }
+
+    const sessionToken = PatronSessionManager.getSessionToken();
+    if (!sessionToken) {
+      LogUtil.warn("DnDBConnection: No session token - stopping reconnection attempts");
+      PatronSessionManager.setDDBConnected(false);
       return;
     }
 

@@ -259,7 +259,7 @@ export class GMAttackConfigDialog extends GMRollConfigMixin(dnd5e.applications.d
       target,
       sendRequest: result.sendRequest,
       isRollRequest: result.sendRequest,
-      skipRollDialog: result.sendRequest ? options.skipRollDialog || false : true,
+      skipRollDialog: result.config?.skipRollDialog ?? (result.sendRequest ? false : true),
       chatMessage: !GeneralUtil.isModuleOn('midi-qol') || true,
       // Preserve spell slot and scaling information from activity usage
       spell: storedActivityConfig?.spell || originalConfig?.spell || {},

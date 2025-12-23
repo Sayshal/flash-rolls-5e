@@ -168,7 +168,7 @@ export class SettingsUtil {
 
     try{
       await game.settings.set(moduleName, settingName, newValue);
-      LogUtil.log('SettingsUtil.set - success', [moduleName, settingName, newValue]);
+      LogUtil.log('SettingsUtil.set - success', [moduleName, settingName]);
     }catch(e){
       LogUtil.error('SettingsUtil.set - error', [e]);
     }

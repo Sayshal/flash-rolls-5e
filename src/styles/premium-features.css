@@ -63,8 +63,8 @@
   .status-indicator {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 0.25rem;
+    gap: 0rem;
+    padding: 0.5rem 0.15rem;
     border-radius: 4px;
     font-weight: 500;
 
@@ -85,6 +85,7 @@
 
     i {
       font-size: 1em;
+      margin-right: 0.5rem;
     }
   }
 

@@ -3,6 +3,7 @@ import { MODULE_ID } from "../../../../constants/General.mjs";
 import { HOOKS_CORE } from "../../../../constants/Hooks.mjs";
 import { GeneralUtil } from "../../../utils/GeneralUtil.mjs";
 import { FlashAPI } from "../../../core/FlashAPI.mjs";
+import { RollHelpers } from "../../../helpers/RollHelpers.mjs";
 
 // Check if required D&D5e classes exist
 Hooks.once(HOOKS_CORE.READY, () => {
@@ -102,16 +103,22 @@ export function GMRollConfigMixin(Base) {
     _finalizeRolls(action) {
       const finalizedRolls = super._finalizeRolls(action);
       LogUtil.log(`_finalizeRolls #1`, [finalizedRolls, this.sendRequest]);
-      
+
       if (this.dcValue !== undefined && this.dcValue !== null) {
         for (const roll of finalizedRolls) {
           roll.options.target = this.dcValue;
         }
       }
-      
+
       this.config.sendRequest = this.sendRequest;
-      this.config.skipRollDialog = this.sendRequest ? this.config.skipRollDialog || false : true;
-      
+      const hasPC = this.actors?.some(a => RollHelpers.isPlayerOwned(a));
+      const hasNPC = this.actors?.some(a => !RollHelpers.isPlayerOwned(a));
+      this.config.skipRollDialog = RollHelpers.shouldSkipRollDialog({
+        isPC: hasPC,
+        isNPC: hasNPC,
+        sendRequest: this.sendRequest
+      });
+
       return finalizedRolls;
     }
     
