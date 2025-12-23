@@ -148,6 +148,7 @@ export class PremiumFeaturesDialog extends HandlebarsApplicationMixin(Applicatio
     const ddbCampaignId = SettingsUtil.get(SETTINGS.ddbCampaignId.tag) || "";
     const ddbUserId = SettingsUtil.get(SETTINGS.ddbUserId.tag) || "";
     const ddbCobaltCookie = SettingsUtil.get(SETTINGS.ddbCobaltCookie.tag) || "";
+    const ddbNoAutoConsumeSpellSlot = SettingsUtil.get(SETTINGS.ddbNoAutoConsumeSpellSlot.tag) || false;
     const hasSessionToken = !!PatronSessionManager.getSessionToken();
 
     const ddbStatusInfo = this._getDDBConnectionStatusInfo(this._ddbGameLogStatus);
@@ -190,6 +191,7 @@ export class PremiumFeaturesDialog extends HandlebarsApplicationMixin(Applicatio
           ddbCampaignId,
           ddbUserId,
           ddbCobaltCookie,
+          ddbNoAutoConsumeSpellSlot,
           hasSessionToken,
           proxyAuthUrl: `${PROXY_BASE_URL}/auth/patreon`,
           patronStatus,
@@ -516,6 +518,7 @@ export class PremiumFeaturesDialog extends HandlebarsApplicationMixin(Applicatio
     const ddbCampaignId = this.element.querySelector('input[name="ddbCampaignId"]')?.value;
     const ddbUserId = this.element.querySelector('input[name="ddbUserId"]')?.value;
     const ddbCobaltCookie = this.element.querySelector('input[name="ddbCobaltCookie"]')?.value;
+    const ddbNoAutoConsumeSpellSlot = this.element.querySelector('input[name="ddbNoAutoConsumeSpellSlot"]')?.checked;
 
     if (ddbCampaignId !== undefined) {
       await SettingsUtil.set(SETTINGS.ddbCampaignId.tag, ddbCampaignId);
@@ -525,6 +528,9 @@ export class PremiumFeaturesDialog extends HandlebarsApplicationMixin(Applicatio
     }
     if (ddbCobaltCookie !== undefined) {
       await SettingsUtil.set(SETTINGS.ddbCobaltCookie.tag, ddbCobaltCookie);
+    }
+    if (ddbNoAutoConsumeSpellSlot !== undefined) {
+      await SettingsUtil.set(SETTINGS.ddbNoAutoConsumeSpellSlot.tag, ddbNoAutoConsumeSpellSlot);
     }
 
     ui.notifications.info(game.i18n.localize("FLASH_ROLLS.notifications.settingsUpdated"));

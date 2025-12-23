@@ -1,5 +1,7 @@
 import { MODULE_ID } from "../../../constants/General.mjs";
+import { getSettings } from "../../../constants/Settings.mjs";
 import { LogUtil } from "../../utils/LogUtil.mjs";
+import { SettingsUtil } from "../../utils/SettingsUtil.mjs";
 import { getPlayerOwner, getTargetDescriptors } from "../../helpers/Helpers.mjs";
 import { DnDBRollParser } from "./DnDBRollParser.mjs";
 import { DnDBRollUtil } from "./DnDBRollUtil.mjs";
@@ -13,6 +15,7 @@ import { DnDBMidiIntegration } from "./DnDBMidiIntegration.mjs";
 export class DnDBRollExecutor {
 
   static _pendingVanillaDamageRoll = null;
+  static _isDnDBDamageInProgress = false;
 
   static setPendingDamageRoll(rollInfo) {
     this._pendingVanillaDamageRoll = rollInfo;
@@ -26,11 +29,29 @@ export class DnDBRollExecutor {
   static consumePendingDamageRoll() {
     const roll = this._pendingVanillaDamageRoll;
     this._pendingVanillaDamageRoll = null;
+    this._isDnDBDamageInProgress = true;
     return roll;
   }
 
   static hasPendingDamageRoll() {
     return this._pendingVanillaDamageRoll !== null;
+  }
+
+  static isDnDBDamageInProgress() {
+    return this._isDnDBDamageInProgress;
+  }
+
+  static clearDnDBDamageInProgress() {
+    this._isDnDBDamageInProgress = false;
+  }
+
+  /**
+   * Check if spell slot consumption should be skipped for DDB rolls
+   * @returns {boolean} True if spell slots should NOT be consumed
+   */
+  static shouldSkipSpellSlotConsumption() {
+    const SETTINGS = getSettings();
+    return SettingsUtil.get(SETTINGS.ddbNoAutoConsumeSpellSlot.tag) === true;
   }
 
   /**
@@ -424,10 +445,11 @@ export class DnDBRollExecutor {
       ]);
 
       this.setPendingDamageRoll(rollInfo);
+      const consumeSpellSlot = !this.shouldSkipSpellSlotConsumption();
 
       const usageConfig = {
         subsequentActions: false,
-        consume: { resources: true, spellSlot: true },
+        consume: { resources: true, spellSlot: consumeSpellSlot },
         create: { measuredTemplate: !!hasTemplate, _isDnDBRoll: true }
       };
 
@@ -538,9 +560,10 @@ export class DnDBRollExecutor {
     const rollMode = game.settings.get("core", "rollMode");
 
     LogUtil.log("DnDBRollExecutor: Healing activity (vanilla), triggering usage first", [item.name]);
+    const consumeSpellSlot = !this.shouldSkipSpellSlotConsumption();
     const usageConfig = {
       subsequentActions: false,
-      consume: { resources: true, spellSlot: true }
+      consume: { resources: true, spellSlot: consumeSpellSlot }
     };
 
     await DnDBActivityUtil.ddbUse(activity, usageConfig, dialogConfig, {

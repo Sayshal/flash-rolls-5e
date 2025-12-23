@@ -230,6 +230,10 @@
           "1": "Send to Player"
         }
       },
+      "ddbNoAutoConsumeSpellSlot": {
+        "label": "Do not auto-consume spell slots",
+        "hint": "When enabled, D&D Beyond rolls will not automatically consume spell slots in Foundry - they should be tracked manually."
+      },
       "initiateCombatOnRequest": {
         "label": "Initiate Combat when Requesting Initiative",
         "hint": "Enable to automatically initiate the a combat encounter when using the menu to request initiative rolls."

@@ -238,10 +238,29 @@ export class BaseActivityManager {
     const requestsEnabled = SettingsUtil.get(SETTINGS.rollRequestsEnabled.tag);
     const rollInterceptionEnabled = SettingsUtil.get(SETTINGS.rollInterceptionEnabled.tag);
     const actor = activity.actor;
-    
-    LogUtil.log("BaseActivityManager.onPostUseActivityGM #0", [activity, config, results, game.user.targets, requestsEnabled, rollInterceptionEnabled, actor]);
+    const isDnDBRoll = config.create?._isDnDBRoll === true;
 
-    if (!requestsEnabled || !rollInterceptionEnabled || !actor) return;
+    LogUtil.log("BaseActivityManager.onPostUseActivityGM #0", [
+      "activityType:", activity.type,
+      "isDnDBRoll:", isDnDBRoll,
+      "hasDamageParts:", activity.damage?.parts?.length > 0,
+      "requestsEnabled:", requestsEnabled,
+      "rollInterceptionEnabled:", rollInterceptionEnabled,
+      "actor:", actor?.name
+    ]);
+
+    if (!requestsEnabled || !rollInterceptionEnabled || !actor) {
+      LogUtil.log("BaseActivityManager.onPostUseActivityGM - Early return (settings or no actor)", [
+        "requestsEnabled:", requestsEnabled,
+        "rollInterceptionEnabled:", rollInterceptionEnabled,
+        "hasActor:", !!actor
+      ]);
+      if (isDnDBRoll && activity.type === ACTIVITY_TYPES.SAVE && activity.damage?.parts?.length > 0 && !this.isMidiActive) {
+        LogUtil.log("BaseActivityManager.onPostUseActivityGM - DnDB save damage bypassing settings check");
+        this._handleDnDBSaveDamageRoll(activity, config);
+      }
+      return;
+    }
 
     const actorOwner = GeneralUtil.getActorOwner(actor);
     const isOwnerActive = actorOwner && actorOwner.active && actorOwner.id !== game.user.id;
@@ -289,13 +308,18 @@ export class BaseActivityManager {
     }
 
     if (activity.type === ACTIVITY_TYPES.SAVE && activity.damage?.parts?.length > 0 && !this.isMidiActive && isLocalRoll) {
-      LogUtil.log("BaseActivityManager.onPostUseActivityGM - triggering vanilla save damage roll for local roll", [activity, config]);
+      const isDnDBRoll = config.create?._isDnDBRoll === true;
 
-      const shouldShowDialog = config.skipRollDialog !== undefined ? !config.skipRollDialog : (isOwnerActive && !skipRollDialog);
-
-      activity.rollDamage(config, {
-        configure: shouldShowDialog
-      }, {});
+      if (isDnDBRoll) {
+        LogUtil.log("BaseActivityManager.onPostUseActivityGM - DnDB save damage roll detected", [activity.item.name]);
+        this._handleDnDBSaveDamageRoll(activity, config);
+      } else {
+        LogUtil.log("BaseActivityManager.onPostUseActivityGM - triggering vanilla save damage roll for local roll", [activity, config]);
+        const shouldShowDialog = config.skipRollDialog !== undefined ? !config.skipRollDialog : (isOwnerActive && !skipRollDialog);
+        activity.rollDamage(config, {
+          configure: shouldShowDialog
+        }, {});
+      }
     }
   }
 
@@ -336,7 +360,14 @@ export class BaseActivityManager {
    */
   static onPostUseActivityPlayer(activity, config, results) {
     const isDnDBRoll = config.create?._isDnDBRoll === true;
-    LogUtil.log("BaseActivityManager.onPostUseActivityPlayer", [activity.type, isDnDBRoll, config.create, activity.target?.template?.count]);
+    LogUtil.log("BaseActivityManager.onPostUseActivityPlayer", [
+      "activityType:", activity.type,
+      "isDnDBRoll:", isDnDBRoll,
+      "hasDamageParts:", activity.damage?.parts?.length > 0,
+      "damagePartsCount:", activity.damage?.parts?.length,
+      "isMidiActive:", this.isMidiActive,
+      "hasPendingDamageRoll:", DnDBRollExecutor.hasPendingDamageRoll()
+    ]);
 
     if (this.isMidiActive) {
       MidiActivityManager.onPostUseActivityPlayer(activity, config, results);
@@ -364,6 +395,11 @@ export class BaseActivityManager {
    * Note: This method is async but called from a sync hook - it handles its own promise chain
    */
   static _handleDnDBSaveDamageRoll(activity, config) {
+    LogUtil.log("BaseActivityManager._handleDnDBSaveDamageRoll - Entry", [
+      "activity:", activity.item?.name,
+      "hasPending:", DnDBRollExecutor.hasPendingDamageRoll()
+    ]);
+
     const pendingRollInfo = DnDBRollExecutor.consumePendingDamageRoll();
     if (!pendingRollInfo) {
       LogUtil.warn("BaseActivityManager._handleDnDBSaveDamageRoll - No pending DnDB roll found");
@@ -376,9 +412,16 @@ export class BaseActivityManager {
       return;
     }
 
-    LogUtil.log("BaseActivityManager._handleDnDBSaveDamageRoll - Processing DnDB damage", [activity.item.name]);
+    LogUtil.log("BaseActivityManager._handleDnDBSaveDamageRoll - Processing DnDB damage", [
+      "item:", activity.item.name,
+      "ddbRollAction:", pendingRollInfo.action
+    ]);
 
-    activity.rollDamage(config, { configure: false }, { create: false }).then(rolls => {
+    const rollConfig = { sendRequest: false };
+    const dialogConfig = { configure: false };
+    const messageConfig = { create: false };
+
+    activity.rollDamage(rollConfig, dialogConfig, messageConfig).then(rolls => {
       if (!rolls?.length) {
         LogUtil.warn("BaseActivityManager._handleDnDBSaveDamageRoll - rollDamage returned no rolls");
         return;
@@ -417,7 +460,11 @@ export class BaseActivityManager {
 
       rolls[0].toMessage(messageConfig, { rollMode }).then(() => {
         LogUtil.log("BaseActivityManager._handleDnDBSaveDamageRoll - Damage message created");
+        DnDBRollExecutor.clearDnDBDamageInProgress();
       });
+    }).catch(err => {
+      LogUtil.error("BaseActivityManager._handleDnDBSaveDamageRoll - Error", [err]);
+      DnDBRollExecutor.clearDnDBDamageInProgress();
     });
   }
 }

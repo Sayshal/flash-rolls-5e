@@ -8,6 +8,8 @@ import { RollHelpers } from '../helpers/RollHelpers.mjs';
 import { HooksManager } from '../core/HooksManager.mjs';
 import { BaseActivityManager } from '../managers/BaseActivityManager.mjs';
 import { MidiActivityManager } from '../managers/MidiActivityManager.mjs';
+import { DnDBRollExecutor } from '../integrations/dnd-beyond/DnDBRollExecutor.mjs';
+import { DnDBMidiIntegration } from '../integrations/dnd-beyond/DnDBMidiIntegration.mjs';
 
 /**
  * Handles roll-specific hooks
@@ -43,6 +45,11 @@ export class RollHooksHandler {
         dialogOptions.configure = false;
         LogUtil.log("RollHooksHandler.onPreRollGM - Local GM roll, skipping dialog via stored flag");
       }
+    }
+
+    if (DnDBRollExecutor.hasPendingDamageRoll() || DnDBRollExecutor.isDnDBDamageInProgress() || DnDBMidiIntegration.hasPendingRoll()) {
+      dialogOptions.configure = false;
+      LogUtil.log("RollHooksHandler.onPreRollGM - DnDB roll detected, skipping dialog");
     }
   }
 

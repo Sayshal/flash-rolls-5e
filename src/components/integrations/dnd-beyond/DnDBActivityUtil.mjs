@@ -46,7 +46,7 @@ export class DnDBActivityUtil {
     }
 
     const dialogConfig = foundry.utils.mergeObject({
-      configure: true,
+      configure: false,
       applicationClass: activity.metadata.usage.dialog
     }, dialog);
 
@@ -101,7 +101,7 @@ export class DnDBActivityUtil {
     messageConfig.data.rolls = (messageConfig.data.rolls ?? []).concat(updates.rolls);
 
     activity._finalizeMessageConfig(usageConfig, messageConfig, results);
-    results.message = await activity._createUsageMessage(messageConfig);
+    results.message = await this._createUsageMessage(activity, messageConfig);
 
     await activity._finalizeUsage(usageConfig, results);
 

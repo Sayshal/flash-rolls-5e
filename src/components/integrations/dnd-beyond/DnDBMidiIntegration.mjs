@@ -4,6 +4,7 @@ import { LogUtil } from "../../utils/LogUtil.mjs";
 import { GeneralUtil } from "../../utils/GeneralUtil.mjs";
 import { ModuleHelpers } from "../../helpers/ModuleHelpers.mjs";
 import { DnDBRollUtil } from "./DnDBRollUtil.mjs";
+import { DnDBRollExecutor } from "./DnDBRollExecutor.mjs";
 
 /**
  * Handles DnDB roll integration with Midi-QOL workflows
@@ -104,7 +105,7 @@ export class DnDBMidiIntegration {
    * This runs before the roll dialog would show
    */
   static _onPreRollDamage(config, dialog, message) {
-    if (!this.hasPendingRoll()) return;
+    if (!this.hasPendingRoll() && !DnDBRollExecutor.hasPendingDamageRoll()) return;
     dialog.configure = false;
     LogUtil.log("DnDBMidiIntegration._onPreRollDamage - Forcing dialog.configure = false");
   }
@@ -179,13 +180,27 @@ export class DnDBMidiIntegration {
    * @param {Object} message - Message configuration
    */
   static _onPostBasicRollConfiguration(rolls, config, dialog, message) {
+    LogUtil.log("DnDBMidiIntegration._onPostBasicRollConfiguration - Hook fired", [
+      "hasPending:", this.hasPendingRoll(),
+      "rollCount:", rolls?.length
+    ]);
+
     if (!this.hasPendingRoll()) return;
 
     const pendingRoll = this._pendingDnDBRoll;
     const ddbRoll = pendingRoll?.rawRolls?.[0];
-    if (!ddbRoll || !rolls?.length) return;
+    if (!ddbRoll || !rolls?.length) {
+      LogUtil.warn("DnDBMidiIntegration._onPostBasicRollConfiguration - Missing ddbRoll or rolls", [
+        "ddbRoll:", !!ddbRoll,
+        "rollsLength:", rolls?.length
+      ]);
+      return;
+    }
 
-    LogUtil.log("DnDBMidiIntegration._onPostBasicRollConfiguration - Injecting DDB values", [rolls, ddbRoll]);
+    LogUtil.log("DnDBMidiIntegration._onPostBasicRollConfiguration - Injecting DDB values", [
+      "action:", pendingRoll?.action,
+      "rollType:", pendingRoll?.rollType
+    ]);
 
     for (const roll of rolls) {
       this._injectDiceValuesPreEval(roll, ddbRoll);
@@ -203,13 +218,21 @@ export class DnDBMidiIntegration {
    */
   static _injectDiceValuesPreEval(roll, ddbRoll) {
     const notation = ddbRoll.diceNotation;
-    if (!notation) return;
+    if (!notation) {
+      LogUtil.warn("DnDBMidiIntegration._injectDiceValuesPreEval - No diceNotation found", [ddbRoll]);
+      return;
+    }
 
     const allDnDBDice = [];
     for (const set of notation.set || []) {
       for (const die of set.dice || []) {
         allDnDBDice.push(die.dieValue);
       }
+    }
+
+    if (allDnDBDice.length === 0) {
+      LogUtil.warn("DnDBMidiIntegration._injectDiceValuesPreEval - No dice values found", [notation]);
+      return;
     }
 
     let ddbDiceIndex = 0;
@@ -231,7 +254,11 @@ export class DnDBMidiIntegration {
       }
     }
 
-    LogUtil.log("DnDBMidiIntegration._injectDiceValuesPreEval - Injected values", [roll.formula, allDnDBDice]);
+    LogUtil.log("DnDBMidiIntegration._injectDiceValuesPreEval - Injected values", [
+      "formula:", roll.formula,
+      "ddbValues:", allDnDBDice,
+      "rollTerms:", roll.terms.map(t => t instanceof Die ? { faces: t.faces, results: t.results } : t)
+    ]);
   }
 
   /**
@@ -667,8 +694,9 @@ export class DnDBMidiIntegration {
       "templateType:", activity.target?.template?.type
     ]);
 
+    const consumeSpellSlot = !DnDBRollExecutor.shouldSkipSpellSlotConsumption();
     const usageConfig = {
-      consume: { resources: true, spellSlot: true },
+      consume: { resources: true, spellSlot: consumeSpellSlot },
       create: { measuredTemplate: !!hasTemplate, _isDnDBRoll: true },
       midiOptions: {
         fastForwardAttack: true,
@@ -728,8 +756,9 @@ export class DnDBMidiIntegration {
       "item:", activity.item?.name
     ]);
 
+    const consumeSpellSlot = !DnDBRollExecutor.shouldSkipSpellSlotConsumption();
     const usageConfig = {
-      consume: { resources: true, spellSlot: true },
+      consume: { resources: true, spellSlot: consumeSpellSlot },
       midiOptions: {
         fastForwardAttack: true,
         fastForwardDamage: true,

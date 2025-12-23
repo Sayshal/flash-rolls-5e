@@ -159,10 +159,12 @@ export const getSettings = () => {
       hint: game.i18n.localize("FLASH_ROLLS.settings.moduleSettingsMenu.hint"),
       propType: Object,
       fields: [
-        'ddbRollOwnership'
+        'ddbRollOwnership',
+        'ddbNoAutoConsumeSpellSlot'
       ],
       default: {
-        ddbRollOwnership: 0
+        ddbRollOwnership: 0,
+        ddbNoAutoConsumeSpellSlot: false
       },
       scope: SETTING_SCOPE.world,
       config: false,
@@ -764,6 +766,17 @@ export const getSettings = () => {
         1: game.i18n.localize("FLASH_ROLLS.settings.ddbRollOwnership.choices.1")
       },
       default: 0,
+      scope: SETTING_SCOPE.world,
+      config: false
+    },
+
+    ddbNoAutoConsumeSpellSlot: {
+      tag: "ddb-no-auto-consume-spell-slot",
+      label: game.i18n.localize("FLASH_ROLLS.settings.ddbNoAutoConsumeSpellSlot.label"),
+      hint: game.i18n.localize("FLASH_ROLLS.settings.ddbNoAutoConsumeSpellSlot.hint"),
+      propType: Boolean,
+      inputType: SETTING_INPUT.checkbox,
+      default: false,
       scope: SETTING_SCOPE.world,
       config: false
     }
