@@ -131,22 +131,21 @@ export function showBatchedNotifications(pendingNotifications, getRollTypeDispla
 
 /**
  * Check if an actor is owned by a player (not GM)
+ * Prioritizes players who have this actor as their assigned character
  * @param {Actor} actor - The actor to check
  * @returns {User|null} The player owner, or null if not player-owned
  */
 export function getPlayerOwner(actor) {
+  const assignedUser = game.users.find(user => !user.isGM && user.active && user.character?.id === actor.id);
+  if (assignedUser) return assignedUser;
+  const offlineAssignedUser = game.users.find(user => !user.isGM && user.character?.id === actor.id);
+  if (offlineAssignedUser) return offlineAssignedUser;
   const ownership = actor.ownership || {};
-  
-  for (const [userId, level] of Object.entries(ownership)) {
-    if (level >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER) {
-      const user = game.users.get(userId);
-      if (user && !user.isGM) {
-        return user;
-      }
-    }
-  }
-  
-  return null;
+  const owners = Object.entries(ownership)
+    .filter(([userId, level]) => level >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER)
+    .map(([userId]) => game.users.get(userId))
+    .filter(user => user && !user.isGM);
+  return owners.find(user => user.active) || owners[0] || null;
 }
 
 /**

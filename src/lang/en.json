@@ -222,6 +222,10 @@
           "dndBeyond": "D&D Beyond Integration"
         }
       },
+      "ddbImportOwnership": {
+        "label": "Add ownership to all players",
+        "hint": "When enabled, all players will be given ownership of characters imported from D&D Beyond. When disabled, they will have Observer permission."
+      },
       "ddbRollOwnership": {
         "label": "Who executes D&D Beyond Rolls",
         "hint": "If GM executes, they will place templates and select targets. If roll is sent for player, their targets and templates will be used. Always falls back to GM if player is offline.",
@@ -287,7 +291,7 @@
         "buttonLabel": "Premium Features",
         "title": "Premium Features",
         "hint": "Configure premium features including D&D Beyond Rolls integration (Patreon supporters only).",
-        "description": "Premium features require a Patreon membership. Click 'Authenticate with Patreon' to get access.",
+        "description": "Click 'Authenticate with Patreon' to get access to D&D Beyond features. Free access will be given to all Patreon members (free or not) until February 2026 - after that, a $2 or $5 paid tier will be required.",
         "tabs": {
           "authentication": "Member Authentication",
           "ddbSettings": "D&D Beyond Options"
@@ -309,7 +313,7 @@
         "testGameLogBtn": "Test DDB Connection",
         "ddbSettings": "D&D Beyond Integration",
         "ddbWarning": "To enable D&D Beyond features, add your cobalt cookie, campaign id and user id. For rolls to be fully captured, all characters must be in the campaign and linked to a Foundry actor. Import uses DDB Importer module, if available.",
-        "ddbWarningImportItems": "If characters have homebrewed items or spells, it is recommended to munch with DDB Importer before importing, or sync after munching.",
+        "ddbWarningImportItems": "It is recommended to import items or spells with DDB Importer muncher before importing characters - or sync after munching.",
         "noApiKey": "Please enter an API key first.",
         "connectionSuccess": "Connection successful! Welcome, {name}.",
         "connectionFailed": "Authentication failed. Please re-authenticate with Patreon.",
@@ -355,8 +359,8 @@
         "characterCountText": "{count} character(s) found",
         "importAll": "Import All",
         "syncAll": "Sync All",
-        "importAllTooltip": "Import all unmapped characters from D&D Beyond",
-        "syncAllTooltip": "Sync all mapped characters from D&D Beyond",
+        "importAllTooltip": "Import all characters (needs DDB Importer)",
+        "syncAllTooltip": "Sync imported characters (needs DDB Importer)",
         "noCharactersToImport": "No unmapped characters to import.",
         "noCharactersToSync": "No mapped characters to sync.",
         "bulkImportProgress": "Importing {current}/{total}: {name}...",

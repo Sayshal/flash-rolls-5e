@@ -57,6 +57,12 @@
 
     <p class="hint on">{{localize "FLASH_ROLLS.settings.premiumFeatures.ddbWarningImportItems"}}</p>
 
+    <div class="form-group">
+      <label>{{localize "FLASH_ROLLS.settings.ddbImportOwnership.label"}}</label>
+      <input type="checkbox" name="ddbImportOwnership" {{#if ddbImportOwnership}}checked{{/if}} />
+      <p class="hint">{{localize "FLASH_ROLLS.settings.ddbImportOwnership.hint"}}</p>
+    </div>
+
     <div class="bulk-operation-overlay hidden">
       <div class="overlay-content">
         <i class="fas fa-spinner fa-spin"></i>

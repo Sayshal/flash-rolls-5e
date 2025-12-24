@@ -149,6 +149,7 @@ export class PremiumFeaturesDialog extends HandlebarsApplicationMixin(Applicatio
     const ddbUserId = SettingsUtil.get(SETTINGS.ddbUserId.tag) || "";
     const ddbCobaltCookie = SettingsUtil.get(SETTINGS.ddbCobaltCookie.tag) || "";
     const ddbNoAutoConsumeSpellSlot = SettingsUtil.get(SETTINGS.ddbNoAutoConsumeSpellSlot.tag) || false;
+    const ddbImportOwnership = SettingsUtil.get(SETTINGS.ddbImportOwnership.tag) ?? true;
     const hasSessionToken = !!PatronSessionManager.getSessionToken();
 
     const ddbStatusInfo = this._getDDBConnectionStatusInfo(this._ddbGameLogStatus);
@@ -186,16 +187,17 @@ export class PremiumFeaturesDialog extends HandlebarsApplicationMixin(Applicatio
           count: charactersWithMapping.length
         });
         const patronStatus = PatronSessionManager.getStatus();
-        const patronTierDollars = patronStatus.tier ? (patronStatus.tier / 100).toFixed(2) : "0.00";
+        const patronTierName = this._getTierName(patronStatus.tier);
         Object.assign(partContext, {
           ddbCampaignId,
           ddbUserId,
           ddbCobaltCookie,
           ddbNoAutoConsumeSpellSlot,
+          ddbImportOwnership,
           hasSessionToken,
           proxyAuthUrl: `${PROXY_BASE_URL}/auth/patreon`,
           patronStatus,
-          patronTierDollars,
+          patronTierName,
           patreonStatusClass: patreonStatusInfo.cssClass,
           patreonStatusIcon: patreonStatusInfo.icon,
           patreonStatusText: patreonStatusInfo.text,
@@ -274,6 +276,19 @@ export class PremiumFeaturesDialog extends HandlebarsApplicationMixin(Applicatio
       icon: "fa-circle-xmark",
       text: game.i18n.localize("FLASH_ROLLS.settings.premiumFeatures.patreonNotVerified")
     };
+  }
+
+  /**
+   * Get tier name from tier amount in cents
+   * @param {number} tierCents - Tier amount in cents
+   * @returns {string} Tier name
+   */
+  _getTierName(tierCents) {
+    if (!tierCents || tierCents === 0) return "Free";
+    if (tierCents >= 99999) return "Special";
+    if (tierCents >= 500) return "Gatewarden";
+    if (tierCents >= 200) return "Avowed";
+    return "Free";
   }
 
   /**
@@ -519,6 +534,7 @@ export class PremiumFeaturesDialog extends HandlebarsApplicationMixin(Applicatio
     const ddbUserId = this.element.querySelector('input[name="ddbUserId"]')?.value;
     const ddbCobaltCookie = this.element.querySelector('input[name="ddbCobaltCookie"]')?.value;
     const ddbNoAutoConsumeSpellSlot = this.element.querySelector('input[name="ddbNoAutoConsumeSpellSlot"]')?.checked;
+    const ddbImportOwnership = this.element.querySelector('input[name="ddbImportOwnership"]')?.checked;
 
     if (ddbCampaignId !== undefined) {
       await SettingsUtil.set(SETTINGS.ddbCampaignId.tag, ddbCampaignId);
@@ -531,6 +547,9 @@ export class PremiumFeaturesDialog extends HandlebarsApplicationMixin(Applicatio
     }
     if (ddbNoAutoConsumeSpellSlot !== undefined) {
       await SettingsUtil.set(SETTINGS.ddbNoAutoConsumeSpellSlot.tag, ddbNoAutoConsumeSpellSlot);
+    }
+    if (ddbImportOwnership !== undefined) {
+      await SettingsUtil.set(SETTINGS.ddbImportOwnership.tag, ddbImportOwnership);
     }
 
     ui.notifications.info(game.i18n.localize("FLASH_ROLLS.notifications.settingsUpdated"));
@@ -863,9 +882,13 @@ export class PremiumFeaturesDialog extends HandlebarsApplicationMixin(Applicatio
 
       const DDBImporter = game.modules.get("ddb-importer")?.api;
       if (DDBImporter?.importCharacter) {
+        const SETTINGS = getSettings();
+        const giveOwnership = SettingsUtil.get(SETTINGS.ddbImportOwnership.tag) ?? true;
+        const ownershipLevel = giveOwnership ? CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER : CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER;
         const actor = await Actor.create({
           name: characterName || "New Character",
           type: "character",
+          ownership: { default: ownershipLevel },
           flags: {
             ddbimporter: {
               dndbeyond: {
@@ -977,6 +1000,10 @@ export class PremiumFeaturesDialog extends HandlebarsApplicationMixin(Applicatio
     let imported = 0;
     let failed = 0;
 
+    const SETTINGS = getSettings();
+    const giveOwnership = SettingsUtil.get(SETTINGS.ddbImportOwnership.tag) ?? true;
+    const ownershipLevel = giveOwnership ? CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER : CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER;
+
     for (const char of unmappedCharacters) {
       this._setBulkOperationOverlay(true, game.i18n.format("FLASH_ROLLS.settings.premiumFeatures.bulkImportProgress", {
         current: imported + failed + 1,
@@ -988,6 +1015,7 @@ export class PremiumFeaturesDialog extends HandlebarsApplicationMixin(Applicatio
         const actor = await Actor.create({
           name: char.name || "New Character",
           type: "character",
+          ownership: { default: ownershipLevel },
           flags: {
             ddbimporter: {
               dndbeyond: {

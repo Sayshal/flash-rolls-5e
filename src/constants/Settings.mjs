@@ -755,6 +755,17 @@ export const getSettings = () => {
       config: false
     },
 
+    ddbImportOwnership: {
+      tag: "ddb-import-ownership",
+      label: game.i18n.localize("FLASH_ROLLS.settings.ddbImportOwnership.label"),
+      hint: game.i18n.localize("FLASH_ROLLS.settings.ddbImportOwnership.hint"),
+      propType: Boolean,
+      inputType: SETTING_INPUT.checkbox,
+      default: true,
+      scope: SETTING_SCOPE.world,
+      config: false
+    },
+
     ddbRollOwnership: {
       tag: "ddb-roll-ownership",
       label: game.i18n.localize("FLASH_ROLLS.settings.ddbRollOwnership.label"),
