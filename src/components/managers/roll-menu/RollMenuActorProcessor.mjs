@@ -172,16 +172,21 @@ export class RollMenuActorProcessor {
   }
 
   /**
-   * Check if an actor is player-owned
+   * Check if an actor is player-owned (either via explicit ownership or assigned character)
    * @param {Actor} actor - The actor to check
    * @returns {boolean} True if player-owned
    */
   static isPlayerOwnedActor(actor) {
-    return Object.entries(actor.ownership)
+    const hasExplicitOwnership = Object.entries(actor.ownership)
       .some(([userId, level]) => {
         const user = game.users.get(userId);
         return user && !user.isGM && level >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER;
       });
+    if (hasExplicitOwnership) return true;
+    const isAssignedCharacter = game.users.some(user =>
+      !user.isGM && user.character?.id === actor.id
+    );
+    return isAssignedCharacter;
   }
 
   /**
