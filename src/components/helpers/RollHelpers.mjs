@@ -12,17 +12,17 @@ export const RollHelpers = {
    * Add situational bonus to a roll configuration
    * @param {BasicRollProcessConfiguration} config - The process configuration with rolls array
    * @param {string} situational - The situational bonus formula
+   * @param {boolean} [addToParts=true] - Whether to add @situational to parts array. Set to false when dialog will handle it.
    * @returns {BasicRollProcessConfiguration} The modified config
    */
-  addSituationalBonus(config, situational) {
-    LogUtil.log("Config before adding bonus:", [situational, config]);
+  addSituationalBonus(config, situational, addToParts = true) {
+    LogUtil.log("Config before adding bonus:", [situational, config, addToParts]);
     if (situational && config.rolls?.[0]) {
       if (!config.rolls[0].parts) config.rolls[0].parts = [];
       if (!config.rolls[0].data) config.rolls[0].data = {};
-      
+
       config.rolls[0].data.situational = situational;
-      // Only add @situational if it's not already in parts
-      if (!config.rolls[0].parts.includes("@situational")) {
+      if (addToParts && !config.rolls[0].parts.includes("@situational")) {
         config.rolls[0].parts.push("@situational");
       }
       LogUtil.log("Config after adding bonus:", [config]);
@@ -72,9 +72,10 @@ export const RollHelpers = {
    * @param {Object} [rollConfig.data={}] - Roll data for formula resolution
    * @param {Object} [rollConfig.options={}] - Roll options
    * @param {Object} [additionalConfig={}] - Additional configuration specific to the roll type
+   * @param {boolean} [dialogWillHandle=true] - If true, dialog will add @situational to parts; only set data.situational
    * @returns {BasicRollProcessConfiguration} The process configuration for D&D5e actor roll methods
    */
-  buildRollConfig(requestData, rollConfig, additionalConfig = {}) {
+  buildRollConfig(requestData, rollConfig, additionalConfig = {}, dialogWillHandle = true) {
 
     const config = {
       rolls: [{
@@ -91,6 +92,8 @@ export const RollHelpers = {
       subject: null,
       chatMessage: true,
       legacy: false,
+      sendRequest: requestData?.config?.sendRequest,
+      skipRollDialog: requestData?.config?.skipRollDialog,
       ...additionalConfig
     };
 
@@ -102,7 +105,7 @@ export const RollHelpers = {
         situational = alreadyInRolls;
       }
       if (situational) {
-        this.addSituationalBonus(config, situational);
+        this.addSituationalBonus(config, situational, !dialogWillHandle);
       }
     } else {
       if (alreadyInRolls) {
@@ -110,7 +113,7 @@ export const RollHelpers = {
           config.rolls[0].data.situational = alreadyInRolls;
         }
       } else if (situational) {
-        this.addSituationalBonus(config, situational);
+        this.addSituationalBonus(config, situational, !dialogWillHandle);
       }
     }
 
@@ -314,6 +317,7 @@ export const RollHelpers = {
       advantage,
       disadvantage,
       target,
+      situationalBonus: situational || '',
       sendRequest: result.sendRequest,
       isRollRequest: result.sendRequest,
       skipRollDialog: result.config?.skipRollDialog || options.skipRollDialog || false,
@@ -784,17 +788,40 @@ export const RollHelpers = {
    * @param {Event} [options.event] - The triggering event (for modifier key detection)
    * @param {boolean} [options.isPC=false] - Whether the actor is a PC with active player owner
    * @param {boolean} [options.isNPC=false] - Whether the actor is an NPC
-   * @param {boolean} [options.sendRequest] - Whether this is a roll request
+   * @param {boolean} [options.sendRequest] - Whether this is a roll request (from menu/orchestrator)
    * @param {boolean} [options.hasNonDigitalDice=false] - Whether user has non-digital dice configured
-   * @param {boolean} [options.forceSkip] - Force skip (explicit override, e.g. from config.skipRollDialog)
+   * @param {boolean} [options.forceSkip] - Force skip (explicit override)
    * @param {boolean} [options.forceShow] - Force show dialog (explicit override)
+   * @param {boolean} [options.configSendRequest] - Explicit config.sendRequest value from roll config
+   * @param {boolean} [options.configSkipRollDialog] - Explicit config.skipRollDialog value from roll config
+   * @param {boolean} [options.isRollRequest=false] - Whether any isRollRequest flag is set (config/dialog/message)
    * @returns {boolean} Whether to skip the roll dialog
    */
-  shouldSkipRollDialog({event = null, isPC = false, isNPC = false, sendRequest = null, hasNonDigitalDice = false, forceSkip = false, forceShow = false} = {}) {
+  shouldSkipRollDialog({
+    event = null,
+    isPC = false,
+    isNPC = false,
+    sendRequest = null,
+    hasNonDigitalDice = false,
+    forceSkip = false,
+    forceShow = false,
+    configSendRequest = undefined,
+    configSkipRollDialog = undefined,
+    isRollRequest = false
+  } = {}) {
     if (forceShow === true) {
       return false;
     }
     if (forceSkip === true) {
+      return true;
+    }
+    if (configSkipRollDialog === true) {
+      return true;
+    }
+    if (configSendRequest === false) {
+      return true;
+    }
+    if (isRollRequest === true) {
       return true;
     }
     if (this._areSkipKeysPressed(event)) {
@@ -831,12 +858,16 @@ export const RollHelpers = {
 
     switch (skipRollDialogOption) {
       case 1: // all rolls
+      LogUtil.log("_shouldSkipDialogGM case 1")
         return true;
       case 2: // Only request rolls (PC actors being sent as request)
+      LogUtil.log("_shouldSkipDialogGM case 2")
         return (isPC===true && sendRequest===true) || (isPC===true && sendRequest !== false && rollRequestsEnabled === true);
       case 3: // Only non-request rolls (NPC/local rolls)
+      LogUtil.log("_shouldSkipDialogGM case 3")
         return isNPC===true;
       default:
+      LogUtil.log("_shouldSkipDialogGM case default")
         return false;
     }
   },

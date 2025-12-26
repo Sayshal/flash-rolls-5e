@@ -14,9 +14,10 @@ import { FlashAPI } from "../core/FlashAPI.mjs";
  */
 export const RollHandlers = {
   ability: async (actor, requestData, rollConfig, dialogConfig, messageConfig) => {
+    const dialogWillHandle = dialogConfig.configure !== false;
     const config = RollHelpers.buildRollConfig(requestData, rollConfig, {
       ability: requestData.rollKey
-    });
+    }, dialogWillHandle);
 
     await ChatMessageManager.addGroupRollFlag(messageConfig, requestData, actor, ROLL_TYPES.ABILITY);
     await actor.rollAbilityCheck(config, dialogConfig, messageConfig);
@@ -27,9 +28,10 @@ export const RollHandlers = {
   },
 
   save: async (actor, requestData, rollConfig, dialogConfig, messageConfig) => {
+    const dialogWillHandle = dialogConfig.configure !== false;
     const config = RollHelpers.buildRollConfig(requestData, rollConfig, {
       ability: requestData.config?.ability || requestData.rollKey
-    });
+    }, dialogWillHandle);
 
     await ChatMessageManager.addGroupRollFlag(messageConfig, requestData, actor, ROLL_TYPES.SAVE);
 
@@ -41,20 +43,22 @@ export const RollHandlers = {
   },
 
   skill: async (actor, requestData, rollConfig, dialogConfig, messageConfig) => {
+    const dialogWillHandle = dialogConfig.configure !== false;
     const defaultAbility = actor.system.skills?.[requestData.rollKey]?.ability ||
                           CONFIG.DND5E.skills?.[requestData.rollKey]?.ability ||
                           undefined;
 
     const config = RollHelpers.buildRollConfig(requestData, rollConfig, {
       skill: requestData.rollKey,
-      chooseAbility: dialogConfig.configure !== false,
+      chooseAbility: dialogWillHandle,
       ability: requestData.config.ability || defaultAbility
-    });
+    }, dialogWillHandle);
     await ChatMessageManager.addGroupRollFlag(messageConfig, requestData, actor, ROLL_TYPES.SKILL);
     await actor.rollSkill(config, dialogConfig, messageConfig);
   },
 
   tool: async (actor, requestData, rollConfig, dialogConfig, messageConfig) => {
+    const dialogWillHandle = dialogConfig.configure !== false;
     const toolConfig = actor.system.tools?.[requestData.rollKey];
     const defaultAbility = toolConfig?.ability ||
                           CONFIG.DND5E.enrichmentLookup?.tools?.[requestData.rollKey]?.ability ||
@@ -62,9 +66,9 @@ export const RollHandlers = {
 
     const config = RollHelpers.buildRollConfig(requestData, rollConfig, {
       tool: requestData.rollKey,
-      chooseAbility: dialogConfig.configure !== false,
+      chooseAbility: dialogWillHandle,
       ability: requestData.config.ability || defaultAbility
-    });
+    }, dialogWillHandle);
     LogUtil.log('RollHandlers.tool #2', [config, dialogConfig, messageConfig]);
 
     await ChatMessageManager.addGroupRollFlag(messageConfig, requestData, actor, ROLL_TYPES.TOOL);
@@ -72,7 +76,8 @@ export const RollHandlers = {
   },
 
   concentration: async (actor, requestData, rollConfig, dialogConfig, messageConfig) => {
-    const config = RollHelpers.buildRollConfig(requestData, rollConfig);
+    const dialogWillHandle = dialogConfig.configure !== false;
+    const config = RollHelpers.buildRollConfig(requestData, rollConfig, {}, dialogWillHandle);
 
     await ChatMessageManager.addGroupRollFlag(messageConfig, requestData, actor, ROLL_TYPES.CONCENTRATION);
     await actor.rollConcentration(config, dialogConfig, messageConfig);
@@ -117,8 +122,8 @@ export const RollHandlers = {
         if (requestData.config) {
           const initiativeConfig = RollHelpers.buildRollConfig(requestData, rollConfig, {
             ability: actor.system.attributes?.init?.ability || 'dex'
-          });
-          
+          }, true);
+
           const tempConfig = {
             advantage: requestData.config.advantage || false,
             disadvantage: requestData.config.disadvantage || false,
@@ -162,17 +167,19 @@ export const RollHandlers = {
   },
 
   deathsave: async (actor, requestData, rollConfig, dialogConfig, messageConfig) => {
-    const config = RollHelpers.buildRollConfig(requestData, rollConfig);
+    const dialogWillHandle = dialogConfig.configure !== false;
+    const config = RollHelpers.buildRollConfig(requestData, rollConfig, {}, dialogWillHandle);
     await ChatMessageManager.addGroupRollFlag(messageConfig, requestData, actor, ROLL_TYPES.DEATH_SAVE);
     await actor.rollDeathSave(config, dialogConfig, messageConfig);
   },
 
   hitdie: async (actor, requestData, rollConfig, dialogConfig, messageConfig) => {
     dialogConfig.configure = game.user.isGM ? dialogConfig.configure : true;
+    const dialogWillHandle = dialogConfig.configure !== false;
 
     const config = RollHelpers.buildRollConfig(requestData, rollConfig, {
       denomination: requestData.rollKey
-    });
+    }, dialogWillHandle);
     LogUtil.log('RollHandlers.hitdie', [config, dialogConfig, messageConfig]);
     await ChatMessageManager.addGroupRollFlag(messageConfig, requestData, actor, ROLL_TYPES.HIT_DIE);
     await actor.rollHitDie(config, dialogConfig, messageConfig);
@@ -200,8 +207,12 @@ export const RollHandlers = {
   async handleActivityRoll(actor, rollType, requestData, rollConfig, dialogConfig, messageConfig) {
     LogUtil.log('RollHandlers.handleActivityRoll', [rollType, requestData, rollConfig]);
     if (requestData.rollKey) {
-      const processConfig = RollHelpers.buildRollConfig(requestData, rollConfig);
-      
+      const effectiveDialogConfigure = game.user.isGM && requestData.config.skipRollDialog !== undefined
+        ? !requestData.config.skipRollDialog
+        : dialogConfig.configure;
+      const dialogWillHandle = effectiveDialogConfigure !== false;
+      const processConfig = RollHelpers.buildRollConfig(requestData, rollConfig, {}, dialogWillHandle);
+
       const rollOptions = processConfig.rolls?.[0]?.options || {};
       const activityConfig = {
         usage: {
@@ -218,7 +229,7 @@ export const RollHandlers = {
         },
         dialog: {
           ...dialogConfig,
-          configure: game.user.isGM && requestData.config.skipRollDialog!==undefined ? !requestData.config.skipRollDialog : dialogConfig.configure
+          configure: effectiveDialogConfigure
         },
         message: messageConfig
       };

@@ -267,6 +267,7 @@ export class ChatMessageManager {
       }
 
       ChatMessageManager._attachGroupRollListeners(htmlElement, message);
+      ChatMessageManager._attachDCAndSelectionListeners(htmlElement, message);
     }
 
     this._addSelectTargetsButton(message, htmlElement);
@@ -518,7 +519,7 @@ export class ChatMessageManager {
 
     actorResults.forEach(element => {
       element.addEventListener('click', (event) => {
-        if (event.target.closest('.dice-btn.rollable')) {
+        if (event.target.closest('.dice-btn.rollable') || event.target.closest('.adv-btn')) {
           return;
         }
 
@@ -550,44 +551,21 @@ export class ChatMessageManager {
       }
     });
     
+    html.querySelectorAll('.adv-btn').forEach(advBtn => {
+      advBtn.addEventListener('click', async (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+        const advantageMode = parseInt(advBtn.dataset.advantageMode);
+        this._handleGroupRollClick(advBtn, message, true, advantageMode === 1, advantageMode === -1);
+      });
+    });
+
     html.querySelectorAll('.dice-btn.rollable').forEach(diceBtn => {
       diceBtn.addEventListener('click', async (event) => {
         event.preventDefault();
         event.stopPropagation();
         event.stopImmediatePropagation();
-        
-        const dataset = diceBtn.dataset;
-        const actorId = dataset.actorId;
-        const tokenId = dataset.tokenId;
-        let actor;
-        let uniqueId = actorId;
-        if (tokenId) {
-          const tokenDoc = game.scenes.current?.tokens.get(tokenId);
-          actor = tokenDoc?.actor;
-          uniqueId = tokenId;
-        }
-        if (!actor) {
-          actor = game.actors.get(actorId);
-          uniqueId = actorId;
-        }
-
-        if (!actor) {
-          FlashAPI.notify('warn', `Actor not found`);
-          return;
-        }
-
-        const canRoll = game.user.isGM || actor.isOwner;
-        if (!canRoll) {
-          FlashAPI.notify('warn', `You don't have permission to roll for ${actor.name}`);
-          return;
-        }
-        
-        const rollType = dataset.type?.toLowerCase();
-        const rollKey = dataset.rollKey;
-        const groupRollId = dataset.groupRollId;
-        const dc = dataset.dc ? parseInt(dataset.dc) : null;
-        
-        LogUtil.log('Rollable dice clicked', [rollType, rollKey, actorId, groupRollId]);
 
         const { areKeysPressed } = game.dnd5e.utils || {};
         let hasAdvantage = false;
@@ -604,77 +582,164 @@ export class ChatMessageManager {
           hasDisadvantage = event.ctrlKey || event.metaKey;
         }
 
-        const shouldSkipDialog = skipNormal || hasAdvantage || hasDisadvantage;
+        let shouldSkipDialog = skipNormal || hasAdvantage || hasDisadvantage;
 
-        const requestData = {
-          rollKey: rollKey,
-          groupRollId: groupRollId,
-          config: {
-            advantage: hasAdvantage && !hasDisadvantage,
-            disadvantage: hasDisadvantage && !hasAdvantage,
-            target: dc,
-            rollMode: game.settings.get("core", "rollMode")
+        if (game.user.isGM && !shouldSkipDialog) {
+          const actorId = diceBtn.dataset.actorId;
+          const tokenId = diceBtn.dataset.tokenId;
+          let actor;
+          if (tokenId) {
+            const tokenDoc = game.scenes.current?.tokens.get(tokenId);
+            actor = tokenDoc?.actor;
           }
-        };
-
-        const dialogConfig = {
-          configure: !shouldSkipDialog,
-          isRollRequest: true
-        };
-        
-        const messageConfig = {
-          rollMode: game.settings.get("core", "rollMode"),
-          create: true,
-          isRollRequest: true
-        };
-        
-        const rollConfig = {
-          parts: [],
-          data: {},
-          options: {}
-        };
-        
-        try {
-          const handler = RollHandlers[rollType];
-          if (handler) {
-            await handler(actor, requestData, rollConfig, dialogConfig, messageConfig);
-          } else {
-            let rollMethod;
-            switch(rollType) {
-              case ROLL_TYPES.SKILL:
-                rollMethod = 'rollSkill';
-                break;
-              case ROLL_TYPES.ABILITY:
-              case ROLL_TYPES.ABILITY_CHECK:
-                rollMethod = 'rollAbilityTest';
-                break;
-              case ROLL_TYPES.SAVE:
-              case ROLL_TYPES.SAVING_THROW:
-                rollMethod = 'rollAbilitySave';
-                break;
-              case ROLL_TYPES.TOOL:
-                rollMethod = 'rollToolCheck';
-                break;
-              default:
-                FlashAPI.notify('warn', `Unknown roll type: ${rollType}`);
-                return;
-            }
-            
-            if (rollMethod && actor[rollMethod]) {
-              await actor[rollMethod](rollKey, {
-                ...requestData.config,
-                messageOptions: { "flags.flash-rolls-5e.groupRollId": groupRollId }
-              });
-            }
+          if (!actor) {
+            actor = game.actors.get(actorId);
           }
-        } catch (error) {
-          LogUtil.error('Error executing roll from chat', error);
-          ui.notifications.error(`Failed to execute roll: ${error.message}`);
+          const isNPC = actor?.type === 'npc';
+          const isPC = actor?.type === 'character';
+          shouldSkipDialog = RollHelpers.shouldSkipRollDialog({
+            event,
+            isPC,
+            isNPC,
+            sendRequest: isPC
+          });
         }
+
+        this._handleGroupRollClick(diceBtn, message, shouldSkipDialog, hasAdvantage, hasDisadvantage);
       });
     });
-    
-    // Handle DC control visibility and input
+  }
+
+  /**
+   * Handle a group roll click from either the dice button or advantage/disadvantage buttons
+   * @param {HTMLElement} element - The clicked element with data attributes
+   * @param {ChatMessage} message - The chat message
+   * @param {boolean} shouldSkipDialog - Whether to skip the roll dialog
+   * @param {boolean} hasAdvantage - Whether to roll with advantage
+   * @param {boolean} hasDisadvantage - Whether to roll with disadvantage
+   */
+  static async _handleGroupRollClick(element, message, shouldSkipDialog, hasAdvantage, hasDisadvantage) {
+    const dataset = element.dataset;
+    const actorId = dataset.actorId;
+    const tokenId = dataset.tokenId;
+    let actor;
+    let uniqueId = actorId;
+    if (tokenId) {
+      const tokenDoc = game.scenes.current?.tokens.get(tokenId);
+      actor = tokenDoc?.actor;
+      uniqueId = tokenId;
+    }
+    if (!actor) {
+      actor = game.actors.get(actorId);
+      uniqueId = actorId;
+    }
+
+    if (!actor) {
+      FlashAPI.notify('warn', `Actor not found`);
+      return;
+    }
+
+    const canRoll = game.user.isGM || actor.isOwner;
+    if (!canRoll) {
+      FlashAPI.notify('warn', `You don't have permission to roll for ${actor.name}`);
+      return;
+    }
+
+    const rollType = dataset.type?.toLowerCase();
+    const rollKey = dataset.rollKey;
+    const groupRollId = dataset.groupRollId;
+    const dc = dataset.dc ? parseInt(dataset.dc) : null;
+    const gmAdvantage = dataset.gmAdvantage === 'true';
+    const gmDisadvantage = dataset.gmDisadvantage === 'true';
+    const situationalBonus = dataset.situationalBonus || '';
+
+    const finalAdvantage = hasAdvantage || gmAdvantage;
+    const finalDisadvantage = hasDisadvantage || gmDisadvantage;
+
+    LogUtil.log('Group roll click', [rollType, rollKey, actorId, groupRollId, { shouldSkipDialog, hasAdvantage, hasDisadvantage, gmAdvantage, gmDisadvantage, situationalBonus }]);
+
+    const requestData = {
+      rollKey: rollKey,
+      groupRollId: groupRollId,
+      config: {
+        advantage: finalAdvantage && !finalDisadvantage,
+        disadvantage: finalDisadvantage && !finalAdvantage,
+        target: dc,
+        rollMode: game.settings.get("core", "rollMode"),
+        situational: situationalBonus || undefined
+      }
+    };
+
+    const dialogConfig = {
+      configure: !shouldSkipDialog,
+      isRollRequest: true
+    };
+
+    const messageConfig = {
+      rollMode: game.settings.get("core", "rollMode"),
+      create: true,
+      isRollRequest: true
+    };
+
+    const rollConfig = {
+      parts: [],
+      data: {},
+      options: {}
+    };
+
+    try {
+      const handler = RollHandlers[rollType];
+      if (handler) {
+        await handler(actor, requestData, rollConfig, dialogConfig, messageConfig);
+      } else {
+        let rollMethod;
+        switch(rollType) {
+          case ROLL_TYPES.SKILL:
+            rollMethod = 'rollSkill';
+            break;
+          case ROLL_TYPES.ABILITY:
+          case ROLL_TYPES.ABILITY_CHECK:
+            rollMethod = 'rollAbilityTest';
+            break;
+          case ROLL_TYPES.SAVE:
+          case ROLL_TYPES.SAVING_THROW:
+            rollMethod = 'rollAbilitySave';
+            break;
+          case ROLL_TYPES.TOOL:
+            rollMethod = 'rollToolCheck';
+            break;
+          default:
+            FlashAPI.notify('warn', `Unknown roll type: ${rollType}`);
+            return;
+        }
+
+        if (rollMethod && actor[rollMethod]) {
+          const rollOptions = {
+            ...requestData.config,
+            configure: !shouldSkipDialog,
+            messageOptions: { "flags.flash-rolls-5e.groupRollId": groupRollId }
+          };
+          if (situationalBonus) {
+            rollOptions.rolls = [{
+              data: { situational: situationalBonus },
+              ...(shouldSkipDialog ? { parts: ["@situational"] } : {})
+            }];
+          }
+          await actor[rollMethod](rollKey, rollOptions);
+        }
+      }
+    } catch (error) {
+      LogUtil.error('Error executing roll from chat', error);
+      ui.notifications.error(`Failed to execute roll: ${error.message}`);
+    }
+  }
+
+  /**
+   * Attach DC control and selection button listeners
+   * @param {HTMLElement} html - The HTML element
+   * @param {ChatMessage} message - The chat message
+   */
+  static _attachDCAndSelectionListeners(html, message) {
     const dcControl = html.querySelector('.group-roll-dc-control');
     const dcInput = html.querySelector('.dc-input');
     
@@ -745,8 +810,88 @@ export class ChatMessageManager {
         });
       }
     }
+
+    const selectionButtons = html.querySelector('.group-roll-selection-buttons');
+    if (selectionButtons) {
+      if (game.user.isGM) {
+        selectionButtons.classList.remove('gm-only');
+      }
+
+      selectionButtons.querySelectorAll('.select-actors-btn').forEach(btn => {
+        btn.addEventListener('click', async (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          const selectType = btn.dataset.selectType;
+          const messageId = selectionButtons.dataset.messageId;
+          const targetMessage = game.messages.get(messageId);
+          if (targetMessage) {
+            await ChatMessageManager.selectActorsFromGroupRoll(targetMessage, selectType);
+          }
+        });
+      });
+    }
   }
-  
+
+  /**
+   * Select actors from a group roll message based on their roll result
+   * @param {ChatMessage} message - The group roll chat message
+   * @param {string} selectType - Type of selection: 'failed', 'passed', or 'all'
+   */
+  static async selectActorsFromGroupRoll(message, selectType) {
+    if (!game.user.isGM) return;
+
+    const flagData = message.getFlag(MODULE_ID, 'rollData');
+    if (!flagData?.results) return;
+
+    const tokensToSelect = [];
+
+    for (const result of flagData.results) {
+      if (!result.rolled) continue;
+
+      let shouldSelect = false;
+      switch (selectType) {
+        case 'failed':
+          shouldSelect = result.failure === true;
+          break;
+        case 'passed':
+          shouldSelect = result.success === true;
+          break;
+        case 'all':
+          shouldSelect = true;
+          break;
+      }
+
+      if (shouldSelect) {
+        let token = null;
+        if (result.tokenId) {
+          token = canvas.tokens.get(result.tokenId);
+        }
+        if (!token && result.uniqueId && result.uniqueId !== result.actorId) {
+          token = canvas.tokens.get(result.uniqueId);
+        }
+        if (!token && result.actorId) {
+          const matchingTokens = canvas.tokens.placeables.filter(t => t.actor?.id === result.actorId);
+          if (matchingTokens.length === 1) {
+            token = matchingTokens[0];
+          }
+        }
+        if (token) {
+          tokensToSelect.push(token);
+        }
+      }
+    }
+
+    canvas.tokens.releaseAll();
+    if (tokensToSelect.length > 0) {
+      tokensToSelect.forEach((token, index) => {
+        token.control({ releaseOthers: index === 0 });
+      });
+      LogUtil.log('selectActorsFromGroupRoll - Selected tokens', [selectType, tokensToSelect.length]);
+    } else {
+      LogUtil.log('selectActorsFromGroupRoll - No matching tokens, deselected all', [selectType]);
+    }
+  }
+
   /**
    * Preload the Handlebars template
    */
@@ -981,7 +1126,10 @@ export class ChatMessageManager {
       isGM,
       isSingleActor: validEntries.length === 1,
       actorEntries: validEntries.map(entry => ({ actorId: entry.actor.id, uniqueId: entry.uniqueId, tokenId: entry.tokenId })),
-      moduleId: MODULE_ID
+      moduleId: MODULE_ID,
+      gmAdvantage: config?.advantage === true,
+      gmDisadvantage: config?.disadvantage === true,
+      gmSituationalBonus: config?.situationalBonus || config?.rolls?.[0]?.data?.situational || ''
     };
   }
   
@@ -1428,12 +1576,51 @@ export class ChatMessageManager {
       if (pendingData.results.size === pendingData.actorEntries.length) {
         this.pendingRolls.delete(groupRollId);
         this._scheduleMessageRemoval(message);
+
+        if (flagData.supportsDC && flagData.dc && !flagData.isContestedRoll) {
+          this._handleAutoSelectOnComplete(message, flagData);
+        }
+
         setTimeout(() => {
           this.groupRollMessages.delete(groupRollId);
           this.updateQueue.delete(groupRollId);
         }, 60000);
       }
     }
+  }
+
+  /**
+   * Handle auto-selection of tokens when a group roll completes
+   * @param {ChatMessage} message - The group roll message
+   * @param {Object} flagData - The roll data from message flags
+   * @private
+   */
+  static _handleAutoSelectOnComplete(message, flagData) {
+    if (!game.user.isGM) return;
+
+    const SETTINGS = getSettings();
+    const autoSelectMode = SettingsUtil.get(SETTINGS.autoSelectOnGroupRoll.tag);
+
+    if (autoSelectMode === 0) return;
+
+    let selectType;
+    switch (autoSelectMode) {
+      case 1:
+        selectType = 'failed';
+        break;
+      case 2:
+        selectType = 'passed';
+        break;
+      case 3:
+        selectType = 'all';
+        break;
+      default:
+        return;
+    }
+
+    setTimeout(() => {
+      this.selectActorsFromGroupRoll(message, selectType);
+    }, 100);
   }
 
   /**

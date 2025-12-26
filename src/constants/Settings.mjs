@@ -100,7 +100,8 @@ export const getSettings = () => {
         'showGroupResultToPlayers',
         'groupRollNPCHidden',
         'concealNPCNames',
-        'interceptTidySheetsGroupRolls'
+        'interceptTidySheetsGroupRolls',
+        'autoSelectOnGroupRoll'
       ],
       default: {
         groupRollsMsgEnabled: true,
@@ -110,7 +111,8 @@ export const getSettings = () => {
         showGroupResultToPlayers: true,
         groupRollNPCHidden: true,
         concealNPCNames: false,
-        interceptTidySheetsGroupRolls: true
+        interceptTidySheetsGroupRolls: true,
+        autoSelectOnGroupRoll: 0
       },
       scope: SETTING_SCOPE.world,
       config: false,
@@ -222,6 +224,23 @@ export const getSettings = () => {
       propType: Boolean,
       inputType: SETTING_INPUT.checkbox,
       default: true,
+      scope: SETTING_SCOPE.world,
+      config: false
+    },
+
+    autoSelectOnGroupRoll: {
+      tag: "auto-select-on-group-roll",
+      label: game.i18n.localize("FLASH_ROLLS.settings.autoSelectOnGroupRoll.label"),
+      hint: game.i18n.localize("FLASH_ROLLS.settings.autoSelectOnGroupRoll.hint"),
+      propType: Number,
+      inputType: SETTING_INPUT.select,
+      choices: {
+        0: game.i18n.localize("FLASH_ROLLS.settings.autoSelectOnGroupRoll.choices.0"),
+        1: game.i18n.localize("FLASH_ROLLS.settings.autoSelectOnGroupRoll.choices.1"),
+        2: game.i18n.localize("FLASH_ROLLS.settings.autoSelectOnGroupRoll.choices.2"),
+        3: game.i18n.localize("FLASH_ROLLS.settings.autoSelectOnGroupRoll.choices.3")
+      },
+      default: 0,
       scope: SETTING_SCOPE.world,
       config: false
     },

@@ -7,7 +7,7 @@ import { getPlayerOwner } from "../helpers/Helpers.mjs";
 import { DnDBConnection } from "./dnd-beyond/DnDBConnection.mjs";
 import { DnDBRollParser } from "./dnd-beyond/DnDBRollParser.mjs";
 import { DnDBRollExecutor } from "./dnd-beyond/DnDBRollExecutor.mjs";
-import { DnDBMidiIntegration } from "./dnd-beyond/DnDBMidiIntegration.mjs";
+import { DnDBIntegration } from "./dnd-beyond/DnDBIntegration.mjs";
 import { PatronSessionManager } from "../managers/PatronSessionManager.mjs";
 
 const SOCKET_HANDLERS = {
@@ -26,7 +26,7 @@ export class DnDBeyondIntegration {
    * Only runs for GM users with valid configuration
    */
   static async initialize() {
-    DnDBMidiIntegration.registerHooks();
+    DnDBIntegration.registerHooks();
     this._registerSocketHandlers();
 
     if (!game.user.isGM) {

@@ -6,7 +6,7 @@ import { getPlayerOwner, getTargetDescriptors } from "../../helpers/Helpers.mjs"
 import { DnDBRollParser } from "./DnDBRollParser.mjs";
 import { DnDBRollUtil } from "./DnDBRollUtil.mjs";
 import { DnDBActivityUtil } from "./DnDBActivityUtil.mjs";
-import { DnDBMidiIntegration } from "./DnDBMidiIntegration.mjs";
+import { DnDBIntegration } from "./DnDBIntegration.mjs";
 
 /**
  * Executes rolls in Foundry using DnDB dice values
@@ -110,7 +110,7 @@ export class DnDBRollExecutor {
    * Sets pending roll so hook can inject DnDB values before evaluation
    */
   static async _executeSave(actor, rollInfo, category) {
-    DnDBMidiIntegration.setPendingRoll(rollInfo);
+    DnDBIntegration.setPendingRoll(rollInfo);
 
     const owner = getPlayerOwner(actor) || game.user;
     const rollConfig = { ability: category.ability, sendRequest: false };
@@ -134,7 +134,7 @@ export class DnDBRollExecutor {
     );
 
     if (!rolls || rolls.length < 1) {
-      DnDBMidiIntegration.clearPendingRoll();
+      DnDBIntegration.clearPendingRoll();
       return false;
     }
 
@@ -146,7 +146,7 @@ export class DnDBRollExecutor {
    * Sets pending roll so hook can inject DnDB values before evaluation
    */
   static async _executeAbilityCheck(actor, rollInfo, category) {
-    DnDBMidiIntegration.setPendingRoll(rollInfo);
+    DnDBIntegration.setPendingRoll(rollInfo);
 
     const owner = getPlayerOwner(actor) || game.user;
     const rollConfig = { ability: category.ability, sendRequest: false };
@@ -170,7 +170,7 @@ export class DnDBRollExecutor {
     );
 
     if (!rolls || rolls.length < 1) {
-      DnDBMidiIntegration.clearPendingRoll();
+      DnDBIntegration.clearPendingRoll();
       return false;
     }
 
@@ -182,7 +182,7 @@ export class DnDBRollExecutor {
    * Sets pending roll so hook can inject DnDB values before evaluation
    */
   static async _executeSkillCheck(actor, rollInfo, category) {
-    DnDBMidiIntegration.setPendingRoll(rollInfo);
+    DnDBIntegration.setPendingRoll(rollInfo);
 
     const owner = getPlayerOwner(actor) || game.user;
     const rollConfig = { skill: category.skill, sendRequest: false };
@@ -206,7 +206,7 @@ export class DnDBRollExecutor {
     );
 
     if (!rolls || rolls.length < 1) {
-      DnDBMidiIntegration.clearPendingRoll();
+      DnDBIntegration.clearPendingRoll();
       return false;
     }
 
@@ -224,7 +224,7 @@ export class DnDBRollExecutor {
       return await this._executeAbilityCheck(actor, rollInfo, { ability: "dex" });
     }
 
-    DnDBMidiIntegration.setPendingRoll(rollInfo);
+    DnDBIntegration.setPendingRoll(rollInfo);
 
     const owner = getPlayerOwner(actor) || game.user;
     const rollConfig = { sendRequest: false };
@@ -252,7 +252,7 @@ export class DnDBRollExecutor {
     const rolls = await actor.rollToolCheck(toolConfig, dialogConfig, messageConfig);
 
     if (!rolls || rolls.length < 1) {
-      DnDBMidiIntegration.clearPendingRoll();
+      DnDBIntegration.clearPendingRoll();
       return false;
     }
 
@@ -342,9 +342,9 @@ export class DnDBRollExecutor {
       return await this._createSimpleMessage(actor, rollInfo);
     }
 
-    if (DnDBMidiIntegration.isActive()) {
+    if (DnDBIntegration.isActive()) {
       LogUtil.log("DnDBRollExecutor._executeAttack - Using Midi-QOL workflow");
-      return await DnDBMidiIntegration.executeAttackWithMidi(actor, activity, rollInfo);
+      return await DnDBIntegration.executeAttackWithMidi(actor, activity, rollInfo);
     }
 
     return await this._executeAttackVanilla(actor, item, activity, rollInfo);
@@ -354,7 +354,7 @@ export class DnDBRollExecutor {
    * Execute an attack roll using vanilla DnD5e system
    */
   static async _executeAttackVanilla(actor, item, activity, rollInfo) {
-    DnDBMidiIntegration.setPendingRoll(rollInfo);
+    DnDBIntegration.setPendingRoll(rollInfo);
 
     const ddbRoll = rollInfo.rawRolls[0];
     const dialogConfig = { configure: false };
@@ -453,11 +453,11 @@ export class DnDBRollExecutor {
       return await this._createSimpleMessage(actor, rollInfo);
     }
 
-    if (DnDBMidiIntegration.isActive()) {
+    if (DnDBIntegration.isActive()) {
       LogUtil.log("DnDBRollExecutor._executeDamage - Checking Midi-QOL workflow routing", [
         "isGM:", game.user.isGM
       ]);
-      const midiResult = await DnDBMidiIntegration.executeDamageWithMidi(actor, activity, rollInfo);
+      const midiResult = await DnDBIntegration.executeDamageWithMidi(actor, activity, rollInfo);
       if (midiResult) return true;
       LogUtil.log("DnDBRollExecutor._executeDamage - Midi returned false, using vanilla flow", [
         "isGM:", game.user.isGM
@@ -513,7 +513,7 @@ export class DnDBRollExecutor {
       return true;
     }
 
-    DnDBMidiIntegration.setPendingRoll(rollInfo);
+    DnDBIntegration.setPendingRoll(rollInfo);
 
     const ddbRoll = rollInfo.rawRolls[0];
     const targets = getTargetDescriptors();
@@ -579,9 +579,9 @@ export class DnDBRollExecutor {
       return await this._createSimpleMessage(actor, rollInfo);
     }
 
-    if (DnDBMidiIntegration.isActive()) {
+    if (DnDBIntegration.isActive()) {
       LogUtil.log("DnDBRollExecutor._executeHealing - Using Midi-QOL workflow");
-      return await DnDBMidiIntegration.executeHealingWithMidi(actor, activity, rollInfo);
+      return await DnDBIntegration.executeHealingWithMidi(actor, activity, rollInfo);
     }
 
     return await this._executeHealingVanilla(actor, item, activity, rollInfo);
@@ -591,7 +591,7 @@ export class DnDBRollExecutor {
    * Execute a healing roll using vanilla DnD5e system
    */
   static async _executeHealingVanilla(actor, item, activity, rollInfo) {
-    DnDBMidiIntegration.setPendingRoll(rollInfo);
+    DnDBIntegration.setPendingRoll(rollInfo);
 
     const ddbRoll = rollInfo.rawRolls[0];
     const dialogConfig = { configure: false };

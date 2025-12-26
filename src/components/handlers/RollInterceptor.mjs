@@ -15,7 +15,7 @@ import { RollHelpers } from '../helpers/RollHelpers.mjs';
 import { HooksManager } from '../core/HooksManager.mjs';
 import { DiceConfigUtil } from '../utils/DiceConfigUtil.mjs';
 import { ChatMessageManager } from '../managers/ChatMessageManager.mjs';
-import { DnDBMidiIntegration } from '../integrations/dnd-beyond/DnDBMidiIntegration.mjs';
+import { DnDBIntegration } from '../integrations/dnd-beyond/DnDBIntegration.mjs';
 
 /**
  * Handles intercepting D&D5e rolls on the GM side and redirecting them to players
@@ -105,17 +105,15 @@ export class RollInterceptor {
     let actor;
     if (rollType === ROLL_TYPES.INITIATIVE && config instanceof Actor) {
       actor = config;
-      if (dialog?.isRollRequest === false || message?.isRollRequest === false) {
-        return;
-      }
     } else if (rollType === ROLL_TYPES.HIT_DIE) {
       actor = dialog?.subject?.actor || dialog?.subject || dialog?.actor;
-    } else if(rollType === ROLL_TYPES.ATTACK || rollType === ROLL_TYPES.DAMAGE){
+    } else if (rollType === ROLL_TYPES.ATTACK || rollType === ROLL_TYPES.DAMAGE) {
       actor = config.subject?.actor;
     } else {
       actor = config.subject?.actor || config.subject || config.actor;
     }
 
+    // === External module bypass checks (keep these separate) ===
     const ddbGameLogFlag = message?.data?.flags?.['ddb-game-log'];
     if (ddbGameLogFlag?.cls) {
       LogUtil.log('_onPreRollIntercept - skipping roll with ddb-game-log.cls flag (DDB roll)', [ddbGameLogFlag]);
@@ -123,122 +121,107 @@ export class RollInterceptor {
     }
 
     const flash5eFlags = message?.data?.flags?.[MODULE_ID];
-    LogUtil.log('_onPreRollIntercept - flags', [flash5eFlags, message, message?.data, message?.data?.flags, MODULE_ID]);
     if (flash5eFlags?.isDnDBRoll) {
-      LogUtil.log('_onPreRollIntercept - skipping roll with flash-rolls-5e.isDnDBRoll flag (DDB roll)', [flash5eFlags]);
       return;
     }
 
-    if (DnDBMidiIntegration.hasPendingRoll()) {
+    const monksTokenBarFlags = message?.data?.flags?.['monks-tokenbar'];
+    const eventTarget = config.event?.target;
+    const isMonksTokenBarButton = eventTarget?.closest?.('[data-action="requestRollPlusRoll"]') ||
+                                   eventTarget?.closest?.('.monks-tokenbar') ||
+                                   eventTarget?.closest?.('.request-card');
+    if (monksTokenBarFlags || config?.options?.['monks-tokenbar'] || dialog?.options?.['monks-tokenbar'] || isMonksTokenBarButton) {
+      LogUtil.log('_onPreRollIntercept - skipping roll from Monk\'s Token Bar', [monksTokenBarFlags, isMonksTokenBarButton]);
+      return;
+    }
+
+    if (DnDBIntegration.hasPendingRoll()) {
       LogUtil.log('_onPreRollIntercept - skipping interception: pending DnDB roll');
       dialog.configure = false;
       return;
     }
 
-    // Calculate these variables before using them
+    // === Calculate context for skip dialog decision ===
     const owner = GeneralUtil.getActorOwner(actor);
     const isOwnerActive = owner && owner?.active && !owner?.isGM;
     const skipToRollResolver = SettingsUtil.get(SETTINGS.skipToRollResolver.tag);
     const hasNonDigitalDice = skipToRollResolver && DiceConfigUtil.hasNonDigitalDice();
-    const skipRollDialog = RollHelpers.shouldSkipRollDialog({
+    const isRollRequestFlag = config?.isRollRequest || dialog?.isRollRequest || message?.isRollRequest;
+
+    const shouldSkipDialog = RollHelpers.shouldSkipRollDialog({
       event: config.event,
       isPC: isOwnerActive,
       isNPC: !isOwnerActive,
-      hasNonDigitalDice
+      hasNonDigitalDice,
+      configSendRequest: config.sendRequest,
+      configSkipRollDialog: config.skipRollDialog,
+      isRollRequest: isRollRequestFlag
     });
 
-    if (!requestsEnabled || !rollInterceptionEnabled || config.isRollRequest === false) {
-      if(!isMidiOn) {
-        const shouldSkip = config.isRollRequest === undefined && skipRollDialog;
-        dialog.configure = !shouldSkip;
-      }
+    // === Handle non-interception mode (requests disabled or not intercepting) ===
+    if (!requestsEnabled || !rollInterceptionEnabled) {
+      dialog.configure = !shouldSkipDialog;
+      LogUtil.log('_onPreRollIntercept - interception disabled, dialog.configure:', [!shouldSkipDialog]);
       return;
     }
 
+    // === Only intercept on GM side ===
+    if (!game.user.isGM) return;
+
+    // === Skip interception if shouldSkipDialog is true ===
+    if (shouldSkipDialog) {
+      dialog.configure = false;
+      LogUtil.log('_onPreRollIntercept - skipping interception (shouldSkipDialog)', [shouldSkipDialog]);
+      return;
+    }
+
+    // === Context checks that remain in interceptor ===
+    if (isMidiOn && (owner?.isGM || !owner?.active)) return;
+
+    if (!actor || actor.documentName !== 'Actor') {
+      return;
+    }
+
+    // Attack/Damage specific: check for module flags on item
+    if (rollType === ROLL_TYPES.ATTACK || rollType === ROLL_TYPES.DAMAGE) {
+      const moduleFlags = config.subject?.item?.getFlag(MODULE_ID, 'tempAttackConfig') || config.subject?.item?.getFlag(MODULE_ID, 'tempDamageConfig');
+      if (moduleFlags) {
+        LogUtil.log('_onPreRollIntercept - found module flags, skipping interception', [moduleFlags]);
+        return;
+      }
+      if ((config.subject?.activity || config.subject?.item) && !owner?.active) {
+        LogUtil.log('_onPreRollIntercept - activity-based attack/damage roll with offline owner, skip interception', [config.subject, owner]);
+        return;
+      }
+    }
+
+    // Override rollType if this is actually an initiative roll
+    const hookNames = config?.hookNames || dialog?.hookNames || message?.hookNames || [];
+    const isInitiativeRoll = hookNames.includes('initiativeDialog') || hookNames.includes('initiative');
+    if (isInitiativeRoll && rollType === ROLL_TYPES.ABILITY) {
+      LogUtil.log('RollInterceptor._onPreRollIntercept - Overriding ability to initiative', [hookNames]);
+      rollType = ROLL_TYPES.INITIATIVE;
+    }
+
+    // Set attack rolls to public
+    if (rollType === ROLL_TYPES.ATTACK) {
+      message = { ...message, rollMode: CONST.DICE_ROLL_MODES.PUBLIC };
+    }
+
+    // Add processing flags to message
     if (message?.data) {
       message.data = {
         ...message.data,
         flags: {
           ...message.data?.flags,
-          rsr5e: {
-            ...message.data?.flags?.rsr5e,
-            processed: true, quickRoll: false
-          }
+          rsr5e: { ...message.data?.flags?.rsr5e, processed: true, quickRoll: false }
         }
-      }
-    }
-    LogUtil.log('_onPreRollIntercept #1', [requestsEnabled, rollInterceptionEnabled, config, message]);
-
-    // Only intercept on GM side, if this is a request
-    if (!game.user.isGM) return;
-    if(isMidiOn && (owner?.isGM || !owner?.active)) return;
-
-    const hookNames = config?.hookNames || dialog?.hookNames || message?.hookNames || [];
-    const isInitiativeRoll = hookNames.includes('initiativeDialog') || hookNames.includes('initiative');
-    
-    if(rollType === ROLL_TYPES.ATTACK || rollType === ROLL_TYPES.DAMAGE){
-      const moduleFlags = config.subject?.item?.getFlag(MODULE_ID, 'tempAttackConfig') || config.subject?.item?.getFlag(MODULE_ID, 'tempDamageConfig');
-      dialog.configure = !skipRollDialog;
-      LogUtil.log('_onPreRollIntercept - attack / damage - flag', [moduleFlags, config.subject, owner]);
-      if(moduleFlags){
-        LogUtil.log('_onPreRollIntercept - found module flags, skipping interception', [moduleFlags]);
-        return;
-      }
-
-      if((config.subject?.activity || config.subject?.item) && !owner?.active){
-        LogUtil.log('_onPreRollIntercept - activity-based attack/damage roll with offline owner, skip interception', [config.subject, owner]);
-        return;
-      }
-    }
-    
-    // Override rollType if this is actually an initiative roll
-    if (isInitiativeRoll && rollType === ROLL_TYPES.ABILITY) {
-      LogUtil.log('RollInterceptor._onPreRollIntercept - Overriding ability to initiative', [hookNames]);
-      rollType = ROLL_TYPES.INITIATIVE;
-    }
-    
-    if ( config?.isRollRequest || config.sendRequest===false || 
-         dialog?.isRollRequest || message?.isRollRequest) {
-      LogUtil.log('_onPreRollIntercept - skipping interception (roll request)', [config, dialog, message]);
-      return;
-    }
-
-    if(!rollInterceptionEnabled || //!rollRequestsEnabled ||
-      !actor || actor.documentName !== 'Actor') {
-      return;
-    }
-
-    if (rollType === ROLL_TYPES.ATTACK) {
-      message = {
-        ...message,
-        rollMode: CONST.DICE_ROLL_MODES.PUBLIC
       };
     }
 
-    const isMidiActive = isMidiOn && config.midiOptions;
-
-    if (config.sendRequest===false || config.skipRollDialog===true) { 
-      LogUtil.log('_onPreRollIntercept - skipping interception', [dialog.configure, config.sendRequest]);
-      return;
-    }
-    
-    if(isMidiActive && game.user.isGM){
-      // if(config.midiOptions?.fastForward){
-      //   config.midiOptions = {
-      //     ...config.midiOptions,
-      //     consume: {
-      //       spellSlot: false
-      //     }
-      //   }
-      // }
-      LogUtil.log('_onPreRollIntercept - MidiActive', [config.midiOptions]);
-      this._showGMConfigDialog(actor, owner, rollType, config, dialog, message); 
-      return false;
-    }
-    
-    LogUtil.log('_onPreRollIntercept - intercepting roll #1', [config, dialog, message]);
-    this._showGMConfigDialog(actor, owner, rollType, config, dialog, message); 
-    
+    // === Show GM config dialog ===
+    LogUtil.log('_onPreRollIntercept - showing GM config dialog', [rollType, config, dialog, message]);
+    this._showGMConfigDialog(actor, owner, rollType, config, dialog, message);
     return false;
   }
   /**

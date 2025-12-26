@@ -28,6 +28,10 @@ export class PatronSessionManager {
   }
 
   static async initialize() {
+    if (!game.user.isGM) {
+      LogUtil.log("PatronSessionManager: Skipping initialization for non-GM user");
+      return;
+    }
     LogUtil.log("Initializing PatronSessionManager");
     PatronSessionManager._loadSessionToken();
     const instance = PatronSessionManager.getInstance();

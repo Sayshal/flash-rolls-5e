@@ -5,6 +5,7 @@ import { LogUtil } from '../../utils/LogUtil.mjs';
 import { GMRollConfigDialog, GMSkillToolConfigDialog, GMHitDieConfigDialog } from '../../ui/dialogs/gm-dialogs/index.mjs';
 import { CustomRollDialog } from '../../ui/dialogs/CustomRollDialog.mjs';
 import { RollHelpers } from '../../helpers/RollHelpers.mjs';
+import { OfflinePlayerManager } from './OfflinePlayerManager.mjs';
 
 /**
  * Utility class for roll configuration operations in the Roll Requests Menu
@@ -23,16 +24,20 @@ export class RollMenuConfig {
     const SETTINGS = getSettings();
     const rollRequestsEnabled = SettingsUtil.get(SETTINGS.rollRequestsEnabled.tag);
     const sendAsRequest = configOverrides.hasOwnProperty('sendAsRequest') ? configOverrides.sendAsRequest : undefined;
-    const npcActors = actors.filter(actor => pcActors.includes(actor.id));
+    const npcActors = actors.filter(actor => !pcActors.some(pc => pc.actor.id === actor.id));
+
+    const { onlinePlayerActors, offlinePlayerActors } = OfflinePlayerManager.categorizeActorsByOnlineStatus(pcActors);
+    const hasOnlinePlayers = onlinePlayerActors.length > 0;
+    const allActorsAreLocalRolls = !hasOnlinePlayers;
 
     let confirmedSkipDialog;
     if (configOverrides.hasOwnProperty('skipRollDialog')) {
       confirmedSkipDialog = configOverrides.skipRollDialog;
     } else {
       confirmedSkipDialog = RollHelpers.shouldSkipRollDialog({
-        isPC: pcActors.length > 0,
-        isNPC: npcActors.length > 0,
-        sendRequest: sendAsRequest
+        isPC: hasOnlinePlayers,
+        isNPC: npcActors.length > 0 || allActorsAreLocalRolls,
+        sendRequest: allActorsAreLocalRolls ? false : sendAsRequest
       });
     }
 
@@ -49,7 +54,7 @@ export class RollMenuConfig {
 
       const config = await DialogClass.initConfiguration(actors, rollMethodName, rollKey, {
         confirmedSkipDialog,
-        sendRequest: rollRequestsEnabled && (sendAsRequest===true || (sendAsRequest===undefined && pcActors.length > 0)),
+        sendRequest: rollRequestsEnabled && (sendAsRequest===true || (sendAsRequest===undefined && hasOnlinePlayers)),
         ...configOverrides,
         advantage: configOverrides.advantage === true,
         disadvantage: configOverrides.disadvantage === true,
@@ -82,7 +87,7 @@ export class RollMenuConfig {
         chatMessage: true,
         isRollRequest: false,
         skipRollDialog: confirmedSkipDialog,
-        sendRequest: rollRequestsEnabled && (configOverrides.hasOwnProperty('sendAsRequest') ? configOverrides.sendAsRequest : (pcActors.length > 0))
+        sendRequest: rollRequestsEnabled && (configOverrides.hasOwnProperty('sendAsRequest') ? configOverrides.sendAsRequest : hasOnlinePlayers)
       };
 
       if (configOverrides.dc) {

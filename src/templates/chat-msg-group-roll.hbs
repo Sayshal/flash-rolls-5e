@@ -15,7 +15,19 @@
           {{#if rolled}}
             <span class="roll-value toggle" title="Click to see roll breakdown">{{total}}</span>
           {{else}}
-            <span class="dice-btn fas fa-dice-d20 rollable" 
+            <span class="adv-btn fas fa-angles-down"
+                  data-action="roll"
+                  data-advantage-mode="-1"
+                  data-type="{{../rollType}}"
+                  data-roll-key="{{../rollKey}}"
+                  data-actor-id="{{actorId}}"
+                  {{#if tokenId}}data-token-id="{{tokenId}}"{{/if}}
+                  data-group-roll-id="{{../groupRollId}}"
+                  {{#if ../dc}}data-dc="{{../dc}}"{{/if}}
+                  {{#if ../gmSituationalBonus}}data-situational-bonus="{{../gmSituationalBonus}}"{{/if}}
+                  {{#if ../gmDisadvantage}}data-gm-active="true"{{/if}}
+                  title="Roll with Disadvantage"></span>
+            <span class="dice-btn fas fa-dice-d20 rollable"
                   data-action="roll"
                   data-type="{{../rollType}}"
                   data-roll-key="{{../rollKey}}"
@@ -27,8 +39,23 @@
                   {{#if ../rollType}}{{#eq ../rollType "save"}}data-ability="{{../rollKey}}"{{/eq}}{{/if}}
                   {{#if ../rollType}}{{#eq ../rollType "ability"}}data-ability="{{../rollKey}}"{{/eq}}{{/if}}
                   {{#if ../dc}}data-dc="{{../dc}}"{{/if}}
+                  {{#if ../gmAdvantage}}data-gm-advantage="true"{{/if}}
+                  {{#if ../gmDisadvantage}}data-gm-disadvantage="true"{{/if}}
+                  {{#if ../gmSituationalBonus}}data-situational-bonus="{{../gmSituationalBonus}}"{{/if}}
                   title="Click to roll"
                   alt="Pending Roll"></span>
+            <span class="adv-btn fas fa-angles-up"
+                  data-action="roll"
+                  data-advantage-mode="1"
+                  data-type="{{../rollType}}"
+                  data-roll-key="{{../rollKey}}"
+                  data-actor-id="{{actorId}}"
+                  {{#if tokenId}}data-token-id="{{tokenId}}"{{/if}}
+                  data-group-roll-id="{{../groupRollId}}"
+                  {{#if ../dc}}data-dc="{{../dc}}"{{/if}}
+                  {{#if ../gmSituationalBonus}}data-situational-bonus="{{../gmSituationalBonus}}"{{/if}}
+                  {{#if ../gmAdvantage}}data-gm-active="true"{{/if}}
+                  title="Roll with Advantage"></span>
           {{/if}}
         </span>
       </div>
@@ -85,6 +112,18 @@
       </div>
       {{/if}}
       {{/if}}
+
+      <div class="group-roll-selection-buttons gm-only" data-group-roll-id="{{groupRollId}}" data-message-id="{{messageId}}">
+        <button type="button" class="select-actors-btn" data-select-type="failed" data-tooltip="Select Failed">
+          <i class="fa-solid fa-user-xmark"></i>
+        </button>
+        <button type="button" class="select-actors-btn" data-select-type="passed" data-tooltip="Select Passed">
+          <i class="fa-solid fa-user-check"></i>
+        </button>
+        <button type="button" class="select-actors-btn" data-select-type="all" data-tooltip="Select All">
+          <i class="fa-solid fa-users"></i>
+        </button>
+      </div>
     {{/if}}
   {{/if}}
 </div>

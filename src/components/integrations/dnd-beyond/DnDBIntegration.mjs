@@ -10,7 +10,7 @@ import { DnDBRollExecutor } from "./DnDBRollExecutor.mjs";
  * Handles DnDB roll integration with Midi-QOL workflows
  * Uses dnd5e roll configuration hooks to inject DDB dice values into Midi workflows
  */
-export class DnDBMidiIntegration {
+export class DnDBIntegration {
 
   static _pendingDnDBRoll = null;
 
@@ -28,7 +28,7 @@ export class DnDBMidiIntegration {
    */
   static setPendingRoll(rollInfo) {
     this._pendingDnDBRoll = rollInfo;
-    LogUtil.log("DnDBMidiIntegration.setPendingRoll", [rollInfo]);
+    LogUtil.log("DnDBIntegration.setPendingRoll", [rollInfo]);
   }
 
   /**
@@ -75,7 +75,7 @@ export class DnDBMidiIntegration {
     Hooks.on(HOOKS_DND5E.POST_SKILL_CHECK_ROLL_CONFIGURATION, this._onPostBasicRollConfiguration.bind(this));
     Hooks.on(HOOKS_DND5E.POST_SAVING_THROW_ROLL_CONFIGURATION, this._onPostBasicRollConfiguration.bind(this));
     Hooks.on(HOOKS_MIDI_QOL.PRE_DAMAGE_ROLL, this._onMidiPreDamageRoll.bind(this));
-    LogUtil.log("DnDBMidiIntegration: Registered roll configuration hooks");
+    LogUtil.log("DnDBIntegration: Registered roll configuration hooks");
   }
 
   /**
@@ -84,7 +84,7 @@ export class DnDBMidiIntegration {
    */
   static _onMidiPreDamageRoll(workflow, activity, config, dialog, message) {
     if (this._waitingForDnDBDamage && !this.hasPendingRoll()) {
-      LogUtil.log("DnDBMidiIntegration._onMidiPreDamageRoll - Blocking auto-damage, waiting for DDB damage roll");
+      LogUtil.log("DnDBIntegration._onMidiPreDamageRoll - Blocking auto-damage, waiting for DDB damage roll");
       return false;
     }
     return true;
@@ -97,7 +97,7 @@ export class DnDBMidiIntegration {
   static _onPreRollAttack(config, dialog, message) {
     if (!this.hasPendingRoll()) return;
     dialog.configure = false;
-    LogUtil.log("DnDBMidiIntegration._onPreRollAttack - Forcing dialog.configure = false");
+    LogUtil.log("DnDBIntegration._onPreRollAttack - Forcing dialog.configure = false");
   }
 
   /**
@@ -107,7 +107,7 @@ export class DnDBMidiIntegration {
   static _onPreRollDamage(config, dialog, message) {
     if (!this.hasPendingRoll() && !DnDBRollExecutor.hasPendingDamageRoll()) return;
     dialog.configure = false;
-    LogUtil.log("DnDBMidiIntegration._onPreRollDamage - Forcing dialog.configure = false");
+    LogUtil.log("DnDBIntegration._onPreRollDamage - Forcing dialog.configure = false");
   }
 
   /**
@@ -118,7 +118,7 @@ export class DnDBMidiIntegration {
   static _onPreRollBasic(config, dialog, message) {
     if (!this.hasPendingRoll()) return;
     dialog.configure = false;
-    LogUtil.log("DnDBMidiIntegration._onPreRollBasic - Forcing dialog.configure = false");
+    LogUtil.log("DnDBIntegration._onPreRollBasic - Forcing dialog.configure = false");
   }
 
   /**
@@ -136,7 +136,7 @@ export class DnDBMidiIntegration {
     const ddbRoll = pendingRoll?.rawRolls?.[0];
     if (!ddbRoll || !rolls?.length) return;
 
-    LogUtil.log("DnDBMidiIntegration._onPostAttackRollConfiguration - Injecting DDB values", [rolls, ddbRoll]);
+    LogUtil.log("DnDBIntegration._onPostAttackRollConfiguration - Injecting DDB values", [rolls, ddbRoll]);
 
     for (const roll of rolls) {
       this._injectDiceValuesPreEval(roll, ddbRoll);
@@ -161,7 +161,7 @@ export class DnDBMidiIntegration {
     const ddbRoll = pendingRoll?.rawRolls?.[0];
     if (!ddbRoll || !rolls?.length) return;
 
-    LogUtil.log("DnDBMidiIntegration._onPostDamageRollConfiguration - Injecting DDB values", [rolls, ddbRoll]);
+    LogUtil.log("DnDBIntegration._onPostDamageRollConfiguration - Injecting DDB values", [rolls, ddbRoll]);
 
     for (const roll of rolls) {
       this._injectDiceValuesPreEval(roll, ddbRoll);
@@ -180,7 +180,7 @@ export class DnDBMidiIntegration {
    * @param {Object} message - Message configuration
    */
   static _onPostBasicRollConfiguration(rolls, config, dialog, message) {
-    LogUtil.log("DnDBMidiIntegration._onPostBasicRollConfiguration - Hook fired", [
+    LogUtil.log("DnDBIntegration._onPostBasicRollConfiguration - Hook fired", [
       "hasPending:", this.hasPendingRoll(),
       "rollCount:", rolls?.length
     ]);
@@ -190,14 +190,14 @@ export class DnDBMidiIntegration {
     const pendingRoll = this._pendingDnDBRoll;
     const ddbRoll = pendingRoll?.rawRolls?.[0];
     if (!ddbRoll || !rolls?.length) {
-      LogUtil.warn("DnDBMidiIntegration._onPostBasicRollConfiguration - Missing ddbRoll or rolls", [
+      LogUtil.warn("DnDBIntegration._onPostBasicRollConfiguration - Missing ddbRoll or rolls", [
         "ddbRoll:", !!ddbRoll,
         "rollsLength:", rolls?.length
       ]);
       return;
     }
 
-    LogUtil.log("DnDBMidiIntegration._onPostBasicRollConfiguration - Injecting DDB values", [
+    LogUtil.log("DnDBIntegration._onPostBasicRollConfiguration - Injecting DDB values", [
       "action:", pendingRoll?.action,
       "rollType:", pendingRoll?.rollType
     ]);
@@ -219,7 +219,7 @@ export class DnDBMidiIntegration {
   static _injectDiceValuesPreEval(roll, ddbRoll) {
     const notation = ddbRoll.diceNotation;
     if (!notation) {
-      LogUtil.warn("DnDBMidiIntegration._injectDiceValuesPreEval - No diceNotation found", [ddbRoll]);
+      LogUtil.warn("DnDBIntegration._injectDiceValuesPreEval - No diceNotation found", [ddbRoll]);
       return;
     }
 
@@ -231,7 +231,7 @@ export class DnDBMidiIntegration {
     }
 
     if (allDnDBDice.length === 0) {
-      LogUtil.warn("DnDBMidiIntegration._injectDiceValuesPreEval - No dice values found", [notation]);
+      LogUtil.warn("DnDBIntegration._injectDiceValuesPreEval - No dice values found", [notation]);
       return;
     }
 
@@ -254,7 +254,7 @@ export class DnDBMidiIntegration {
       }
     }
 
-    LogUtil.log("DnDBMidiIntegration._injectDiceValuesPreEval - Injected values", [
+    LogUtil.log("DnDBIntegration._injectDiceValuesPreEval - Injected values", [
       "formula:", roll.formula,
       "ddbValues:", allDnDBDice,
       "rollTerms:", roll.terms.map(t => t instanceof Die ? { faces: t.faces, results: t.results } : t)
@@ -296,7 +296,7 @@ export class DnDBMidiIntegration {
   static async executeAttackWithMidi(actor, activity, rollInfo, options = {}) {
     const MidiQOL = ModuleHelpers.getMidiQOL();
     if (!MidiQOL) {
-      LogUtil.warn("DnDBMidiIntegration: MidiQOL not available");
+      LogUtil.warn("DnDBIntegration: MidiQOL not available");
       return false;
     }
 
@@ -337,7 +337,7 @@ export class DnDBMidiIntegration {
       const result = await MidiQOL.completeActivityUse(activity, usageConfig, dialogConfig, messageConfig);
       const item = activity.item;
       const workflow = this._findWorkflowWaitingForDamage(MidiQOL, item);
-      LogUtil.log("DnDBMidiIntegration.executeAttackWithMidi - After completeActivityUse", [
+      LogUtil.log("DnDBIntegration.executeAttackWithMidi - After completeActivityUse", [
         "result:", result,
         "workflowFound:", !!workflow,
         "workflowState:", workflow?.currentAction,
@@ -346,7 +346,7 @@ export class DnDBMidiIntegration {
       ]);
       return true;
     } catch (error) {
-      LogUtil.error("DnDBMidiIntegration.executeAttackWithMidi failed", [error]);
+      LogUtil.error("DnDBIntegration.executeAttackWithMidi failed", [error]);
       this.clearPendingRoll();
       this._waitingForDnDBDamage = false;
       return false;
@@ -369,11 +369,11 @@ export class DnDBMidiIntegration {
   static async executeDamageWithMidi(actor, activity, rollInfo, options = {}) {
     const MidiQOL = ModuleHelpers.getMidiQOL();
     if (!MidiQOL) {
-      LogUtil.warn("DnDBMidiIntegration: MidiQOL not available");
+      LogUtil.warn("DnDBIntegration: MidiQOL not available");
       return false;
     }
 
-    LogUtil.log("DnDBMidiIntegration.executeDamageWithMidi - Entry", [
+    LogUtil.log("DnDBIntegration.executeDamageWithMidi - Entry", [
       "wasWaitingForDnDBDamage:", this._waitingForDnDBDamage,
       "isGM:", game.user.isGM,
       "activityUuid:", activity.uuid
@@ -387,7 +387,7 @@ export class DnDBMidiIntegration {
     const workflowWaiting = this._findWorkflowWaitingForDamage(MidiQOL, activity);
     const recentWorkflow = workflowWaiting || workflowByActivity || this._findRecentWorkflowForItem(MidiQOL, activity);
 
-    LogUtil.log("DnDBMidiIntegration.executeDamageWithMidi - Routing decision", [
+    LogUtil.log("DnDBIntegration.executeDamageWithMidi - Routing decision", [
       "itemRequiresAttack:", itemRequiresAttack,
       "hasWorkflowWaiting:", !!workflowWaiting,
       "hasWorkflowByActivity:", !!workflowByActivity,
@@ -399,17 +399,17 @@ export class DnDBMidiIntegration {
 
     if (itemRequiresAttack) {
       if (workflowWaiting) {
-        LogUtil.log("DnDBMidiIntegration: Case A - Item requires attack + workflow waiting for damage, using Midi");
+        LogUtil.log("DnDBIntegration: Case A - Item requires attack + workflow waiting for damage, using Midi");
         return await this._executeDamageExistingWorkflow(activity, rollInfo, workflowWaiting);
       } else if (recentWorkflow) {
-        LogUtil.log("DnDBMidiIntegration: Case C - Item requires attack + recent workflow, attaching damage");
+        LogUtil.log("DnDBIntegration: Case C - Item requires attack + recent workflow, attaching damage");
         return await this._executeDamageAttachToWorkflow(activity, rollInfo, recentWorkflow);
       } else {
-        LogUtil.log("DnDBMidiIntegration: Case D - Item requires attack but NO workflow, falling back to vanilla");
+        LogUtil.log("DnDBIntegration: Case D - Item requires attack but NO workflow, falling back to vanilla");
         return false;
       }
     } else {
-      LogUtil.log("DnDBMidiIntegration: Case B - Damage-only item, creating new Midi workflow");
+      LogUtil.log("DnDBIntegration: Case B - Damage-only item, creating new Midi workflow");
       return await this._executeDamageNewWorkflow(actor, activity, rollInfo, options);
     }
   }
@@ -423,7 +423,7 @@ export class DnDBMidiIntegration {
    */
   static _findWorkflowWaitingForDamage(MidiQOL, activity) {
     if (!activity || !MidiQOL?.Workflow?.workflows) {
-      LogUtil.log("DnDBMidiIntegration._findWorkflowWaitingForDamage - No activity or workflows", [
+      LogUtil.log("DnDBIntegration._findWorkflowWaitingForDamage - No activity or workflows", [
         "activity:", activity?.name,
         "hasWorkflows:", !!MidiQOL?.Workflow?.workflows
       ]);
@@ -432,7 +432,7 @@ export class DnDBMidiIntegration {
 
     const workflows = MidiQOL.Workflow.workflows;
     const itemUuid = activity.item?.uuid;
-    LogUtil.log("DnDBMidiIntegration._findWorkflowWaitingForDamage - Searching workflows", [
+    LogUtil.log("DnDBIntegration._findWorkflowWaitingForDamage - Searching workflows", [
       "activityUuid:", activity.uuid,
       "itemUuid:", itemUuid,
       "workflowCount:", workflows.size
@@ -445,7 +445,7 @@ export class DnDBMidiIntegration {
       const matchesActivity = workflow.activity?.uuid === activity.uuid;
       const matchesItem = workflow.item?.uuid === itemUuid;
 
-      LogUtil.log("DnDBMidiIntegration._findWorkflowWaitingForDamage - Checking workflow", [
+      LogUtil.log("DnDBIntegration._findWorkflowWaitingForDamage - Checking workflow", [
         workflow.id,
         "workflowActivityUuid:", workflow.activity?.uuid,
         "workflowItemUuid:", workflow.item?.uuid,
@@ -457,7 +457,7 @@ export class DnDBMidiIntegration {
 
       if ((matchesActivity || matchesItem) &&
           workflow.currentAction === workflow.WorkflowState_WaitForDamageRoll) {
-        LogUtil.log("DnDBMidiIntegration._findWorkflowWaitingForDamage - Found workflow", [
+        LogUtil.log("DnDBIntegration._findWorkflowWaitingForDamage - Found workflow", [
           workflow.id,
           "activity:", workflow.activity?.name,
           "item:", workflow.item?.name,
@@ -467,7 +467,7 @@ export class DnDBMidiIntegration {
       }
     }
 
-    LogUtil.log("DnDBMidiIntegration._findWorkflowWaitingForDamage - No matching workflow found");
+    LogUtil.log("DnDBIntegration._findWorkflowWaitingForDamage - No matching workflow found");
     return null;
   }
 
@@ -502,7 +502,7 @@ export class DnDBMidiIntegration {
     }
 
     if (mostRecentWorkflow) {
-      LogUtil.log("DnDBMidiIntegration._findRecentWorkflowForItem - Found workflow without damage", [
+      LogUtil.log("DnDBIntegration._findRecentWorkflowForItem - Found workflow without damage", [
         mostRecentWorkflow.id,
         "activity:", mostRecentWorkflow.activity?.name,
         "item:", mostRecentWorkflow.item?.name,
@@ -538,14 +538,14 @@ export class DnDBMidiIntegration {
       const hasDamageRolls = flags.damageRolls?.length > 0 || flags.damageTotal > 0;
       if (hasDamageRolls) continue;
 
-      LogUtil.log("DnDBMidiIntegration._findWorkflowFromRecentChat - Found candidate message", [
+      LogUtil.log("DnDBIntegration._findWorkflowFromRecentChat - Found candidate message", [
         message.id,
         "itemUuid:", msgItemUuid
       ]);
 
       const workflow = MidiQOL.Workflow.getWorkflow(message.uuid);
       if (workflow) {
-        LogUtil.log("DnDBMidiIntegration._findWorkflowFromRecentChat - Reconstructed workflow from chat", [
+        LogUtil.log("DnDBIntegration._findWorkflowFromRecentChat - Reconstructed workflow from chat", [
           workflow.id,
           "item:", workflow.item?.name,
           "suspended:", workflow.suspended
@@ -587,7 +587,7 @@ export class DnDBMidiIntegration {
       await activity.rollDamage(rollConfig, dialogConfig, messageConfig);
       return true;
     } catch (error) {
-      LogUtil.error("DnDBMidiIntegration._executeDamageExistingWorkflow failed", [error]);
+      LogUtil.error("DnDBIntegration._executeDamageExistingWorkflow failed", [error]);
       this.clearPendingRoll();
       return false;
     }
@@ -608,7 +608,7 @@ export class DnDBMidiIntegration {
     const isWorkflowCompleted = workflow.currentAction === workflow.WorkflowState_Completed ||
                                  workflow.currentAction === workflow.WorkflowState_RollFinished;
 
-    LogUtil.log("DnDBMidiIntegration._executeDamageAttachToWorkflow - Entry", [
+    LogUtil.log("DnDBIntegration._executeDamageAttachToWorkflow - Entry", [
       "workflowId:", workflow.id,
       "isWorkflowCompleted:", isWorkflowCompleted,
       "currentAction:", workflow.currentAction?.name,
@@ -629,7 +629,7 @@ export class DnDBMidiIntegration {
     const dialogConfig = { configure: false };
     const messageConfig = { create: false };
 
-    LogUtil.log("DnDBMidiIntegration._executeDamageAttachToWorkflow - Calling rollDamage", [
+    LogUtil.log("DnDBIntegration._executeDamageAttachToWorkflow - Calling rollDamage", [
       "rollConfig:", rollConfig,
       "dialogConfig:", dialogConfig,
       "messageConfig:", messageConfig
@@ -638,12 +638,12 @@ export class DnDBMidiIntegration {
     try {
       const rolls = await activity.rollDamage(rollConfig, dialogConfig, messageConfig);
       if (!rolls?.length) {
-        LogUtil.warn("DnDBMidiIntegration._executeDamageAttachToWorkflow - No rolls returned");
+        LogUtil.warn("DnDBIntegration._executeDamageAttachToWorkflow - No rolls returned");
         this.clearPendingRoll();
         return false;
       }
 
-      LogUtil.log("DnDBMidiIntegration._executeDamageAttachToWorkflow - Got damage rolls", [
+      LogUtil.log("DnDBIntegration._executeDamageAttachToWorkflow - Got damage rolls", [
         "rollCount:", rolls.length,
         "workflowId:", workflow.id,
         "workflowSuspended:", workflow.suspended
@@ -651,7 +651,7 @@ export class DnDBMidiIntegration {
 
       if (typeof workflow.setDamageRolls === 'function') {
         await workflow.setDamageRolls(rolls);
-        LogUtil.log("DnDBMidiIntegration._executeDamageAttachToWorkflow - Used setDamageRolls API", [
+        LogUtil.log("DnDBIntegration._executeDamageAttachToWorkflow - Used setDamageRolls API", [
           "damageTotal:", workflow.damageTotal,
           "hasDamageRollHTML:", !!workflow.damageRollHTML
         ]);
@@ -659,14 +659,14 @@ export class DnDBMidiIntegration {
         workflow.damageRolls = rolls;
         workflow.damageRoll = rolls[0];
         workflow.damageTotal = rolls.reduce((total, roll) => total + roll.total, 0);
-        LogUtil.log("DnDBMidiIntegration._executeDamageAttachToWorkflow - Set damageRolls directly (fallback)");
+        LogUtil.log("DnDBIntegration._executeDamageAttachToWorkflow - Set damageRolls directly (fallback)");
       }
 
       await workflow.displayDamageRolls?.();
 
       return true;
     } catch (error) {
-      LogUtil.error("DnDBMidiIntegration._executeDamageAttachToWorkflow failed", [error]);
+      LogUtil.error("DnDBIntegration._executeDamageAttachToWorkflow failed", [error]);
       this.clearPendingRoll();
       return false;
     }
@@ -688,7 +688,7 @@ export class DnDBMidiIntegration {
     this.setPendingRoll(rollInfo);
 
     const hasTemplate = activity.target?.template?.type;
-    LogUtil.log("DnDBMidiIntegration._executeDamageNewWorkflow", [
+    LogUtil.log("DnDBIntegration._executeDamageNewWorkflow", [
       "activity:", activity.name,
       "hasTemplate:", hasTemplate,
       "templateType:", activity.target?.template?.type
@@ -728,7 +728,7 @@ export class DnDBMidiIntegration {
       await MidiQOL.completeActivityUse(activity, usageConfig, dialogConfig, messageConfig);
       return true;
     } catch (error) {
-      LogUtil.error("DnDBMidiIntegration._executeDamageNewWorkflow failed", [error]);
+      LogUtil.error("DnDBIntegration._executeDamageNewWorkflow failed", [error]);
       this.clearPendingRoll();
       return false;
     }
@@ -745,13 +745,13 @@ export class DnDBMidiIntegration {
   static async executeHealingWithMidi(actor, activity, rollInfo) {
     const MidiQOL = ModuleHelpers.getMidiQOL();
     if (!MidiQOL) {
-      LogUtil.warn("DnDBMidiIntegration: MidiQOL not available for healing");
+      LogUtil.warn("DnDBIntegration: MidiQOL not available for healing");
       return false;
     }
 
     this.setPendingRoll(rollInfo);
 
-    LogUtil.log("DnDBMidiIntegration.executeHealingWithMidi", [
+    LogUtil.log("DnDBIntegration.executeHealingWithMidi", [
       "activity:", activity.name,
       "item:", activity.item?.name
     ]);
@@ -789,7 +789,7 @@ export class DnDBMidiIntegration {
       await MidiQOL.completeActivityUse(activity, usageConfig, dialogConfig, messageConfig);
       return true;
     } catch (error) {
-      LogUtil.error("DnDBMidiIntegration.executeHealingWithMidi failed", [error]);
+      LogUtil.error("DnDBIntegration.executeHealingWithMidi failed", [error]);
       this.clearPendingRoll();
       return false;
     }

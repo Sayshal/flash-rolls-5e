@@ -137,6 +137,16 @@
         "label": "Show Group Calculation for Saves",
         "hint": "When enabled, group roll messages for saving throws will include the group calculation result summary. When disabled, save group messages will only show individual results without the group calculation footer."
       },
+      "autoSelectOnGroupRoll": {
+        "label": "Auto-Select Tokens on Group Roll Complete",
+        "hint": "Automatically select tokens on the canvas when a group roll with DC completes. Useful for quickly applying damage or effects to failed/passed saves.",
+        "choices": {
+          "0": "Do not auto-select",
+          "1": "Auto-select failed",
+          "2": "Auto-select passed",
+          "3": "Auto-select all"
+        }
+      },
       "removeSaveMsgAfterRoll": {
         "label": "Hide Messages from Automatic Save Request by Midi-QOL",
         "hint": "Activate this to reduce repetition especially with Midi-QoL. Save roll messages will be hidden 1 second after all rolls complete and then deleted. This prevents duplicate information with what's shown on Midi-QoL cards."
