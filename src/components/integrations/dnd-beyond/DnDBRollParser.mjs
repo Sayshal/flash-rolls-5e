@@ -29,8 +29,28 @@ export class DnDBRollParser {
       isAdvantage: firstRoll.rollKind === "advantage",
       isDisadvantage: firstRoll.rollKind === "disadvantage",
       isCritical: firstRoll.rollKind === "critical hit",
-      rawRolls: rolls
+      rawRolls: rolls,
+      rollMode: this._determineRollMode(rollData)
     };
+  }
+
+  /**
+   * Determine Foundry rollMode from DnDB messageScope/messageTarget
+   * @param {Object} rollData - The raw roll data from DnDB
+   * @returns {string} Foundry roll mode constant
+   */
+  static _determineRollMode(rollData) {
+    const { messageScope, messageTarget, userId } = rollData;
+    if (messageScope === "gameId") {
+      return CONST.DICE_ROLL_MODES.PUBLIC;
+    }
+    if (messageScope === "userId") {
+      if (messageTarget === userId) {
+        return CONST.DICE_ROLL_MODES.PRIVATE;
+      }
+      return CONST.DICE_ROLL_MODES.BLIND;
+    }
+    return CONST.DICE_ROLL_MODES.PUBLIC;
   }
 
   /**

@@ -2,38 +2,11 @@
   <h4> <span class="toggle-hint">{{localize 'FLASH_ROLLS.ui.dialogs.toggleHints'}}</span></h4>
   <p class="hint on">{{localize "FLASH_ROLLS.settings.premiumFeatures.ddbWarning"}}</p>
 
-  <fieldset>
-    <legend>{{localize "FLASH_ROLLS.settings.premiumFeatures.ddbSettings"}}</legend>
-    <div class="form-group">
-      <label>{{localize "FLASH_ROLLS.settings.ddbCampaignId.label"}}</label>
-      <div class="form-fields">
-        <input type="text" name="ddbCampaignId" value="{{ddbCampaignId}}"
-              placeholder="5555555" />
-      </div>
-      <p class="hint">{{localize "FLASH_ROLLS.settings.ddbCampaignId.hint"}}</p>
-    </div>
-
-    <div class="form-group">
-      <label>{{localize "FLASH_ROLLS.settings.ddbUserId.label"}}</label>
-      <div class="form-fields">
-        <input type="text" name="ddbUserId" value="{{ddbUserId}}"
-              placeholder="111111111" />
-      </div>
-      <p class="hint">{{localize "FLASH_ROLLS.settings.ddbUserId.hint"}}</p>
-    </div>
-
-    <div class="form-group">
-      <label>{{localize "FLASH_ROLLS.settings.ddbCobaltCookie.label"}}</label>
-      <div class="form-fields">
-        <input type="password" name="ddbCobaltCookie" value="{{ddbCobaltCookie}}"
-              placeholder="CobaltSession cookie value" autocomplete="off" />
-      </div>
-      <p class="hint">{{localize "FLASH_ROLLS.settings.ddbCobaltCookie.hint"}}</p>
-    </div>
-
-    {{!-- <div class="form-group buttons-row">
-      
-    </div> --}}
+  <fieldset class="collapsible-fieldset {{#if ddbIsConnected}}collapsed{{/if}}">
+    <legend class="collapsible-legend" data-action="toggleDdbSettings">
+      {{localize "FLASH_ROLLS.settings.premiumFeatures.ddbSettings"}}
+      <i class="fas fa-caret-{{#if ddbIsConnected}}right{{else}}down{{/if}} toggle-icon"></i>
+    </legend>
 
     <div class="form-group connection-status ddb-status">
       <div class="status-indicator {{ddbStatusClass}}">
@@ -44,6 +17,35 @@
         <i class="fas fa-plug"></i>
         {{localize "FLASH_ROLLS.settings.premiumFeatures.testGameLogBtn"}}
       </button>
+    </div>
+
+    <div class="collapsible-content">
+      <div class="form-group">
+        <label>{{localize "FLASH_ROLLS.settings.ddbCampaignId.label"}}</label>
+        <div class="form-fields">
+          <input type="text" name="ddbCampaignId" value="{{ddbCampaignId}}"
+                placeholder="5555555" />
+        </div>
+        <p class="hint">{{localize "FLASH_ROLLS.settings.ddbCampaignId.hint"}}</p>
+      </div>
+
+      <div class="form-group">
+        <label>{{localize "FLASH_ROLLS.settings.ddbUserId.label"}}</label>
+        <div class="form-fields">
+          <input type="text" name="ddbUserId" value="{{ddbUserId}}"
+                placeholder="111111111" />
+        </div>
+        <p class="hint">{{localize "FLASH_ROLLS.settings.ddbUserId.hint"}}</p>
+      </div>
+
+      <div class="form-group">
+        <label>{{localize "FLASH_ROLLS.settings.ddbCobaltCookie.label"}}</label>
+        <div class="form-fields">
+          <input type="password" name="ddbCobaltCookie" value="{{ddbCobaltCookie}}"
+                placeholder="CobaltSession cookie value" autocomplete="off" />
+        </div>
+        <p class="hint">{{localize "FLASH_ROLLS.settings.ddbCobaltCookie.hint"}}</p>
+      </div>
     </div>
   </fieldset>
     
@@ -56,13 +58,7 @@
     </legend>
 
     <p class="hint on">{{localize "FLASH_ROLLS.settings.premiumFeatures.ddbWarningImportItems"}}</p>
-
-    <div class="form-group">
-      <label>{{localize "FLASH_ROLLS.settings.ddbImportOwnership.label"}}</label>
-      <input type="checkbox" name="ddbImportOwnership" {{#if ddbImportOwnership}}checked{{/if}} />
-      <p class="hint">{{localize "FLASH_ROLLS.settings.ddbImportOwnership.hint"}}</p>
-    </div>
-
+    
     <div class="bulk-operation-overlay hidden">
       <div class="overlay-content">
         <i class="fas fa-spinner fa-spin"></i>
@@ -76,6 +72,7 @@
       {{localize "FLASH_ROLLS.settings.premiumFeatures.loadingCharacters"}}
     </div>
     {{else if hasCharacters}}
+
     <div class="character-list-header">
       <span class="character-count">{{characterCount}}</span>
       <div class="bulk-actions">
@@ -144,10 +141,10 @@
           </button>
           {{else}}
           <button type="button" data-action="importCharacter" data-character-id="{{id}}" data-character-name="{{name}}"
-          {{#if ../hasDDBImporter}} 
+          {{#if ../hasDDBImporter}}
           data-tooltip="{{localize 'FLASH_ROLLS.settings.premiumFeatures.importCharacter'}}"
           {{else}}
-          disabled data-tooltip="{{localize 'FLASH_ROLLS.settings.premiumFeatures.ddbImporterRequired'}}"
+          data-tooltip="{{localize 'FLASH_ROLLS.settings.premiumFeatures.importCharacterCompendium'}}"
           {{/if}}
           class="import-btn">
             <i class="fas fa-download"></i>
@@ -166,5 +163,14 @@
     {{else}}
     <p class="no-characters">{{localize "FLASH_ROLLS.settings.premiumFeatures.noCharacters"}}</p>
     {{/if}}
+
+    <div class="form-group">
+      <label>{{localize "FLASH_ROLLS.settings.ddbImportOwnership.label"}}</label>
+      <input type="checkbox" name="ddbImportOwnership" {{#if ddbImportOwnership}}checked{{/if}} />
+      <p class="hint">{{localize "FLASH_ROLLS.settings.ddbImportOwnership.hint"}}</p>
+    </div>
+    
+    <p class="hint on">{{localize "FLASH_ROLLS.settings.premiumFeatures.ddbWarningAfter"}}</p>
+
   </fieldset>
 </section>

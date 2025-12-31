@@ -1,5 +1,7 @@
 import { isPlayerOwned, hasTokenInScene } from '../helpers/Helpers.mjs';
 import { LogUtil } from './LogUtil.mjs';
+import { getSettings } from '../../constants/Settings.mjs';
+import { SettingsUtil } from './SettingsUtil.mjs';
 
 /**
  * Utility class for actor-related operations in the Roll Requests Menu
@@ -11,40 +13,42 @@ export class RollMenuActorUtil {
    * @returns {Array<{abbrev: string, value: number}>} Array of stat objects
    */
   static getActorStats(actor) {
+    const SETTINGS = getSettings();
+    const statsToShow = SettingsUtil.get(SETTINGS.actorStatsToShow.tag) || { hp: true, ac: true, dc: true, prc: true };
     const system = actor.system;
     const stats = [];
 
-    // HP
-    if (system.attributes?.hp) {
+    if (statsToShow.hp && system.attributes?.hp) {
       stats.push({
         abbrev: 'HP',
         value: system.attributes.hp.value
       });
     }
-    
-    // AC
-    if (system.attributes?.ac) {
+
+    if (statsToShow.ac && system.attributes?.ac) {
       stats.push({
         abbrev: 'AC',
         value: system.attributes.ac.value
       });
     }
-    
-    const spellDC = system.attributes?.spell?.dc;
-    if (spellDC) {
-      stats.push({
-        abbrev: 'DC',
-        value: spellDC
-      });
+
+    if (statsToShow.dc) {
+      const spellDC = system.attributes?.spell?.dc;
+      if (spellDC) {
+        stats.push({
+          abbrev: 'DC',
+          value: spellDC
+        });
+      }
     }
-    
-    if (system.skills?.prc?.passive) {
+
+    if (statsToShow.prc && system.skills?.prc?.passive) {
       stats.push({
         abbrev: 'PRC',
         value: system.skills.prc.passive
       });
     }
-    
+
     return stats;
   }
 

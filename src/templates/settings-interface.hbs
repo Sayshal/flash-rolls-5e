@@ -53,6 +53,29 @@
     <p class="hint">{{{fields.tooltipAutoDismiss.hint}}}</p>
   </div>
 
+  <div class="form-group">
+    <label>{{fields.actorStatsToShow.label}}</label>
+    <p class="hint">{{fields.actorStatsToShow.hint}}</p>
+    <fieldset class="actor-stats-checkboxes">
+      <div class="stat-checkbox">
+        <input type="checkbox" name="actorStatsToShow.hp" {{#if actorStatsToShow.hp}}checked{{/if}} />
+        <span>{{localize "FLASH_ROLLS.settings.actorStatsToShow.hp"}}</span>
+      </div>
+      <div class="stat-checkbox">
+        <input type="checkbox" name="actorStatsToShow.ac" {{#if actorStatsToShow.ac}}checked{{/if}} />
+        <span>{{localize "FLASH_ROLLS.settings.actorStatsToShow.ac"}}</span>
+      </div>
+      <div class="stat-checkbox">
+        <input type="checkbox" name="actorStatsToShow.dc" {{#if actorStatsToShow.dc}}checked{{/if}} />
+        <span>{{localize "FLASH_ROLLS.settings.actorStatsToShow.dc"}}</span>
+      </div>
+      <div class="stat-checkbox">
+        <input type="checkbox" name="actorStatsToShow.prc" {{#if actorStatsToShow.prc}}checked{{/if}} />
+        <span>{{localize "FLASH_ROLLS.settings.actorStatsToShow.prc"}}</span>
+      </div>
+    </fieldset>
+  </div>
+
   <div class="form-group column">
     <label>{{fields.menuIconsLayout.label}}</label>
     <p class="hint">{{{fields.menuIconsLayout.hint}}}</p>

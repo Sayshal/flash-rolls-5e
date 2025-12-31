@@ -4,6 +4,7 @@ import { LogUtil } from "../../utils/LogUtil.mjs";
 import { SettingsUtil } from "../../utils/SettingsUtil.mjs";
 import { DnDBeyondIntegration } from "../../integrations/DnDBeyondIntegration.mjs";
 import { PatronSessionManager } from "../../managers/PatronSessionManager.mjs";
+import { DnDBCharacterImporter } from "../../integrations/dnd-beyond/DnDBCharacterImporter.mjs";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
@@ -73,7 +74,8 @@ export class PremiumFeaturesDialog extends HandlebarsApplicationMixin(Applicatio
       syncCharacter: PremiumFeaturesDialog.#onSyncCharacter,
       importAll: PremiumFeaturesDialog.#onImportAll,
       syncAll: PremiumFeaturesDialog.#onSyncAll,
-      save: PremiumFeaturesDialog.#onSave
+      save: PremiumFeaturesDialog.#onSave,
+      toggleDdbSettings: PremiumFeaturesDialog.#onToggleDdbSettings
     }
   };
 
@@ -119,6 +121,9 @@ export class PremiumFeaturesDialog extends HandlebarsApplicationMixin(Applicatio
     super.changeTab(tab, group, options);
     if (group === "primary-tabs") {
       PremiumFeaturesDialog.setLastActiveTab(tab);
+      if (tab === "ddbSettings") {
+        this._autoTestDDBConnection();
+      }
     }
   }
 
@@ -204,6 +209,7 @@ export class PremiumFeaturesDialog extends HandlebarsApplicationMixin(Applicatio
           ddbStatusClass: ddbStatusInfo.cssClass,
           ddbStatusIcon: ddbStatusInfo.icon,
           ddbStatusText: ddbStatusInfo.text,
+          ddbIsConnected: this._ddbGameLogStatus === "connected",
           patronVerified: patronStatus.isPatron,
           canShowCharacters: patronStatus.isPatron && canShowCharacters,
           canTestGameLog: patronStatus.isPatron && canTestGameLog,
@@ -467,7 +473,7 @@ export class PremiumFeaturesDialog extends HandlebarsApplicationMixin(Applicatio
                      ${hasDDBImporter ? `data-tooltip="${game.i18n.localize('FLASH_ROLLS.settings.premiumFeatures.syncCharacter')}"` : `disabled data-tooltip="${game.i18n.localize('FLASH_ROLLS.settings.premiumFeatures.ddbImporterRequired')}"`}
                      class="sync-btn"><i class="fas fa-sync"></i></button>`
           : `<button type="button" data-action="importCharacter" data-character-id="${char.id}" data-character-name="${char.name}"
-                     ${hasDDBImporter ? `data-tooltip="${game.i18n.localize('FLASH_ROLLS.settings.premiumFeatures.importCharacter')}"` : `disabled data-tooltip="${game.i18n.localize('FLASH_ROLLS.settings.premiumFeatures.ddbImporterRequired')}"`}
+                     data-tooltip="${hasDDBImporter ? game.i18n.localize('FLASH_ROLLS.settings.premiumFeatures.importCharacter') : game.i18n.localize('FLASH_ROLLS.settings.premiumFeatures.importCharacterCompendium')}"
                      class="import-btn"><i class="fas fa-download"></i></button>`;
 
         listHtml += `
@@ -498,7 +504,12 @@ export class PremiumFeaturesDialog extends HandlebarsApplicationMixin(Applicatio
     if (existingList) existingList.remove();
     if (existingHint) existingHint.remove();
 
-    fieldset.insertAdjacentHTML('beforeend', listHtml);
+    const formGroup = fieldset.querySelector('.form-group');
+    if (formGroup) {
+      formGroup.insertAdjacentHTML('beforebegin', listHtml);
+    } else {
+      fieldset.insertAdjacentHTML('beforeend', listHtml);
+    }
     this._attachCharacterClickListeners();
   }
 
@@ -554,6 +565,21 @@ export class PremiumFeaturesDialog extends HandlebarsApplicationMixin(Applicatio
 
     ui.notifications.info(game.i18n.localize("FLASH_ROLLS.notifications.settingsUpdated"));
     this.close();
+  }
+
+  /**
+   * Handle toggle DDB settings fieldset collapse/expand
+   */
+  static #onToggleDdbSettings(event, target) {
+    const fieldset = target.closest(".collapsible-fieldset");
+    if (!fieldset) return;
+
+    const isCollapsed = fieldset.classList.toggle("collapsed");
+    const toggleIcon = fieldset.querySelector(".toggle-icon");
+    if (toggleIcon) {
+      toggleIcon.classList.toggle("fa-caret-down", !isCollapsed);
+      toggleIcon.classList.toggle("fa-caret-right", isCollapsed);
+    }
   }
 
   /**
@@ -701,6 +727,52 @@ export class PremiumFeaturesDialog extends HandlebarsApplicationMixin(Applicatio
   }
 
   /**
+   * Automatically test DDB connection when switching to ddbSettings tab
+   * Silent test - only updates status indicator, no notifications unless error
+   * @private
+   */
+  async _autoTestDDBConnection() {
+    const patronStatus = PatronSessionManager.getStatus();
+    const sessionToken = PatronSessionManager.getSessionToken();
+    if (!patronStatus.isPatron || !sessionToken) return;
+
+    const SETTINGS = getSettings();
+    const campaignId = SettingsUtil.get(SETTINGS.ddbCampaignId.tag)?.trim();
+    const userId = SettingsUtil.get(SETTINGS.ddbUserId.tag)?.trim();
+    const cobaltCookie = SettingsUtil.get(SETTINGS.ddbCobaltCookie.tag)?.trim();
+
+    if (!campaignId || !userId || !cobaltCookie) return;
+
+    this._ddbGameLogStatus = "testing";
+    this._updateDDBStatusIndicator();
+
+    try {
+      const response = await fetch(`${PROXY_BASE_URL}/ddb/test`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${sessionToken}`
+        },
+        body: JSON.stringify({ cobaltCookie, userId, gameId: campaignId })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        this._ddbGameLogStatus = "connected";
+        this._collapseDdbSettingsFieldset();
+      } else {
+        this._ddbGameLogStatus = "error";
+      }
+    } catch (error) {
+      LogUtil.error("Auto DDB connection test failed:", [error]);
+      this._ddbGameLogStatus = "error";
+    }
+
+    this._updateDDBStatusIndicator();
+  }
+
+  /**
    * Handle test game log button click - tests the DDB credentials
    */
   static async #onTestGameLog(event, target) {
@@ -743,6 +815,7 @@ export class PremiumFeaturesDialog extends HandlebarsApplicationMixin(Applicatio
       if (response.ok && data.success) {
         this._ddbGameLogStatus = "connected";
         ui.notifications.info(game.i18n.localize("FLASH_ROLLS.settings.premiumFeatures.gameLogTestSuccess"));
+        this._collapseDdbSettingsFieldset();
       } else {
         this._ddbGameLogStatus = "error";
         ui.notifications.error(game.i18n.format("FLASH_ROLLS.settings.premiumFeatures.gameLogTestFailed", { error: data.error || "Unknown error" }));
@@ -863,52 +936,21 @@ export class PremiumFeaturesDialog extends HandlebarsApplicationMixin(Applicatio
 
 
   /**
-   * Handle import character button click (uses ddb-importer)
-   * Note: We don't use importCharacterById because it has a bug where it passes positional args
-   * to importCharacter which expects an object. Instead, we create the actor ourselves and
-   * call importCharacter({actor}) with the correct signature.
+   * Handle import character button click
+   * Uses DDB Importer if available, otherwise falls back to compendium matching
    */
   static async #onImportCharacter(event, target) {
     const characterId = target.dataset.characterId;
     const characterName = target.dataset.characterName;
-
-    if (!game.modules.get("ddb-importer")?.active) {
-      ui.notifications.error(game.i18n.localize("FLASH_ROLLS.settings.premiumFeatures.ddbImporterRequired"));
-      return;
-    }
+    const dialogInstance = this;
 
     try {
       ui.notifications.info(game.i18n.format("FLASH_ROLLS.settings.premiumFeatures.importingCharacter", { name: characterName }));
 
-      const DDBImporter = game.modules.get("ddb-importer")?.api;
-      if (DDBImporter?.importCharacter) {
-        const SETTINGS = getSettings();
-        const giveOwnership = SettingsUtil.get(SETTINGS.ddbImportOwnership.tag) ?? true;
-        const ownershipLevel = giveOwnership ? CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER : CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER;
-        const actor = await Actor.create({
-          name: characterName || "New Character",
-          type: "character",
-          ownership: { default: ownershipLevel },
-          flags: {
-            ddbimporter: {
-              dndbeyond: {
-                characterId: characterId,
-                url: `https://www.dndbeyond.com/characters/${characterId}`
-              }
-            }
-          }
-        });
+      const actor = await DnDBCharacterImporter.importCharacter(characterId);
 
-        await DDBImporter.importCharacter({ actor });
-
-        if (actor) {
-          await DnDBeyondIntegration.mapCharacter(characterId, actor.id);
-          ui.notifications.info(game.i18n.format("FLASH_ROLLS.settings.premiumFeatures.characterImported", { name: actor.name }));
-        }
-
-        this._updateCharacterList();
-      } else {
-        ui.notifications.error(game.i18n.localize("FLASH_ROLLS.settings.premiumFeatures.ddbImporterAPINotFound"));
+      if (actor) {
+        dialogInstance._updateCharacterList();
       }
     } catch (error) {
       LogUtil.error("Character import failed:", [error]);
@@ -1113,6 +1155,11 @@ export class PremiumFeaturesDialog extends HandlebarsApplicationMixin(Applicatio
       if (this._patronVerified) {
         this.render({ parts: ["ddbSettings"] });
         await this._fetchCampaignCharacters();
+
+        const activeTab = this.tabGroups["primary"];
+        if (activeTab === "ddbSettings") {
+          this._autoTestDDBConnection();
+        }
       }
     }
   }
@@ -1203,6 +1250,21 @@ export class PremiumFeaturesDialog extends HandlebarsApplicationMixin(Applicatio
     indicator.className = `status-indicator ${statusInfo.cssClass}`;
     indicator.querySelector("i").className = `fas ${statusInfo.icon}`;
     indicator.querySelector("span").textContent = statusInfo.text;
+  }
+
+  /**
+   * Collapse the D&D Beyond settings fieldset after successful connection
+   */
+  _collapseDdbSettingsFieldset() {
+    const fieldset = this.element?.querySelector(".collapsible-fieldset");
+    if (!fieldset || fieldset.classList.contains("collapsed")) return;
+
+    fieldset.classList.add("collapsed");
+    const toggleIcon = fieldset.querySelector(".toggle-icon");
+    if (toggleIcon) {
+      toggleIcon.classList.remove("fa-caret-down");
+      toggleIcon.classList.add("fa-caret-right");
+    }
   }
 
   /**

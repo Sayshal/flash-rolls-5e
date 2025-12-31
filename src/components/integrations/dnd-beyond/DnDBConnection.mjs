@@ -150,8 +150,16 @@ export class DnDBConnection {
 
     try {
       const data = JSON.parse(raw);
-      if (data.eventType === "dice/roll/fulfilled" && this._onRollEvent) {
-        this._onRollEvent(data);
+      if (data.eventType === "dice/roll/fulfilled") {
+        LogUtil.log("DnDBConnection: Roll received", [
+          `messageScope=${data.messageScope}`,
+          `messageTarget=${data.messageTarget}`,
+          `userId=${data.userId}`,
+          data
+        ]);
+        if (this._onRollEvent) {
+          this._onRollEvent(data);
+        }
       }
     } catch (error) {
       LogUtil.error("DnDBConnection: Error parsing event", [error, raw]);

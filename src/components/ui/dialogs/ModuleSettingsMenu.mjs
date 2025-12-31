@@ -458,9 +458,16 @@ export class ModuleSettingsMenu extends HandlebarsApplicationMixin(ApplicationV2
 
     const inputs = activeContent.querySelectorAll("input, select");
     inputs.forEach(inputField => {
-      inputField.value = defaults[inputField.name];
-      if(inputField.type==='checkbox'){
-        inputField.checked = defaults[inputField.name];
+      const nameParts = inputField.name.split('.');
+      let defaultValue = defaults;
+      for (const part of nameParts) {
+        defaultValue = defaultValue?.[part];
+      }
+      if (defaultValue !== undefined) {
+        inputField.value = defaultValue;
+        if (inputField.type === 'checkbox') {
+          inputField.checked = defaultValue;
+        }
       }
     });
 

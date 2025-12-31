@@ -13,6 +13,7 @@
 @import './transform-dialog.css';
 @import './premium-features.css';
 @import './patron-status.css';
+@import './character-import.css';
 
 body{
   --current-sidebar-width: 0px;

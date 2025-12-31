@@ -99,6 +99,7 @@ export class DnDBeyondIntegration {
     LogUtil.log("Action:", [rollData.data?.action]);
     LogUtil.log("Roll Type:", [rollData.data?.rolls?.[0]?.rollType]);
     LogUtil.log("Roll Kind:", [rollData.data?.rolls?.[0]?.rollKind]);
+    LogUtil.log("Visibility:", [`messageScope=${rollData.messageScope}`, `messageTarget=${rollData.messageTarget}`, `userId=${rollData.userId}`]);
     LogUtil.log("======================");
 
     await this._processRollEvent(rollData);
@@ -110,7 +111,8 @@ export class DnDBeyondIntegration {
    */
   static async _processRollEvent(rollData) {
     const characterId = rollData.entityId;
-    const actor = this._getActorForCharacter(characterId);
+    const entityType = rollData.entityType;
+    const actor = this._getActorForCharacter(characterId, entityType);
 
     const rollInfo = DnDBRollParser.extractRollInfo(rollData);
     const category = DnDBRollParser.determineRollCategory(
@@ -199,63 +201,25 @@ export class DnDBeyondIntegration {
   }
 
   /**
-   * Create a fallback chat message when no actor is mapped
+   * Create a fallback roll message when no actor is mapped
+   * Creates a proper Roll object using DnDB dice values
    * @param {Object} rollInfo - The parsed roll information
    */
   static async _createFallbackMessage(rollInfo) {
-    const diceHtml = rollInfo.diceResults
-      .map((d) => `<span class="die d${d.type.replace("d", "")}">${d.value}</span>`)
-      .join(" ");
-
-    const rollTypeLabel = DnDBRollParser.getRollTypeLabel(rollInfo.rollType);
-    const advantageLabel = rollInfo.isAdvantage
-      ? ` (${game.i18n.localize("DND5E.Advantage")})`
-      : rollInfo.isDisadvantage
-        ? ` (${game.i18n.localize("DND5E.Disadvantage")})`
-        : "";
-
-    const sourceIcon = rollInfo.source === "mobile" ? "📱" : "🖥️";
-
-    const content = `
-      <div class="ddb-roll flash5e-ddb-roll">
-        <div class="roll-header">
-          <span class="roll-action">${rollInfo.action}</span>
-          <span class="roll-type">${rollTypeLabel}${advantageLabel}</span>
-          <span class="roll-source" title="${rollInfo.source}">${sourceIcon}</span>
-        </div>
-        <div class="roll-content">
-          <div class="dice-results">${diceHtml}</div>
-          <div class="roll-formula">${rollInfo.formula}</div>
-          <div class="roll-total">${rollInfo.total}</div>
-        </div>
-      </div>
-    `;
-
-    await ChatMessage.create({
-      speaker: { alias: rollInfo.characterName },
-      content,
-      flags: {
-        [MODULE_ID]: {
-          isDnDBRoll: true,
-          ddbCharacterId: rollInfo.characterId,
-          ddbSource: rollInfo.source,
-          rollType: rollInfo.rollType,
-          action: rollInfo.action
-        }
-      }
-    });
+    await DnDBRollExecutor.createSimpleRollMessage(rollInfo);
   }
 
   /**
-   * Get the Foundry actor associated with a DnDB character ID
-   * @param {string|number} characterId - The DnDB character ID
+   * Get the Foundry actor associated with a DnDB entity ID
+   * @param {string|number} entityId - The DnDB entity ID (character or monster)
+   * @param {string} entityType - The entity type ("character" or "monster")
    * @returns {Actor|null}
    */
-  static _getActorForCharacter(characterId) {
-    const charIdStr = String(characterId);
+  static _getActorForCharacter(entityId, entityType = "character") {
+    const entityIdStr = String(entityId);
     const SETTINGS = getSettings();
     const mappings = SettingsUtil.get(SETTINGS.ddbCharacterMappings.tag) || {};
-    const actorId = mappings[charIdStr];
+    const actorId = mappings[entityIdStr];
 
     if (actorId) {
       const actor = game.actors.get(actorId);
@@ -265,13 +229,25 @@ export class DnDBeyondIntegration {
       LogUtil.warn("DnDBeyondIntegration: Mapped actor not found", [actorId]);
     }
 
+    if (entityType === "monster") {
+      const actorByMonsterId = game.actors.find(a => {
+        const ddbId = a.flags?.ddbimporter?.id;
+        return ddbId && String(ddbId) === entityIdStr;
+      });
+
+      if (actorByMonsterId) {
+        LogUtil.log("DnDBeyondIntegration: Found monster actor via ddbimporter.id", [actorByMonsterId.name]);
+        return actorByMonsterId;
+      }
+    }
+
     const actorByDDBFlag = game.actors.find(a => {
       const dndbeyond = a.flags?.ddbimporter?.dndbeyond;
       if (!dndbeyond) return false;
-      if (dndbeyond.characterId && String(dndbeyond.characterId) === charIdStr) {
+      if (dndbeyond.characterId && String(dndbeyond.characterId) === entityIdStr) {
         return true;
       }
-      if (dndbeyond.url && dndbeyond.url.includes(`/characters/${charIdStr}`)) {
+      if (dndbeyond.url && dndbeyond.url.includes(`/characters/${entityIdStr}`)) {
         return true;
       }
       return false;
@@ -282,7 +258,7 @@ export class DnDBeyondIntegration {
       return actorByDDBFlag;
     }
 
-    LogUtil.log("DnDBeyondIntegration: No actor found for character", [charIdStr]);
+    LogUtil.log("DnDBeyondIntegration: No actor found for entity", [entityIdStr, entityType]);
     return null;
   }
 

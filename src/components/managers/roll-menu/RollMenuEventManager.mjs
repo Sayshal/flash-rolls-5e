@@ -565,14 +565,12 @@ export class RollMenuEventManager {
     if (accordion) {
       const mouseEnterHandler = () => {
         const showOptionsListOnHover = SettingsUtil.get(SETTINGS.showOptionsListOnHover.tag);
-        LogUtil.log('Accordion mouseEnter', [menu.isSearchFocused]);
         if (menu.selectedActors.size > 0 && showOptionsListOnHover) {
           accordion?.classList.add('hover-visible');
         }
       };
       
       const mouseLeaveHandler = () => {
-        LogUtil.log('Accordion mouseLeave', [menu.isSearchFocused]);
         if (!menu.isSearchFocused) {
           accordion?.classList.remove('hover-visible');
         }
@@ -1192,13 +1190,8 @@ export class RollMenuEventManager {
           tokenIds: actor.tokenId ? [actor.tokenId] : []
         });
 
-        const hasPlayerOwnership = Object.entries(actor.ownership || {}).some(([userId, level]) => {
-          if (userId === 'default') return false;
-          const user = game.users.get(userId);
-          return user && !user.isGM && level >= CONST.DOCUMENT_OWNERSHIP_LEVELS.LIMITED;
-        });
-
-        if (hasPlayerOwnership) {
+        const baseActor = game.actors.get(baseActorId);
+        if (baseActor?.hasPlayerOwner) {
           playerOwnedCount++;
         }
       }
@@ -1269,6 +1262,21 @@ export class RollMenuEventManager {
       });
 
       if (newActor) {
+        for (const [sceneId, sceneAssociations] of Object.entries(tokenAssociationsByScene)) {
+          for (const tokenUuids of Object.values(sceneAssociations)) {
+            for (const tokenUuid of tokenUuids) {
+              try {
+                const tokenDoc = await fromUuid(tokenUuid);
+                if (tokenDoc) {
+                  await tokenDoc.setFlag(MODULE_ID, 'groupId', newActor.id);
+                }
+              } catch (error) {
+                LogUtil.log(`createGroupFromSelected - Failed to set groupId on token ${tokenUuid}`, error);
+              }
+            }
+          }
+        }
+
         newActor.sheet.render(true);
 
         const memberSummary = Array.from(actorGroups.values()).map(({ actor, count }) =>

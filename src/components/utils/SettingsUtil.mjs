@@ -197,6 +197,9 @@ export class SettingsUtil {
       case SETTINGS.maxIconsPerRow.tag:
         SettingsUtil.applyMaxIconsPerRow(newValue);
         break;
+      case SETTINGS.actorStatsToShow.tag:
+        SettingsUtil.applyActorStatsToShow(newValue);
+        break;
       case SETTINGS.autoBlockMovementInCombat.tag:
         SettingsUtil.applyAutoBlockMovementInCombat(newValue);
         break;
@@ -244,6 +247,11 @@ export class SettingsUtil {
 
     LogUtil.log('applyMenuIconsLayout', [menuIconsLayout]);
 
+    RollRequestsMenu.refreshIfOpen();
+  }
+
+  static applyActorStatsToShow(newValue){
+    LogUtil.log('applyActorStatsToShow', [newValue]);
     RollRequestsMenu.refreshIfOpen();
   }
 

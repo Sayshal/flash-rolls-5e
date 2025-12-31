@@ -65,6 +65,7 @@ export const getSettings = () => {
         'showMenuOnLoad',
         'showTokenVisionOnHover',
         'compactMode',
+        'actorStatsToShow',
         'menuLayout',
         'menuIconsLayout',
         'maxIconsPerRow',
@@ -75,6 +76,7 @@ export const getSettings = () => {
         showMenuOnLoad: true,
         showTokenVisionOnHover: true,
         compactMode: true,
+        actorStatsToShow: { hp: true, ac: true, dc: true, prc: true },
         menuLayout: "vertical",
         menuIconsLayout: iconsMenuDefault,
         maxIconsPerRow: 5,
@@ -162,11 +164,15 @@ export const getSettings = () => {
       propType: Object,
       fields: [
         'ddbRollOwnership',
-        'ddbNoAutoConsumeSpellSlot'
+        'ddbNoAutoConsumeSpellSlot',
+        'ddbImportSourcePriority',
+        'ddbImportSpellMode'
       ],
       default: {
         ddbRollOwnership: 0,
-        ddbNoAutoConsumeSpellSlot: false
+        ddbNoAutoConsumeSpellSlot: false,
+        ddbImportSourcePriority: 0,
+        ddbImportSpellMode: 0
       },
       scope: SETTING_SCOPE.world,
       config: false,
@@ -475,6 +481,16 @@ export const getSettings = () => {
       propType: Boolean,
       inputType: SETTING_INPUT.checkbox,
       default: true,
+      scope: SETTING_SCOPE.world,
+      config: false
+    },
+
+    actorStatsToShow: {
+      tag: "actor-stats-to-show",
+      label: game.i18n.localize("FLASH_ROLLS.settings.actorStatsToShow.label"),
+      hint: game.i18n.localize("FLASH_ROLLS.settings.actorStatsToShow.hint"),
+      propType: Object,
+      default: { hp: true, ac: true, dc: true, prc: true },
       scope: SETTING_SCOPE.world,
       config: false
     },
@@ -807,6 +823,38 @@ export const getSettings = () => {
       propType: Boolean,
       inputType: SETTING_INPUT.checkbox,
       default: false,
+      scope: SETTING_SCOPE.world,
+      config: false
+    },
+
+    ddbImportSourcePriority: {
+      tag: "ddb-import-source-priority",
+      label: game.i18n.localize("FLASH_ROLLS.settings.ddbImportSourcePriority.label"),
+      hint: game.i18n.localize("FLASH_ROLLS.settings.ddbImportSourcePriority.hint"),
+      propType: Number,
+      inputType: SETTING_INPUT.select,
+      choices: {
+        0: game.i18n.localize("FLASH_ROLLS.settings.ddbImportSourcePriority.choices.0"),
+        1: game.i18n.localize("FLASH_ROLLS.settings.ddbImportSourcePriority.choices.1"),
+        2: game.i18n.localize("FLASH_ROLLS.settings.ddbImportSourcePriority.choices.2"),
+        3: game.i18n.localize("FLASH_ROLLS.settings.ddbImportSourcePriority.choices.3")
+      },
+      default: 0,
+      scope: SETTING_SCOPE.world,
+      config: false
+    },
+
+    ddbImportSpellMode: {
+      tag: "ddb-import-spell-mode",
+      label: game.i18n.localize("FLASH_ROLLS.settings.ddbImportSpellMode.label"),
+      hint: game.i18n.localize("FLASH_ROLLS.settings.ddbImportSpellMode.hint"),
+      propType: Number,
+      inputType: SETTING_INPUT.select,
+      choices: {
+        0: game.i18n.localize("FLASH_ROLLS.settings.ddbImportSpellMode.choices.0"),
+        1: game.i18n.localize("FLASH_ROLLS.settings.ddbImportSpellMode.choices.1")
+      },
+      default: 0,
       scope: SETTING_SCOPE.world,
       config: false
     }

@@ -55,6 +55,28 @@ export class DnDBRollExecutor {
   }
 
   /**
+   * Build whisper recipients array based on rollMode and actor
+   * For PRIVATE rolls (self in DnDB), whisper to GMs + player owner
+   * For BLIND rolls (DM in DnDB), whisper to GMs only
+   * @param {string} rollMode - The Foundry roll mode
+   * @param {Actor} actor - The actor performing the roll
+   * @returns {string[]|null} Array of user IDs to whisper to, or null for public
+   */
+  static getWhisperRecipients(rollMode, actor) {
+    if (rollMode === CONST.DICE_ROLL_MODES.PUBLIC) {
+      return null;
+    }
+    const gmIds = ChatMessage.getWhisperRecipients("GM").map(u => u.id);
+    if (rollMode === CONST.DICE_ROLL_MODES.PRIVATE) {
+      const owner = getPlayerOwner(actor);
+      if (owner && !gmIds.includes(owner.id)) {
+        return [...gmIds, owner.id];
+      }
+    }
+    return gmIds;
+  }
+
+  /**
    * Execute a roll based on the category
    * @param {Actor} actor - The Foundry actor
    * @param {Object} rollInfo - Parsed roll info from DnDBRollParser
@@ -113,13 +135,17 @@ export class DnDBRollExecutor {
     DnDBIntegration.setPendingRoll(rollInfo);
 
     const owner = getPlayerOwner(actor) || game.user;
+    const whisper = this.getWhisperRecipients(rollInfo.rollMode, actor);
     const rollConfig = { ability: category.ability, sendRequest: false };
     const dialogConfig = { configure: false };
     const messageConfig = {
       create: true,
+      rollMode: rollInfo.rollMode,
       data: {
         speaker: ChatMessage.getSpeaker({ actor }),
         author: owner.id,
+        whisper: whisper,
+        blind: rollInfo.rollMode === CONST.DICE_ROLL_MODES.BLIND,
         flags: {
           ...this._buildFlags(rollInfo),
           rsr5e: { processed: true, quickRoll: false }
@@ -149,13 +175,17 @@ export class DnDBRollExecutor {
     DnDBIntegration.setPendingRoll(rollInfo);
 
     const owner = getPlayerOwner(actor) || game.user;
+    const whisper = this.getWhisperRecipients(rollInfo.rollMode, actor);
     const rollConfig = { ability: category.ability, sendRequest: false };
     const dialogConfig = { configure: false };
     const messageConfig = {
       create: true,
+      rollMode: rollInfo.rollMode,
       data: {
         speaker: ChatMessage.getSpeaker({ actor }),
         author: owner.id,
+        whisper: whisper,
+        blind: rollInfo.rollMode === CONST.DICE_ROLL_MODES.BLIND,
         flags: {
           ...this._buildFlags(rollInfo),
           rsr5e: { processed: true, quickRoll: false }
@@ -185,13 +215,17 @@ export class DnDBRollExecutor {
     DnDBIntegration.setPendingRoll(rollInfo);
 
     const owner = getPlayerOwner(actor) || game.user;
+    const whisper = this.getWhisperRecipients(rollInfo.rollMode, actor);
     const rollConfig = { skill: category.skill, sendRequest: false };
     const dialogConfig = { configure: false };
     const messageConfig = {
       create: true,
+      rollMode: rollInfo.rollMode,
       data: {
         speaker: ChatMessage.getSpeaker({ actor }),
         author: owner.id,
+        whisper: whisper,
+        blind: rollInfo.rollMode === CONST.DICE_ROLL_MODES.BLIND,
         flags: {
           ...this._buildFlags(rollInfo),
           rsr5e: { processed: true, quickRoll: false }
@@ -227,13 +261,17 @@ export class DnDBRollExecutor {
     DnDBIntegration.setPendingRoll(rollInfo);
 
     const owner = getPlayerOwner(actor) || game.user;
+    const whisper = this.getWhisperRecipients(rollInfo.rollMode, actor);
     const rollConfig = { sendRequest: false };
     const dialogConfig = { configure: false };
     const messageConfig = {
       create: true,
+      rollMode: rollInfo.rollMode,
       data: {
         speaker: ChatMessage.getSpeaker({ actor }),
         author: owner.id,
+        whisper: whisper,
+        blind: rollInfo.rollMode === CONST.DICE_ROLL_MODES.BLIND,
         flags: {
           ...this._buildFlags(rollInfo),
           rsr5e: { processed: true, quickRoll: false }
@@ -311,16 +349,19 @@ export class DnDBRollExecutor {
     DnDBRollUtil.injectDnDBDiceValues(roll, ddbRoll);
 
     const owner = getPlayerOwner(actor) || game.user;
-    const rollMode = game.settings.get("core", "rollMode");
-    await roll.toMessage({
+    const whisper = this.getWhisperRecipients(rollInfo.rollMode, actor);
+    const messageData = {
       speaker: ChatMessage.getSpeaker({ actor }),
       author: owner.id,
       flavor: this._buildFlavor(rollInfo, "initiative"),
+      whisper: whisper,
+      blind: rollInfo.rollMode === CONST.DICE_ROLL_MODES.BLIND,
       flags: {
         ...this._buildFlags(rollInfo),
         rsr5e: { processed: true, quickRoll: false }
       }
-    }, { rollMode });
+    };
+    await roll.toMessage(messageData, { rollMode: rollInfo.rollMode });
 
     return true;
   }
@@ -422,10 +463,16 @@ export class DnDBRollExecutor {
     }
 
     const owner = getPlayerOwner(actor) || game.user;
+    const whisper = this.getWhisperRecipients(rollInfo.rollMode, actor);
     usageResults.message.flags = usageResults.message.flags ?? {};
     usageResults.message.author = owner.id;
-    const rollMode = game.settings.get("core", "rollMode");
-    const card = await ChatMessage.implementation.create(usageResults.message, { rollMode });
+    if (whisper) {
+      usageResults.message.whisper = whisper;
+    }
+    if (rollInfo.rollMode === CONST.DICE_ROLL_MODES.BLIND) {
+      usageResults.message.blind = true;
+    }
+    const card = await ChatMessage.implementation.create(usageResults.message, { rollMode: rollInfo.rollMode });
     LogUtil.log("DnDBRollExecutor._executeAttackVanilla - created card", [card]);
 
     return true;
@@ -474,7 +521,6 @@ export class DnDBRollExecutor {
   static async _executeDamageVanilla(actor, item, activity, rollInfo) {
     const dialogConfig = { configure: false };
     const owner = getPlayerOwner(actor) || game.user;
-    const rollMode = game.settings.get("core", "rollMode");
     const hasTemplate = activity.target?.template?.type;
 
     if (!activity.attack) {
@@ -485,6 +531,7 @@ export class DnDBRollExecutor {
 
       this.setPendingDamageRoll(rollInfo);
       const consumeSpellSlot = !this.shouldSkipSpellSlotConsumption();
+      const whisper = this.getWhisperRecipients(rollInfo.rollMode, actor);
 
       const usageConfig = {
         subsequentActions: false,
@@ -495,11 +542,13 @@ export class DnDBRollExecutor {
       LogUtil.log("DnDBRollExecutor: About to call ddbUse (will wait for template if needed)");
       const usageResult = await DnDBActivityUtil.ddbUse(activity, usageConfig, dialogConfig, {
         create: true,
-        rollMode: rollMode,
+        rollMode: rollInfo.rollMode,
         data: {
           rolls: [],
           speaker: ChatMessage.getSpeaker({ actor }),
           author: owner.id,
+          whisper: whisper,
+          blind: rollInfo.rollMode === CONST.DICE_ROLL_MODES.BLIND,
           flags: {
             ...this._buildFlags(rollInfo),
             rsr5e: { processed: true, quickRoll: false }
@@ -540,10 +589,13 @@ export class DnDBRollExecutor {
     DnDBRollUtil.injectDnDBDiceValues(rolls[0], ddbRoll);
 
     LogUtil.log("DnDBRollExecutor: Creating damage message with targets");
+    const whisper = this.getWhisperRecipients(rollInfo.rollMode, actor);
     const messageConfig = {
       speaker: ChatMessage.getSpeaker({ actor }),
       author: owner.id,
       flavor: `${item.name} - ${activity.damageFlavor}`,
+      whisper: whisper,
+      blind: rollInfo.rollMode === CONST.DICE_ROLL_MODES.BLIND,
       flags: {
         ...this._buildFlags(rollInfo),
         dnd5e: {
@@ -556,7 +608,7 @@ export class DnDBRollExecutor {
       }
     };
 
-    await rolls[0].toMessage(messageConfig, { rollMode });
+    await rolls[0].toMessage(messageConfig, { rollMode: rollInfo.rollMode });
     LogUtil.log("DnDBRollExecutor: Damage message created");
 
     return true;
@@ -596,10 +648,10 @@ export class DnDBRollExecutor {
     const ddbRoll = rollInfo.rawRolls[0];
     const dialogConfig = { configure: false };
     const owner = getPlayerOwner(actor) || game.user;
-    const rollMode = game.settings.get("core", "rollMode");
 
     LogUtil.log("DnDBRollExecutor: Healing activity (vanilla), triggering usage first", [item.name]);
     const consumeSpellSlot = !this.shouldSkipSpellSlotConsumption();
+    const whisper = this.getWhisperRecipients(rollInfo.rollMode, actor);
     const usageConfig = {
       subsequentActions: false,
       consume: { resources: true, spellSlot: consumeSpellSlot }
@@ -607,11 +659,13 @@ export class DnDBRollExecutor {
 
     await DnDBActivityUtil.ddbUse(activity, usageConfig, dialogConfig, {
       create: true,
-      rollMode: rollMode,
+      rollMode: rollInfo.rollMode,
       data: {
         rolls: [],
         speaker: ChatMessage.getSpeaker({ actor }),
         author: owner.id,
+        whisper: whisper,
+        blind: rollInfo.rollMode === CONST.DICE_ROLL_MODES.BLIND,
         flags: {
           ...this._buildFlags(rollInfo),
           rsr5e: { processed: true, quickRoll: false }
@@ -641,15 +695,27 @@ export class DnDBRollExecutor {
       speaker: ChatMessage.getSpeaker({ actor }),
       author: owner.id,
       flavor: `${item.name}: ${game.i18n.localize("DND5E.Healing")}`,
+      whisper: whisper,
+      blind: rollInfo.rollMode === CONST.DICE_ROLL_MODES.BLIND,
       flags: {
         ...this._buildFlags(rollInfo),
         dnd5e: { roll: { type: "damage" }, targets: targets },
         rsr5e: { processed: true, quickRoll: false }
       }
     };
-    await rolls[0].toMessage(messageConfig, { rollMode });
+    await rolls[0].toMessage(messageConfig, { rollMode: rollInfo.rollMode });
 
     return true;
+  }
+
+  /**
+   * Create a simple roll message for unmapped entities (monsters without actors)
+   * Uses the characterName from rollInfo as the speaker alias
+   * @param {Object} rollInfo - The parsed roll info
+   * @returns {Promise<boolean>} Success status
+   */
+  static async createSimpleRollMessage(rollInfo) {
+    return this._createSimpleMessage(null, rollInfo);
   }
 
   /**
@@ -666,7 +732,7 @@ export class DnDBRollExecutor {
       const roll = DnDBRollUtil.createRollFromDnDB(ddbRoll);
       if (roll) {
         const owner = actor ? (getPlayerOwner(actor) || game.user) : game.user;
-        const rollMode = game.settings.get("core", "rollMode");
+        const whisper = this.getWhisperRecipients(rollInfo.rollMode, actor);
         const typeLabel = DnDBRollParser.getRollTypeLabel(rollInfo.rollType);
         const flavor = typeLabel ? `${rollInfo.action}: ${typeLabel}` : rollInfo.action;
 
@@ -674,11 +740,13 @@ export class DnDBRollExecutor {
           speaker,
           author: owner.id,
           flavor,
+          whisper: whisper,
+          blind: rollInfo.rollMode === CONST.DICE_ROLL_MODES.BLIND,
           flags: {
             ...this._buildFlags(rollInfo),
             rsr5e: { processed: true, quickRoll: false }
           }
-        }, { rollMode });
+        }, { rollMode: rollInfo.rollMode });
 
         return true;
       }
@@ -704,16 +772,18 @@ export class DnDBRollExecutor {
     `;
 
     const owner = actor ? (getPlayerOwner(actor) || game.user) : game.user;
-    const rollMode = game.settings.get("core", "rollMode");
+    const whisper = this.getWhisperRecipients(rollInfo.rollMode, actor);
     await ChatMessage.create({
       speaker,
       author: owner.id,
       content,
+      whisper: whisper,
+      blind: rollInfo.rollMode === CONST.DICE_ROLL_MODES.BLIND,
       flags: {
         ...this._buildFlags(rollInfo),
         rsr5e: { processed: true, quickRoll: false }
       }
-    }, { rollMode });
+    }, { rollMode: rollInfo.rollMode });
 
     return true;
   }

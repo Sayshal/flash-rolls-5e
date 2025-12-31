@@ -42,6 +42,7 @@
   min-height: unset;
   margin: 0 0.5rem 0 0;
   padding: 0.15rem 0;
+  display: flex;
 }
 
 #flash-rolls-menu[data-layout="horizontal"] .main-content ul.actors > li.actor-list > ul {
@@ -51,6 +52,7 @@
   min-width: max-content;
   max-width: max-content;
   margin: auto;
+  align-self: center;
 }
 
 /* Action Icons - Horizontal Layout */

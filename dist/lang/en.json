@@ -248,6 +248,33 @@
         "label": "Do not auto-consume spell slots",
         "hint": "When enabled, D&D Beyond rolls will not automatically consume spell slots in Foundry - they should be tracked manually."
       },
+      "ddbImportSourcePriority": {
+        "label": "Character Import Source Priority",
+        "hint": "When importing characters from D&D Beyond, choose which rules version to prioritize when multiple compendium sources are available.",
+        "choices": {
+          "0": "Auto-detect from Character",
+          "1": "2024 Rules (PHB 2024, DMG 2024, SRD 5.2)",
+          "2": "2014 Rules (PHB 2014, SRD 5.1)",
+          "3": "Closest Match - DDB Importer first"
+        }
+      },
+      "ddbImportSpellMode": {
+        "label": "Spell Import Mode",
+        "hint": "Choose whether to import all spells from a character's spell list (for prepared casters who can change spells daily) or only currently prepared spells.",
+        "choices": {
+          "0": "All Spells (recommended for prepared casters)",
+          "1": "Only Prepared Spells"
+        }
+      },
+      "premiumSettings": {
+        "fetchFailed": "Failed to fetch character from D&D Beyond. Check your connection and try again.",
+        "ddbImporterApiError": "DDB Importer module is active but its API is not available.",
+        "successDDBImporter": "Character \"{name}\" imported via DDB Importer.",
+        "ddbImporterFailed": "DDB Importer failed to import the character.",
+        "ddbImporterError": "An error occurred while importing via DDB Importer.",
+        "success": "Character \"{name}\" created ({tier} import, {count} items matched).",
+        "createFailed": "Failed to create character: {error}"
+      },
       "initiateCombatOnRequest": {
         "label": "Initiate Combat when Requesting Initiative",
         "hint": "Enable to automatically initiate the a combat encounter when using the menu to request initiative rolls."
@@ -322,8 +349,9 @@
         "testConnectionBtn": "Test Connection",
         "testGameLogBtn": "Test DDB Connection",
         "ddbSettings": "D&D Beyond Integration",
-        "ddbWarning": "To enable D&D Beyond features, add your cobalt cookie, campaign id and user id. For rolls to be fully captured, all characters must be in the campaign and linked to a Foundry actor. Import uses DDB Importer module, if available.",
-        "ddbWarningImportItems": "It is recommended to import items or spells with DDB Importer muncher before importing characters - or sync after munching.",
+        "ddbWarning": "For rolls to be fully captured, characters must be in the D&D Beyond campaign and linked to a Foundry actor. Add your cobalt cookie, campaign id and user id in the fields below.",
+        "ddbWarningImportItems": "If you did not purchase official Foundry D&D modules, *DDB Importer* is recommended to add items, spells and features to compendium before importing the character.",
+        "ddbWarningAfter": "If DDB Importer module is active, it is used for character import. If not available, Flash Token Bar will try to find features, items and spells present in any compendiums. This might not work for your case - either use DDB Importer or create missing items",
         "noApiKey": "Please enter an API key first.",
         "connectionSuccess": "Connection successful! Welcome, {name}.",
         "connectionFailed": "Authentication failed. Please re-authenticate with Patreon.",
@@ -335,10 +363,10 @@
         "statusConnecting": "Testing connection...",
         "statusDisconnected": "Disconnected",
         "statusError": "Connection failed",
-        "statusNotTested": "Click to test connection",
+        "statusNotTested": "",
         "missingDDBCredentials": "Please fill in all D&D Beyond fields first.",
         "gameLogTestSuccess": "D&D Beyond connection verified!",
-        "gameLogTestFailed": "D&D Beyond test failed. {error}",
+        "gameLogTestFailed": "D&D Beyond test failed. {error}. If you see 'Auth failed: 401', please log into D&D Beyond again and update your Cobalt cookie.",
         "campaignCharacters": "Campaign Characters",
         "refreshCharacters": "Refresh Characters",
         "loadingCharacters": "Loading characters...",
@@ -377,6 +405,15 @@
         "bulkSyncProgress": "Syncing {current}/{total}: {name}...",
         "bulkImportComplete": "Import complete: {imported} imported, {failed} failed.",
         "bulkSyncComplete": "Sync complete: {synced} synced, {failed} failed.",
+        "importCharacterCompendium": "Import with Compendium Matching",
+        "importCharacterCompendiumHint": "Import character by matching items from local compendiums (DDB Importer not required)",
+        "fetchFailed": "Failed to fetch character data from D&D Beyond.",
+        "successDDBImporter": "{name} imported via DDB Importer.",
+        "ddbImporterApiError": "DDB Importer API is not available.",
+        "ddbImporterFailed": "DDB Importer import did not complete successfully.",
+        "ddbImporterError": "An error occurred while using DDB Importer.",
+        "success": "{name} imported ({tier} match, {count} items added).",
+        "createFailed": "Failed to create actor: {error}",
         "tooltipPatreon": "Patreon:",
         "tooltipDDB": "D&D Beyond:",
         "tooltipVerified": "ON",
@@ -409,6 +446,14 @@
       "compactMode": {
         "label": "Use Compact Mode",
         "hint": "Use compact layout for the roll requests menu. The character information will only show on hover."
+      },
+      "actorStatsToShow": {
+        "label": "Actor Stats to Show",
+        "hint": "Choose which stats are displayed for actors in the token bar menu",
+        "hp": "HP (Hit Points)",
+        "ac": "AC (Armor Class)",
+        "dc": "DC (Spell DC)",
+        "prc": "PRC (Perception)"
       },
       "menuLayout": {
         "label": "Menu Layout",
@@ -686,6 +731,34 @@
           "dice": "Dice",
           "removeActor": "Remove Actor",
           "customRoll": "Custom Roll"
+        },
+        "characterImport": {
+          "resultsTitle": "Import {name}",
+          "tierALabel": "Full Import",
+          "tierADesc": "Using DDB Importer for complete character import with all features.",
+          "tierBLabel": "Partial Match",
+          "tierBDesc": "{rate}% of items matched from compendiums. Missing items listed below.",
+          "tierCLabel": "Basic Import",
+          "tierCDesc": "Only {rate}% of items matched. Consider installing DDB Importer for better results.",
+          "recommendDDBImporter": "For best results, install the <a href=\"https://foundryvtt.com/packages/ddb-importer\" target=\"_blank\">D&D Beyond Importer</a> module and import items first.",
+          "characterInfo": "Character Info",
+          "classLabel": "Class",
+          "raceLabel": "Race",
+          "backgroundLabel": "Background",
+          "matchedItems": "Matched Items ({count})",
+          "unmatchedItems": "Unmatched Items ({count})",
+          "matchedItemEntry": "{ddbName} → {foundryName}",
+          "noItemsMatched": "No items could be matched from compendiums.",
+          "noItemsUnmatched": "All items were matched!",
+          "itemTypeWeapon": "Weapons",
+          "itemTypeEquipment": "Equipment",
+          "itemTypeSpell": "Spells",
+          "itemTypeFeat": "Features",
+          "itemTypeConsumable": "Consumables",
+          "itemTypeTool": "Tools",
+          "itemTypeOther": "Other",
+          "createActor": "Create Actor",
+          "cancel": "Cancel"
         }
       },
       "menus": {

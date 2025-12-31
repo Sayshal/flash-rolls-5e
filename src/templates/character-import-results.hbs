@@ -1,0 +1,111 @@
+<div class="flash5e-import-results scrollable">
+
+  <header class="import-header">
+    <div class="character-info">
+      <h2>{{characterName}}</h2>
+      <div class="other-info">
+      {{#if classInfo}}
+        {{#each classInfo}}
+        <span>{{name}} {{level}}</span>
+        {{/each}}
+      {{/if}}
+      {{#if raceName}}
+        <span>{{raceName}}</span>
+      {{/if}}
+      </div>
+    </div>
+
+    <div class="tier-badge tier-{{tier}}">
+      {{#if isTierB}}
+      <i class="fas fa-check-circle"></i>
+      <span>{{localize "FLASH_ROLLS.ui.dialogs.characterImport.tierBLabel"}} ({{matchPercentage}}%)</span>
+      {{else if isTierC}}
+      <i class="fas fa-exclamation-triangle"></i>
+      <span>{{localize "FLASH_ROLLS.ui.dialogs.characterImport.tierCLabel"}} ({{matchPercentage}}%)</span>
+      {{/if}}
+    </div>
+  </header>
+
+  {{#if isTierC}}
+  <section class="recommendation-box warning">
+    <i class="fas fa-info-circle"></i>
+    <div class="recommendation-content">
+      {{{localize "FLASH_ROLLS.ui.dialogs.characterImport.recommendDDBImporter"}}}
+    </div>
+  </section>
+  {{/if}}
+
+  <div class="match-summary">
+    <span class="matched-count">
+      <i class="fas fa-check"></i> {{matchedCount}} matched
+    </span>
+    <span class="unmatched-count">
+      <i class="fas fa-times"></i> {{unmatchedCount}} unmatched
+    </span>
+  </div>
+
+  <p class="import-note">
+    Importing without DDB Importer requires you to have the class features, spells and items in your compendiums. For homebrew items and features, marking the checkboxes for the 'Unmatched' items will create blank items for you - you will need to fill their data manually.
+  </p>
+
+  {{#if hasUnmatched}}
+  <section class="unmatched-items">
+    <h3>
+      Unmatched ({{unmatchedCount}})
+    </h3>
+    <p class="hint">These items were not found in any compendium. Check the box to create a placeholder item.</p>
+    <div class="form-group create-all-homebrew">
+      <label for="createAllHomebrew">
+        <input type="checkbox" id="createAllHomebrew" name="createAllHomebrew" />
+        Create placeholder for all unmatched items
+      </label>
+    </div>
+    {{#each groupedUnmatched}}
+    <fieldset class="item-group">
+      <legend>{{label}}</legend>
+      {{#each items}}
+      <div class="form-group unmatched-item" data-item-key="{{_unmatchedKey}}">
+        <label>
+          <input type="checkbox" class="create-homebrew-checkbox" data-item-key="{{_unmatchedKey}}" />
+          {{name}}
+        </label>
+      </div>
+      {{/each}}
+    </fieldset>
+    {{/each}}
+  </section>
+  {{/if}}
+
+  {{#if matchedCount}}
+  <section class="matched-items">
+    <h3>
+      Matched ({{matchedCount}})
+    </h3>
+    {{#each groupedMatched}}
+    <fieldset class="item-group">
+      <legend>{{label}}</legend>
+      {{#each items}}
+      <div class="form-group" data-item-key="{{_itemKey}}">
+        <label>
+          {{ddbItem.definition.name}}{{#unless ddbItem.definition.name}}{{ddbItem.name}}{{/unless}}
+          {{#if (eq matchType "ddbId")}}
+          <span class="match-type-badge ddb-id" data-tooltip="Matched via DDB Importer flag">
+            <i class="fas fa-link"></i>
+          </span>
+          {{/if}}
+        </label>
+        <select class="source-select" data-item-key="{{_itemKey}}">
+          {{#each allMatches}}
+          <option value="{{@index}}" {{#if (eq @index ../selectedIndex)}}selected{{/if}}>
+            {{displayLabel}}
+          </option>
+          {{/each}}
+        </select>
+      </div>
+      {{/each}}
+    </fieldset>
+    {{/each}}
+  </section>
+  {{/if}}
+
+</div>

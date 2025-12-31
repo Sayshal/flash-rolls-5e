@@ -25,6 +25,30 @@
       <p class="hint">{{{fields.ddbNoAutoConsumeSpellSlot.hint}}}</p>
     </div>
 
+    <div class="form-group">
+      <label for="ddbImportSourcePriority">{{fields.ddbImportSourcePriority.label}}</label>
+      <select name="ddbImportSourcePriority" id="ddbImportSourcePriority" data-current-value="{{ddbImportSourcePriority}}">
+        {{#each fields.ddbImportSourcePriority.choices}}
+        <option value="{{@key}}" {{#if (eq @key ../ddbImportSourcePriority)}}selected{{/if}}>
+          {{this}}
+        </option>
+        {{/each}}
+      </select>
+      <p class="hint">{{{fields.ddbImportSourcePriority.hint}}}</p>
+    </div>
+
+    <div class="form-group">
+      <label for="ddbImportSpellMode">{{fields.ddbImportSpellMode.label}}</label>
+      <select name="ddbImportSpellMode" id="ddbImportSpellMode" data-current-value="{{ddbImportSpellMode}}">
+        {{#each fields.ddbImportSpellMode.choices}}
+        <option value="{{@key}}" {{#if (eq @key ../ddbImportSpellMode)}}selected{{/if}}>
+          {{this}}
+        </option>
+        {{/each}}
+      </select>
+      <p class="hint">{{{fields.ddbImportSpellMode.hint}}}</p>
+    </div>
+
   </fieldset>
 
 </section>

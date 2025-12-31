@@ -1,0 +1,163 @@
+/* Character Import Results Dialog */
+
+.standard-form.flash5e .flash5e-import-results {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.standard-form.flash5e .flash5e-import-results .import-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--color-border-light-tertiary);
+}
+
+.standard-form.flash5e .flash5e-import-results .character-info h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.standard-form.flash5e .flash5e-import-results .other-info {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  opacity: 0.6;
+}
+.standard-form.flash5e .flash5e-import-results .other-info span {
+  display: inline-flex;
+  flex: 0 0 auto;
+  width: auto
+}
+
+.standard-form.flash5e .flash5e-import-results .class-badge {
+  background: var(--fr5e-secondary-bg-10);
+  margin: 0.5rem 0;
+  border-radius: 3px;
+  font-size: 0.75rem;
+}
+
+.standard-form.flash5e .flash5e-import-results .tier-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+
+.standard-form.flash5e .flash5e-import-results .tier-badge.tier-B {
+  background: color-mix(in srgb, var(--color-level-success) 20%, transparent);
+  color: var(--color-level-success);
+}
+
+.standard-form.flash5e .flash5e-import-results .tier-badge.tier-C {
+  background: color-mix(in srgb, var(--color-level-warning) 20%, transparent);
+  color: var(--color-level-warning);
+}
+
+.standard-form.flash5e .flash5e-import-results .recommendation-box {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--color-level-warning) 10%, transparent);
+  border: 1px solid var(--color-level-warning);
+}
+
+.standard-form.flash5e .flash5e-import-results .recommendation-box > i {
+  color: var(--color-level-warning);
+  font-size: 1.25rem;
+}
+
+.standard-form.flash5e .flash5e-import-results .recommendation-content {
+  flex: 1;
+}
+
+.standard-form.flash5e .flash5e-import-results .recommendation-content strong {
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.standard-form.flash5e .flash5e-import-results .recommendation-content p {
+  margin: 0 0 0.5rem;
+  font-size: 0.875rem;
+}
+
+.standard-form.flash5e .flash5e-import-results .link-button {
+  background: none;
+  border: none;
+  color: var(--color-text-hyperlink);
+  cursor: pointer;
+  padding: 0;
+  font-size: 0.875rem;
+  text-decoration: underline;
+}
+
+.standard-form.flash5e .flash5e-import-results .link-button:hover {
+  color: var(--color-text-hyperlink-hover);
+}
+
+.standard-form.flash5e .flash5e-import-results .match-summary {
+  display: flex;
+  gap: 1.5rem;
+  font-size: 0.875rem;
+  justify-content: space-between;
+  background: var(--fr5e-secondary-bg-05);
+  padding: 0.5rem;
+
+}
+
+.standard-form.flash5e .flash5e-import-results .matched-count {
+  color: var(--color-level-success);
+}
+
+.standard-form.flash5e .flash5e-import-results .unmatched-count {
+  color: var(--color-level-error);
+}
+
+.standard-form.flash5e .flash5e-import-results section h3 {
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin: 1rem 0;
+  color: var(--color-text-secondary);
+  justify-content: center;
+}
+
+/*
+.standard-form.flash5e .flash5e-import-results .matched-items h3 {
+  color: var(--color-level-success);
+}
+
+.standard-form.flash5e .flash5e-import-results .unmatched-items h3 {
+  color: var(--color-level-error);
+}
+*/
+.standard-form.flash5e .flash5e-import-results .hint {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  margin: 0 0 0.5rem;
+  font-style: italic;
+}
+
+.standard-form.flash5e .flash5e-import-results .item-group {
+  margin: 0.5rem 0;
+  padding: 0.25rem 1rem 0.5rem 1rem;
+}
+
+.standard-form.flash5e .flash5e-import-results .match-type-badge {
+  font-size: 0.625rem;
+  padding: 0.125rem;
+  color: var(--color-warm-2);
+  margin-left: auto;
+}
+
+.standard-form.flash5e .flash5e-import-results .source-select {
+  max-width: 180px;
+  text-overflow: ellipsis;
+}
